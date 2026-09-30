@@ -1,0 +1,86 @@
+# Local working notes (not part of the package)
+CLAUDE.md
+PLAN.md
+.claude/settings.local.json
+
+# R session / RStudio
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Renviron
+.Rproj.user/
+*.Rproj
+.httr-oauth
+rsconnect/
+
+# R CMD build / check / install output
+# (the historical tarballs already tracked in the repo root are unaffected)
+/*.tar.gz
+/*.Rcheck/
+*-Ex.R
+src/*.o
+src/*.so
+src/*.dll
+
+# knitr / rmarkdown intermediates
+*_cache/
+*_files/
+*.utf8.md
+*.knit.md
+vignettes/*.html
+vignettes/*.pdf
+Rplots.pdf
+
+# pkgdown / renv
+/docs/
+renv/library/
+renv/staging/
+renv/local/
+
+# ORFquant run outputs (keep test fixtures under tests/ or inst/extdata/)
+*_Rannot
+*_TxDb
+*_seed
+*_for_ORFquant
+*_P_sites_calcs
+*_tmp_ORFquant_results
+*_final_ORFquant_results
+*_Protein_sequences.fasta
+*_Detected_ORFs.gtf
+*_ORFquant_plots_RData
+*_final_ORFquant_results_plots/
+*_ORFquant_report.html
+*_ORFquant_report_output.txt
+*_similbed.bed
+table_gene_tx_IDs
+seqinfo
+genetic_codes
+BSgenome.*/
+locusplot.pdf
+
+# Vignette downloads when run from the repo root
+test_human.2bit
+test_human.gtf
+test_human_hek.bam
+instructions_hektest.txt
+HEK293_*
+
+# Profiling / scratch
+*.Rprof
+Rprof.out
+profvis_*.html
+scratch/
+tmp/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.vscode/
+.idea/
+
+# SLURM
+slurm-*.out
