@@ -1209,7 +1209,7 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   df_orfs_ex$exon_rank<-c(unlist(sapply(as.numeric(table(df_orfs_ex$tx_id)),FUN=function(x){1:x})))
   df_orfs<-data.frame(tx_id=sort(unique(df_orfs_ex$tx_id)),tx_name=as.character(names(orfs)),tx_chrom=as.character(unique(seqnames(orfs[[1]]))),tx_start=min(start(orfs)),tx_end=max(end(orfs)),tx_strand=as.character(unique(strand(orfs[[1]]))),stringsAsFactors=F)
   df_genes<-data.frame(tx_name=as.character(names(orfs)),gene_id="OFF")
-  orfann<-suppressWarnings(makeTxDb(transcripts=df_orfs,splicings=df_orfs_ex,genes=df_genes))
+  orfann<-suppressWarnings(txdbmaker::makeTxDb(transcripts=df_orfs,splicings=df_orfs_ex,genes=df_genes))
   #disjointExons(orfann)
   
   
@@ -3580,7 +3580,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
   if(create_TxDb){
     cat(paste("Creating the TxDb object ... ",date(),"\n",sep = ""))
     
-    annotation<-makeTxDbFromGFF(file=gtf_file,format="gtf",chrominfo = seqinfotwob)
+    annotation<-txdbmaker::makeTxDbFromGFF(file=gtf_file,format="gtf",chrominfo = seqinfotwob)
     
     saveDb(annotation, file=paste(annotation_directory,"/",basename(gtf_file),"_TxDb",sep=""))
     cat(paste("Creating the TxDb object --- Done! ",date(),"\n",sep = ""))
