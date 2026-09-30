@@ -16,7 +16,7 @@ Authors@R:
              email = "Dermot.Harnett@mdc-berlin.de"))
 Description: ORFquant is a method that annotates and quantifies
     translation at the single ORF level using Ribo-seq data.
-License: GPL-3 or above
+License: GPL (>= 3)
 Depends: 
     R (>= 4.5.0),
     GenomicRanges

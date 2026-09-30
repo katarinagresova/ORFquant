@@ -5,3 +5,4 @@
 ^ORFquant_.*\.tar\.gz$
 ^ORFquant-manual\.pdf$
 ^ORFquant_vignette\.html$
+^LICENSE$
