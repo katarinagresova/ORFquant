@@ -1,5 +1,3 @@
-#' @import Rsamtools
-NULL
 
 
 DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
@@ -14,7 +12,6 @@ DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
 #' ranges, e.g. chrM
 #'
 #' @field circularRanges A character vector describing which seqnames have circular ranges
-#' @importFrom Rsamtools FaFile
 #' @examples
 #' mytempfile=tempfile()
 #' Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),

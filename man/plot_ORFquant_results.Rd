@@ -21,9 +21,9 @@ plot_ORFquant_results(
 
 \item{annotation_file}{Full path to the *Rannot R file in the annotation directory used in the \code{prepare_annotation_files function}}
 
-\item{coverage_file_plus}{Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (plus strand), as the ones created by \code{RiboseQC}}
+\item{coverage_file_plus}{Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (plus strand), as the ones created by \code{RiboseQC}}
 
-\item{coverage_file_minus}{Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (minus strand), as the ones created by \code{RiboseQC}}
+\item{coverage_file_minus}{Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (minus strand), as the ones created by \code{RiboseQC}}
 
 \item{output_plots_path}{Full path to the directory where plots in .pdf format are stored.}
 

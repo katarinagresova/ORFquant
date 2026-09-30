@@ -26,78 +26,96 @@ export(take_Fvals_spect)
 exportClasses(FaFile_Circ)
 exportMethods(getSeq)
 exportMethods(seqinfo)
-import(Biostrings)
-import(GenomicAlignments)
-import(rtracklayer)
 import(BSgenome)
 import(BiocGenerics)
-import(foreach)
-import(doMC)
-import(multitaper)
-import(reshape2)
-import(ggplot2)
+import(Biostrings)
+import(GenomicAlignments)
+import(GenomicFeatures)
 import(cowplot)
+import(doMC)
+import(foreach)
+import(ggplot2)
 import(grid)
 import(gridExtra)
-import(GenomicFeatures)
+import(multitaper)
+import(reshape2)
+import(rtracklayer)
 importClassesFrom(Rsamtools,FaFile)
 importFrom(AnnotationDbi,saveDb)
-importFrom(GenomicRanges,GRanges)
-importFrom(GenomicRanges,GRangesList)
-importFrom(IRanges,"%over%")
-importFrom(IRanges,CharacterList)
-importFrom(IRanges,IRanges)
-importFrom(IRanges,IntegerList)
-importFrom(IRanges,LogicalList)
-importFrom(IRanges,NumericList)
-importFrom(IRanges,RleList)
-importFrom(IRanges,countOverlaps)
-importFrom(IRanges,disjoin)
-importFrom(IRanges,nearest)
-importFrom(IRanges,quantile)
-importFrom(IRanges,reduce)
-importFrom(IRanges,resize)
-importFrom(IRanges,restrict)
-importFrom(IRanges,shift)
-importFrom(IRanges,subsetByOverlaps)
-importFrom(IRanges,trim)
-importFrom(Rsamtools,BamFile)
-importFrom(Rsamtools,ScanBamParam)
-importFrom(Rsamtools,scanBamFlag)
-importFrom(Rsamtools,scanFa)
-importFrom(Rsamtools,scanFaIndex)
-importFrom(S4Vectors,"mcols<-")
-importFrom(S4Vectors,DataFrame)
-importFrom(S4Vectors,Rle)
-importFrom(S4Vectors,aggregate)
-importFrom(S4Vectors,cbind.DataFrame)
-importFrom(S4Vectors,endoapply)
-importFrom(S4Vectors,na.omit)
-importFrom(S4Vectors,queryHits)
-importFrom(S4Vectors,runLength)
-importFrom(S4Vectors,runValue)
-importFrom(S4Vectors,setMethods)
-importFrom(S4Vectors,splitAsList)
-importFrom(S4Vectors,subjectHits)
-importFrom(Seqinfo,Seqinfo)
-importFrom(Seqinfo,isCircular)
-importFrom(Seqinfo,"seqlengths<-")
-importFrom(Seqinfo,seqlengths)
-importFrom(Seqinfo,seqlevels)
+importFrom(GenomicRanges,
+  GRanges,
+  GRangesList
+)
+importFrom(IRanges,
+  "%over%",
+  CharacterList,
+  IRanges,
+  IntegerList,
+  LogicalList,
+  NumericList,
+  RleList,
+  countOverlaps,
+  disjoin,
+  nearest,
+  quantile,
+  reduce,
+  resize,
+  restrict,
+  shift,
+  subsetByOverlaps,
+  trim
+)
+importFrom(Rsamtools,
+  BamFile,
+  ScanBamParam,
+  scanBamFlag,
+  scanFa,
+  scanFaIndex
+)
+importFrom(S4Vectors,
+  "mcols<-",
+  DataFrame,
+  Rle,
+  aggregate,
+  cbind.DataFrame,
+  endoapply,
+  na.omit,
+  queryHits,
+  runLength,
+  runValue,
+  setMethods,
+  splitAsList,
+  subjectHits
+)
+importFrom(Seqinfo,
+  "seqlengths<-",
+  Seqinfo,
+  isCircular,
+  seqlengths,
+  seqlevels
+)
 importFrom(SummarizedExperiment,assay)
-importFrom(grDevices,colorRampPalette)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,pdf)
-importFrom(grDevices,rgb)
-importFrom(methods,as)
-importFrom(methods,is)
-importFrom(methods,new)
-importFrom(methods,representation)
-importFrom(methods,setMethod)
-importFrom(methods,setRefClass)
-importFrom(stats,as.ts)
-importFrom(stats,optim)
-importFrom(stats,pf)
-importFrom(stats,setNames)
-importFrom(utils,read.table)
-importFrom(utils,write.table)
+importFrom(grDevices,
+  colorRampPalette,
+  dev.off,
+  pdf,
+  rgb
+)
+importFrom(methods,
+  as,
+  is,
+  new,
+  representation,
+  setMethod,
+  setRefClass
+)
+importFrom(stats,
+  as.ts,
+  optim,
+  pf,
+  setNames
+)
+importFrom(utils,
+  read.table,
+  write.table
+)
