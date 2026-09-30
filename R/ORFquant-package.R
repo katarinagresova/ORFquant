@@ -1,9 +1,9 @@
 # Package imports. NAMESPACE is generated from these tags by roxygen2.
-#' @import Biostrings
+#' @rawNamespace import(Biostrings, except = pattern)
 #' @import GenomicAlignments
 #' @import rtracklayer
 #' @import BSgenome
-#' @import BiocGenerics
+#' @rawNamespace import(BiocGenerics, except = c(combine, Position))
 #' @import foreach
 #' @import doMC
 #' @import multitaper
