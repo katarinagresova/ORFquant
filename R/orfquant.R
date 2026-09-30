@@ -3923,7 +3923,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
 #' @export
 
 get_ps_fromspliceplus<-function(x,cutoff){
-  rang<-cigarRangesAlongReferenceSpace(cigar(x), pos=start(x),ops="M")
+  rang<-cigarillo::cigars_as_ranges_along_ref(cigar(x), lmmpos=start(x),ops="M")
   cs<-lapply(rang,function(x){cumsum(x@width)})
   rangok<-lapply(which(IntegerList(cs)>cutoff),"[[",1)
   rangok<-unlist(rangok)
@@ -3966,7 +3966,7 @@ get_ps_fromspliceplus<-function(x,cutoff){
 #' @export
 
 get_ps_fromsplicemin<-function(x,cutoff){
-  rang<-cigarRangesAlongReferenceSpace(cigar(x), pos=start(x),ops="M")
+  rang<-cigarillo::cigars_as_ranges_along_ref(cigar(x), lmmpos=start(x),ops="M")
   rang<-endoapply(rang,rev)
   cs<-lapply(rang,function(x){cumsum(x@width)})
   rangok<-lapply(which(IntegerList(cs)>cutoff),"[[",1)
@@ -4281,7 +4281,7 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     
     # softclipping
     
-    clipp <- width(cigarRangesAlongQuerySpace(x@cigar, ops="S"))
+    clipp <- width(cigarillo::cigars_as_ranges_along_query(x@cigar, ops="S"))
     clipp[elementNROWS(clipp)==0] <- 0
     len_adj <- qwidth(x)-sum(clipp)
     mcols(x)$len_adj <- len_adj
