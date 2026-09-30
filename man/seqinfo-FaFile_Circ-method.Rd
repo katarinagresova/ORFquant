@@ -27,6 +27,3 @@ Rsamtools::indexFa(mytempfile)
 cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
 seqinfo(cREF)
 }
-\seealso{
-\code{\link{create_html_report}}
-}

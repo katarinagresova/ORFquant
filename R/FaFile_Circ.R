@@ -1,5 +1,3 @@
-#' @import Rsamtools
-NULL
 
 
 DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
@@ -14,7 +12,6 @@ DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
 #' ranges, e.g. chrM
 #'
 #' @field circularRanges A character vector describing which seqnames have circular ranges
-#' @importFrom Rsamtools FaFile
 #' @examples
 #' mytempfile=tempfile()
 #' Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
@@ -40,7 +37,6 @@ FaFile_Circ<-setRefClass("FaFile_Circ",
 #'
 #' @return A Seqinfo object
 #'
-#' @seealso \code{\link{create_html_report}}
 #' @examples
 #'
 #' mytempfile=tempfile()
@@ -64,10 +60,11 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 #'
 #'
 #' @param x FaFile_Circ; the object to get the seqinfo for
+#' @param ... the ranges to get (\code{param}, which may be unnamed) and further
+#'   arguments, passed on to \code{\link[Rsamtools]{scanFa}}
 #'
 #' @return A Seqinfo object
 #'
-#' @seealso \code{\link{create_html_report}}
 #' @examples
 #'
 #' mytempfile=tempfile()
