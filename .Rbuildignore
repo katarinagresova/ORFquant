@@ -1,0 +1,7 @@
+^dev$
+^CLAUDE\.md$
+^PLAN\.md$
+^\.claude$
+^ORFquant_.*\.tar\.gz$
+^ORFquant-manual\.pdf$
+^ORFquant_vignette\.html$
