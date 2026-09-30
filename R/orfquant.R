@@ -4630,6 +4630,7 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
   #read the BAM in chunks of chunk_size alignments, same as GenomicFiles::reduceByYield
 
   open(opts)
+  on.exit(if(Rsamtools::isOpen(opts)){close(opts)})
   for_ORFquant<-list()
   chunk<-yiel(opts)
   if(length(chunk)>0){
