@@ -17,7 +17,7 @@ DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
 #' @importFrom Rsamtools FaFile
 #' @examples
 #' mytempfile=tempfile()
-#' writeXStringSet(setNames(DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
+#' Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
 #'   c('chrM','chr2')),filepath=mytempfile)
 #' Rsamtools::indexFa(mytempfile)
 #' cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
@@ -44,7 +44,7 @@ FaFile_Circ<-setRefClass("FaFile_Circ",
 #' @examples
 #'
 #' mytempfile=tempfile()
-#' writeXStringSet(setNames(DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
+#' Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
 #'   c('chrM','chr2')),
 #'   filepath=mytempfile)
 #' Rsamtools::indexFa(mytempfile)
@@ -71,7 +71,7 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 #' @examples
 #'
 #' mytempfile=tempfile()
-#' writeXStringSet(setNames(DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
+#' Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
 #'   c('chrM','chr2')),filepath=mytempfile)
 #' Rsamtools::indexFa(mytempfile)
 #' cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
