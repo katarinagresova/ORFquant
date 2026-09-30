@@ -5811,6 +5811,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 #' @export
 
 create_ORFquant_html_report <- function(input_files, input_sample_names, output_file){
+  if (!requireNamespace("rmarkdown", quietly = TRUE)) {
+    stop("Package \"rmarkdown\" needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
   
   # get input and output file paths
   input_files <- paste(normalizePath(dirname(input_files)),basename(input_files),sep="/")
@@ -5821,7 +5825,7 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
   
   sink(file = paste(output_file,"_ORFquant_report_output.txt",sep = ""))
   # render RMarkdown file > html report
-  suppressWarnings(render(rmd_path, 
+  suppressWarnings(rmarkdown::render(rmd_path, 
                           params = list(input_files = input_files,
                                         input_sample_names = input_sample_names),
                           output_file = output_file))
@@ -5851,8 +5855,8 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
 #' @export
 #' 
 plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusplot.pdf', col ='green' ){
-  if (!requireNamespace(c("Gviz",'lemon','dplyr'), quietly = TRUE)) {
-    stop("Packages \"Gviz\",\"dplyr\",\"lemon\" needed for this function to work. Please install it.",
+  if (!all(vapply(c("Gviz",'lemon','dplyr','GenomeInfoDb'), requireNamespace, logical(1), quietly = TRUE))) {
+    stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
          call. = FALSE)
   }
   options(ucscChromosomeNames=FALSE)
@@ -5884,7 +5888,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   seqinf <- Seqinfo(names(anno$exons_tx),anno$exons_tx%>%width%>%sum)
   #Now get the negatives for each ORF
   
-  utrs <- orfquant_results$ORFs_tx%>%subset(gene_id==selgene)%>%keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
+  utrs <- orfquant_results$ORFs_tx%>%subset(gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
     coverage%>%
     as('GRanges')%>%subset(score==0)%>%mapFromTranscripts(anno$exons_tx)%>%
     {.$transcript <- names(anno$exons_tx)[.$transcriptsHits];.}%>%
@@ -5915,7 +5919,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   disctxs<-anno$txs_gene[selgene]%>%unlist%>%.$tx_name%>%unique%>%setdiff(seltxs)
   disctxsint <- disctxs%>%intersect(seqnames(anno$cds_txs_coords))%>%as.character 
   disc_orfquantgr <- anno$cds_txs_coords%>%
-    keepSeqlevels(disctxsint,'coarse')%>%
+    GenomeInfoDb::keepSeqlevels(disctxsint,'coarse')%>%
     {seqinfo(.)<-seqinf[disctxsint];.}%>%  coverage%>%
     as('GRanges')%>%
     subset(.$score==0)%>%
@@ -5959,7 +5963,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   selgenerange <-  anno$genes[selgene]
   plotstart = start(selgenerange) - (0.2 * (end(selgenerange)-start(selgenerange)))
   plotend = end(selgenerange) + (0 * (end(selgenerange)-start(selgenerange)))
-  library(Gviz)
   legendwidth=1/10
   plottitle <- paste0('ORFquant: ',selgene)
   #write to pdf
@@ -5998,7 +6001,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
                                            transcriptAnnotation='symbol'
                      )%>%
                        # identity
-                       {displayPars(.)[names(orfcols)]<-orfcols;.}
+                       {Gviz::displayPars(.)[names(orfcols)]<-orfcols;.}
                    ),
                    col.labels='black',
                    chr=seqnames(selgenerange)

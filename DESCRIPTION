@@ -36,11 +36,9 @@ Imports:
     grid,
     gridExtra,
     IRanges,
-    knitr,
     methods,
     multitaper,
     reshape2,
-    rmarkdown,
     Rsamtools,
     rtracklayer,
     S4Vectors,
@@ -49,6 +47,13 @@ Imports:
     SummarizedExperiment,
     txdbmaker,
     utils
+Suggests:
+    dplyr,
+    GenomeInfoDb,
+    Gviz,
+    knitr,
+    lemon,
+    rmarkdown
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 LazyData: FALSE
