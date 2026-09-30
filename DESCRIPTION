@@ -37,6 +37,7 @@ Depends:
     rmarkdown,
     rtracklayer
 Imports:
+    cigarillo,
     txdbmaker
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
