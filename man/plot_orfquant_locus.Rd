@@ -21,12 +21,7 @@ plot_orfquant_locus(
 
 \item{plotfile}{the file into which the plot will be saved as a pdf}
 
-\item{input_files}{Character vector with full paths to plot files (*ORFquant_plots_RData) 
-generated with \code{plot_ORFquant_results}. 
-Must be of same length as \code{input_sample_names}.}
-
-\item{input_sample_names}{Character vector containing input names.
-Must be of same length as \code{input_files}.}
+\item{col}{not used (the P-site and junction tracks are drawn in forestgreen)}
 }
 \value{
 returns the value of plotfile if successfull.

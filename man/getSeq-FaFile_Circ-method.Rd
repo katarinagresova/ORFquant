@@ -9,6 +9,9 @@ note that}
 }
 \arguments{
 \item{x}{FaFile_Circ; the object to get the seqinfo for}
+
+\item{...}{the ranges to get (\code{param}, which may be unnamed) and further
+arguments, passed on to \code{\link[Rsamtools]{scanFa}}}
 }
 \value{
 A Seqinfo object

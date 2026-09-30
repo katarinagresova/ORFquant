@@ -5840,17 +5840,11 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
 #' @keywords ORFquant
 #' @author Dermot Harnett, \email{dermot.p.harnett@@gmail.com}
 #' 
-#' @param input_files Character vector with full paths to plot files (*ORFquant_plots_RData) 
-#' generated with \code{plot_ORFquant_results}. 
-#' Must be of same length as \code{input_sample_names}.
-#' 
-#' @param input_sample_names Character vector containing input names.
-#' Must be of same length as \code{input_files}.
-#' 
 #' @param locus String; a gene name, must be present in names(orfquant_results$ORFs_gen)
 #' @param orfquant_results A list containing processed output from ORFquant
 #' @param bam_files bam files, (or pre-processed bam data from RiboseQC) to be plotted
 #' @param plotfile the file into which the plot will be saved as a pdf
+#' @param col not used (the P-site and junction tracks are drawn in forestgreen)
 #' @return returns the value of plotfile if successfull.
 #' @export
 #' 

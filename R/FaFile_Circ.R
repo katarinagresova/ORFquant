@@ -60,6 +60,8 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 #'
 #'
 #' @param x FaFile_Circ; the object to get the seqinfo for
+#' @param ... the ranges to get (\code{param}, which may be unnamed) and further
+#'   arguments, passed on to \code{\link[Rsamtools]{scanFa}}
 #'
 #' @return A Seqinfo object
 #'
