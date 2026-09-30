@@ -36,6 +36,8 @@ Depends:
     reshape2,
     rmarkdown,
     rtracklayer
+Imports:
+    txdbmaker
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 LazyData: FALSE
