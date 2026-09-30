@@ -4627,7 +4627,20 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
   
   cat(paste("Calculating P-sites positions and junctions ...", date(),"\n"))
   
-  for_ORFquant<-reduceByYield(X=opts,YIELD=yiel,MAP=mapp,REDUCE=reduc)
+  #read the BAM in chunks of chunk_size alignments, same as GenomicFiles::reduceByYield
+
+  open(opts)
+  for_ORFquant<-list()
+  chunk<-yiel(opts)
+  if(length(chunk)>0){
+    for_ORFquant<-mapp(chunk)
+    repeat{
+      chunk<-yiel(opts)
+      if(length(chunk)==0){break}
+      for_ORFquant<-reduc(for_ORFquant,mapp(chunk))
+    }
+  }
+  close(opts)
   
   if(length(for_ORFquant$P_sites_all)>0){
     merged_all_ps<-unlist(for_ORFquant$P_sites_all)

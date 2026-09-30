@@ -31,7 +31,6 @@ Imports:
     foreach,
     GenomicAlignments,
     GenomicFeatures,
-    GenomicFiles,
     ggplot2,
     grDevices,
     grid,
