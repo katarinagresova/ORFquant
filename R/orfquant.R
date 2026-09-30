@@ -3644,7 +3644,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     exsss_cds<-exons_tx[names(cds_tx)]
     chunks<-seq(1,length(cds_tx),by = 20000)
-    if(chunks[length(chunks)]<length(cds_tx)){chunks<-c(chunks,length(cds_tx))}
+    if(length(chunks)==1 || chunks[length(chunks)]<length(cds_tx)){chunks<-c(chunks,length(cds_tx))}
     mapp<-GRangesList()
     for(i in 1:(length(chunks)-1)){
       if(i!=(length(chunks)-1)){
