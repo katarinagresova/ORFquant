@@ -21,7 +21,7 @@ ranges, e.g. chrM
 
 \examples{
 mytempfile=tempfile()
-writeXStringSet(setNames(DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
+Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AAAAAAAAGG')),
   c('chrM','chr2')),filepath=mytempfile)
 Rsamtools::indexFa(mytempfile)
 cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
