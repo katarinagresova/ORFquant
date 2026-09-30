@@ -3251,7 +3251,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   #ORFs_tx<-unlist(GRangesList(unlist(sapply(ORFs_found,function(x){unlist(x$ORFs_tx_position)}))))
   
   chunks<-seq(1,length(ORFs_found),by = 1000)
-  if(chunks[length(chunks)]<length(ORFs_found)){chunks<-c(chunks,length(ORFs_found))}
+  if(length(chunks)==1 || chunks[length(chunks)]<length(ORFs_found)){chunks<-c(chunks,length(ORFs_found))}
   ORFs_tx<-GRangesList()
   for(i in 1:(length(chunks)-1)){
   
