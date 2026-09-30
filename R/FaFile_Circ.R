@@ -37,7 +37,6 @@ FaFile_Circ<-setRefClass("FaFile_Circ",
 #'
 #' @return A Seqinfo object
 #'
-#' @seealso \code{\link{create_html_report}}
 #' @examples
 #'
 #' mytempfile=tempfile()
@@ -64,7 +63,6 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 #'
 #' @return A Seqinfo object
 #'
-#' @seealso \code{\link{create_html_report}}
 #' @examples
 #'
 #' mytempfile=tempfile()
