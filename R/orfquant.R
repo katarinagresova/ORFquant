@@ -3256,11 +3256,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   for(i in 1:(length(chunks)-1)){
   
     if(i!=(length(chunks)-1)){
-    ao<-unlist(GRangesList(unlist(sapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
+    ao<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
     ORFs_tx[[i]]<-ao
   }
   if(i==(length(chunks)-1)){
-    ORFs_tx[[i]]<-unlist(GRangesList(unlist(sapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
+    ORFs_tx[[i]]<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
   }
   }
 
