@@ -3215,7 +3215,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
       genetcd<-GTF_annotation$genetic_codes$genetic_code[rownames(GTF_annotation$genetic_codes)==as.character(seqnames(gen_region))]
       genetcd<-getGeneticCode(genetcd)
       
-      ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code=genetcd,
+      ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code_region=genetcd,
                                 orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
                                 orf_find.start_sel_cutoff = stn.orf_find.start_sel_cutoff,orf_find.start_sel_cutoff_ave = stn.orf_find.start_sel_cutoff_ave,
                                 orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
@@ -5237,7 +5237,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   a<-a + theme_bw()
   a<-a + ylab("percentage")
   a<-a + xlab("")
-  a<-a + facet_grid(type~.,scale="free",)
+  a<-a + facet_grid(type~.,scales="free",)
   a<-a + scale_fill_manual(values = colss,"mapping Txs")
   a<-a + theme(axis.title.y = element_text(size=16),axis.text.y  = element_text(angle=45, vjust=0.5, size=16),strip.text.y =  element_text(size=12))
   selection_bins_juns<-a + theme(axis.title.x = element_text(size=12),axis.text.x  = element_text(angle=45, vjust=0.5, size=16))
@@ -5881,17 +5881,17 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   orfs_quantified_gen$feature <- 'CDS'
   orfs_quantified_gen$transcript=orfs_quantified_gen$transcript_id
   anno <- GTF_annotation
-  orfs_quantified_tr <- anno$exons_tx
+  orfs_quantified_tr <- anno$exons_txs
   orfs_quantified_tr <- orfs_quantified_tr[unique(orfs_quantified_gen$transcript_id)]
   #get the orfs, then get the negative coverage
   #add transcript info to the ORFs_tx object
-  seqinf <- Seqinfo(names(anno$exons_tx),anno$exons_tx%>%width%>%sum)
+  seqinf <- Seqinfo(names(anno$exons_txs),anno$exons_txs%>%width%>%sum)
   #Now get the negatives for each ORF
   
   utrs <- orfquant_results$ORFs_tx%>%subset(gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
     coverage%>%
-    as('GRanges')%>%subset(score==0)%>%mapFromTranscripts(anno$exons_tx)%>%
-    {.$transcript <- names(anno$exons_tx)[.$transcriptsHits];.}%>%
+    as('GRanges')%>%subset(score==0)%>%mapFromTranscripts(anno$exons_txs)%>%
+    {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
     {.$feature='utr';.}
   
   orfquantgr <- c(
@@ -5925,11 +5925,11 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
     subset(.$score==0)%>%
     {   
       txgr = .
-      out = mapFromTranscripts(txgr,anno$exons_tx)
+      out = mapFromTranscripts(txgr,anno$exons_txs)
       out$score = txgr$score[out$xHits]
       out
     }%>%
-    {.$transcript <- names(anno$exons_tx)[.$transcriptsHits];.}%>%
+    {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
     {.$feature=ifelse(.$score==0,'utr','CDS');.}
   disc_orfquantgr <- disc_orfquantgr%>% c(.,anno$cds_txs[disctxsint]%>%unlist%>%{.$feature=rep('CDS',length(.));.$transcript=names(.);.})
   discORFnames<-paste0(disctxs,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
@@ -5966,14 +5966,14 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   legendwidth=1/10
   plottitle <- paste0('ORFquant: ',selgene)
   #write to pdf
-  pdf(plotfile,width=14+2,h=7)
+  pdf(plotfile,width=14+2,height=7)
   #code for arranging legend next to the locus plot
   grid.newpage()
-  vp1 <- viewport(x = 0, y = 0, w = 1-legendwidth*1.5, h = 1,
+  vp1 <- viewport(x = 0, y = 0, width = 1-legendwidth*1.5, height = 1,
                   just = c("left", "bottom"), name = "vp1")
-  vp2 <- viewport(x = 1-legendwidth*1.5, y = 0, w = legendwidth*1.5, h = 1,
+  vp2 <- viewport(x = 1-legendwidth*1.5, y = 0, width = legendwidth*1.5, height = 1,
                   just = c("left", "bottom"))
-  vp3 <- viewport(x = 1-legendwidth*1.5, y = 0, w = legendwidth*1.5, h = 1/7,
+  vp3 <- viewport(x = 1-legendwidth*1.5, y = 0, width = legendwidth*1.5, height = 1/7,
                   just = c("left", "bottom"))
   pushViewport(vp1)
   #finally plot the locus
@@ -5986,9 +5986,9 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
                      # Gviz::txs_discarded_Track,
                      # Gviz::txs_selected_track,
                      # Gviz::DataTrack(riboseqcoutput$P_sites_all%>%subsetByOverlaps(selgenerange),type='hist'),
-                     Gviz::GeneRegionTrack(name='discarded\ntranscripts',anno$exons_tx[disctxs]%>%unlist%>%{.$transcript=names(.);.$feature=rep('exon',length(.));.},fill='#F7CAC9',
+                     Gviz::GeneRegionTrack(name='discarded\ntranscripts',anno$exons_txs[disctxs]%>%unlist%>%{.$transcript=names(.);.$feature=rep('exon',length(.));.},fill='#F7CAC9',
                                            transcriptAnnotation='transcript'),
-                     Gviz::GeneRegionTrack(exon='forestgreen',name='selected\ntranscripts',anno$exons_tx[seltxs]%>%unlist%>%{.$transcript=names(.);.$feature=rep('exon',length(.));.},fill='#F7CAC9',
+                     Gviz::GeneRegionTrack(exon='forestgreen',name='selected\ntranscripts',anno$exons_txs[seltxs]%>%unlist%>%{.$transcript=names(.);.$feature=rep('exon',length(.));.},fill='#F7CAC9',
                                            transcriptAnnotation='transcript'),
                      Gviz::DataTrack(legend=TRUE,name='\t\t P-Sites',col.histogram='forestgreen',riboseqcoutput$P_sites_all%>%subsetByOverlaps(selgenerange),type='hist'),
                      Gviz::AlignmentsTrack(name='\nJunction Reads\n\n\n',col.sashimi='forestgreen',fakejreads[,'cigar'],type='sashimi',sashimiNumbers=TRUE),
