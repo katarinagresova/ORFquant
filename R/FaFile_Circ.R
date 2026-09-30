@@ -56,14 +56,17 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 
 
 #' Yields the sequence for a particular range on a circular Fasta File
-#' note that
 #'
+#' GRanges on a circular chromosome may run past its end by up to the
+#' chromosome's length; the rest of the sequence is then taken from its start.
 #'
-#' @param x FaFile_Circ; the object to get the seqinfo for
+#' @param x FaFile_Circ; the object to get the sequences from
 #' @param ... the ranges to get (\code{param}, which may be unnamed) and further
 #'   arguments, passed on to \code{\link[Rsamtools]{scanFa}}
 #'
-#' @return A Seqinfo object
+#' @return A DNAStringSet with the sequence of each range (reverse-complemented
+#'   for GRanges on the - strand), or of every sequence in the file if no ranges
+#'   are given
 #'
 #' @examples
 #'
@@ -72,7 +75,7 @@ setMethod(seqinfo,'FaFile_Circ',function (x){
 #'   c('chrM','chr2')),filepath=mytempfile)
 #' Rsamtools::indexFa(mytempfile)
 #' cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
-#' seqinfo(cREF)
+#' getSeq(cREF, GRanges('chrM:9-12'))
 #' @export
 
 

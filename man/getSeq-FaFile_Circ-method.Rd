@@ -2,23 +2,24 @@
 % Please edit documentation in R/FaFile_Circ.R
 \name{getSeq,FaFile_Circ-method}
 \alias{getSeq,FaFile_Circ-method}
-\title{Yields the sequence for a particular range on a circular Fasta File
-note that}
+\title{Yields the sequence for a particular range on a circular Fasta File}
 \usage{
 \S4method{getSeq}{FaFile_Circ}(x, ...)
 }
 \arguments{
-\item{x}{FaFile_Circ; the object to get the seqinfo for}
+\item{x}{FaFile_Circ; the object to get the sequences from}
 
 \item{...}{the ranges to get (\code{param}, which may be unnamed) and further
 arguments, passed on to \code{\link[Rsamtools]{scanFa}}}
 }
 \value{
-A Seqinfo object
+A DNAStringSet with the sequence of each range (reverse-complemented
+  for GRanges on the - strand), or of every sequence in the file if no ranges
+  are given
 }
 \description{
-Yields the sequence for a particular range on a circular Fasta File
-note that
+GRanges on a circular chromosome may run past its end by up to the
+chromosome's length; the rest of the sequence is then taken from its start.
 }
 \examples{
 
@@ -27,5 +28,5 @@ Biostrings::writeXStringSet(setNames(Biostrings::DNAStringSet(c('AAAAAAAAGG','AA
   c('chrM','chr2')),filepath=mytempfile)
 Rsamtools::indexFa(mytempfile)
 cREF<-FaFile_Circ(Rsamtools::FaFile(mytempfile),circularRanges='chrM')
-seqinfo(cREF)
+getSeq(cREF, GRanges('chrM:9-12'))
 }
