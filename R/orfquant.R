@@ -3554,7 +3554,9 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     cat(paste("Installing the BSgenome package ... ",date(),"\n",sep = ""))
     
-    install(paste(annotation_directory,pkgnm,sep="/"),upgrade = F)
+    #install.packages() only warns when the installation fails: stop instead, as devtools::install() did
+    tryCatch(utils::install.packages(paste(annotation_directory,pkgnm,sep="/"),repos = NULL,type = "source"),
+             warning=function(w){stop("Installing the BSgenome package failed: ",conditionMessage(w))})
     cat(paste("Installing the BSgenome package --- Done! ",date(),"\n",sep = ""))
     
     
