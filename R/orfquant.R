@@ -346,9 +346,9 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
         if(length(psit)<25){slepians<-dpss(n=length(psit)+(50-length(psit)),k=tapers,nw=bw)}
         if(length(psit)>=25){slepians<-dpss(n=length(psit),k=tapers,nw=bw)}
         vals<-take_Fvals_spect(x = psit,n_tapers = tapers,time_bw = bw,slepians_values = slepians)
-        ORFs$pval[i]<-pf(q=vals[1],df1=2,df2=(2*24)-2,lower.tail=F)
+        ORFs$pval[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
         vals<-take_Fvals_spect(x = psit_uniq,n_tapers = tapers,time_bw = bw,slepians_values = slepians)
-        ORFs$pval_uniq[i]<-pf(q=vals[1],df1=2,df2=(2*24)-2,lower.tail=F)
+        ORFs$pval_uniq[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
         
         
       }
@@ -2916,7 +2916,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
       N_ann<-translate(max_cds_seq[1:(segm*3)],genetic.code = genetic_code,if.fuzzy.codon="solve")
-      C_ann<-translate(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,if.fuzzy.codon="solve")
+      C_ann<-translate(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,if.fuzzy.codon="solve",no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       ORFs_tx[[i]]$NC_protein_isoform<-"N_C"
@@ -3048,7 +3048,7 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
   
   res_orfs<-list()
   minimum_reads<-length(P_sites_region)>4
-  if(unique_reads){length(P_sites_uniq_region)>4}
+  if(unique_reads){minimum_reads<-length(P_sites_uniq_region)>4}
   
   if(minimum_reads){
     
@@ -3214,6 +3214,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
       gen_region<-genes_red[g]
       genetcd<-GTF_annotation$genetic_codes$genetic_code[rownames(GTF_annotation$genetic_codes)==as.character(seqnames(gen_region))]
       genetcd<-getGeneticCode(genetcd)
+      if(canonical_start_only){
+        attributes(genetcd)$alt_init_codons<-names(which(genetcd=="M"))
+      }
       
       ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code_region=genetcd,
                                 orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
@@ -3251,16 +3254,16 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   #ORFs_tx<-unlist(GRangesList(unlist(sapply(ORFs_found,function(x){unlist(x$ORFs_tx_position)}))))
   
   chunks<-seq(1,length(ORFs_found),by = 1000)
-  if(chunks[length(chunks)]<length(ORFs_found)){chunks<-c(chunks,length(ORFs_found))}
+  if(length(chunks)==1 || chunks[length(chunks)]<length(ORFs_found)){chunks<-c(chunks,length(ORFs_found))}
   ORFs_tx<-GRangesList()
   for(i in 1:(length(chunks)-1)){
   
     if(i!=(length(chunks)-1)){
-    ao<-unlist(GRangesList(unlist(sapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
+    ao<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
     ORFs_tx[[i]]<-ao
   }
   if(i==(length(chunks)-1)){
-    ORFs_tx[[i]]<-unlist(GRangesList(unlist(sapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
+    ORFs_tx[[i]]<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
   }
   }
 
@@ -3644,7 +3647,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     exsss_cds<-exons_tx[names(cds_tx)]
     chunks<-seq(1,length(cds_tx),by = 20000)
-    if(chunks[length(chunks)]<length(cds_tx)){chunks<-c(chunks,length(cds_tx))}
+    if(length(chunks)==1 || chunks[length(chunks)]<length(cds_tx)){chunks<-c(chunks,length(cds_tx))}
     mapp<-GRangesList()
     for(i in 1:(length(chunks)-1)){
       if(i!=(length(chunks)-1)){
@@ -4045,22 +4048,34 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
   }
   
-  if(!is.na(path_to_rl_cutoff_file) & !is.na(path_to_P_sites_plus_bw) & !is.na(path_to_P_sites_minus_bw)){
+  if(!is.na(path_to_rl_cutoff_file) & (!is.na(path_to_P_sites_plus_bw) | !is.na(path_to_P_sites_minus_bw))){
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_plus_bw),is.na(path_to_P_sites_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_plus_bw and path_to_P_sites_minus_bw, or neither! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_uniq_plus_bw),is.na(path_to_P_sites_uniq_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_uniq_plus_bw and path_to_P_sites_uniq_minus_bw, or neither! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_uniq_mm_plus_bw),is.na(path_to_P_sites_uniq_mm_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_uniq_mm_plus_bw and path_to_P_sites_uniq_mm_minus_bw, or neither! ", date(),sep=""))
   }
   
   if(!is.na(path_to_rl_cutoff_file)){
     rl_cutoff<-read.table(path_to_rl_cutoff_file,header = T,sep = "\t",stringsAsFactors = F)
     
-    if(dim(rl_cutoff)[2]!=3){stop(
-      paste("Error: please format the rl_cutoff file correctly, using 3 tab-separated columns with 'rl', 'cutoff' and 'compartment' as column names! ",date(),sep="")
+    if(!all(c("read_length","cutoff","compartment")%in%colnames(rl_cutoff))){stop(
+      paste("Error: please format the rl_cutoff file correctly, using a tab-separated table with 'read_length', 'cutoff' and 'compartment' as column names! ",date(),sep="")
     )}
     
-    rl_cutoffs_comp<-split(rl_cutoff,rl_cutoff[,3])
+    rl_cutoffs_comp<-split(rl_cutoff,rl_cutoff$compartment)
     compnms<-names(rl_cutoffs_comp)
     
     for(compar in compnms){
-      cat(paste("Using ",paste(rl_cutoffs_comp[[compar]][,1],collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]][,2],collapse=",")," as cutoffs, '", compar,"' compartment ... ","\n",sep=""))
+      cat(paste("Using ",paste(rl_cutoffs_comp[[compar]]$read_length,collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]]$cutoff,collapse=",")," as cutoffs, '", compar,"' compartment ... ","\n",sep=""))
     }
   }
   
@@ -4115,9 +4130,9 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
       input_P_sites_uniq_mm_mn<-import(path_to_P_sites_uniq_mm_minus_bw)
       strand(input_P_sites_uniq_mm_mn)<-"-"
     }
-    suppressWarnings(input_P_sites_uniq<-sort(c(input_P_sites_uniq_mm_pl,input_P_sites_uniq_mm_mn)))
-    seqlevels(input_P_sites_uniq,pruning.mode="coarse")<-seqllll
-    seqlengths(input_P_sites_uniq)<-seqleee
+    suppressWarnings(input_P_sites_uniq_mm<-sort(c(input_P_sites_uniq_mm_pl,input_P_sites_uniq_mm_mn)))
+    seqlevels(input_P_sites_uniq_mm,pruning.mode="coarse")<-seqllll
+    seqlengths(input_P_sites_uniq_mm)<-seqleee
     
   }
   
@@ -5062,7 +5077,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   tpms<-cnts[match(names(ch_txs_sel),cnts$gene_id),"TPM"]
   pct_sel<-(elementNROWS(ch_txs_sel))/tot_n_tx*100
   nsels<-elementNROWS(ch_txs_sel)
-  qnt<-cut(nsels,breaks = c(0,3,6,9,max(nsels)),include.lowest = T)
+  qnt<-cut(nsels,breaks = unique(c(0,3,6,9,max(nsels))),include.lowest = T)
   qnt<-gsub(qnt,pattern = ",",replacement = "-")
   qnt<-gsub(qnt,pattern = "\\[",replacement = "")
   qnt<-gsub(qnt,pattern = "]",replacement = "")
@@ -5823,13 +5838,21 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
   # get path to RMarkdown file (to be rendered)
   rmd_path <- paste(system.file(package="ORFquant"),"/rmd/ORFquant_template.Rmd",sep="")
   
+  # render a copy in a new temporary directory, so that nothing is written into the installed package
+  rmd_dir <- tempfile("ORFquant_report_")
+  dir.create(rmd_dir)
+  on.exit(unlink(rmd_dir, recursive = TRUE), add = TRUE)
+  file.copy(rmd_path, rmd_dir)
+  rmd_path <- paste(rmd_dir,"ORFquant_template.Rmd",sep="/")
+  
   sink(file = paste(output_file,"_ORFquant_report_output.txt",sep = ""))
+  on.exit(sink(), add = TRUE)
   # render RMarkdown file > html report
   suppressWarnings(rmarkdown::render(rmd_path, 
                           params = list(input_files = input_files,
                                         input_sample_names = input_sample_names),
                           output_file = output_file))
-  sink()
+  invisible()
 }
 
 
