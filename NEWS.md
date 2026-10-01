@@ -47,9 +47,32 @@
   chr21 of a human sample, 5 of 87 ORFs change from `C` to `same`. Nothing
   else changes, and the default, `canonical_start_only = TRUE`, is
   unaffected.
+- `calc_orf_pval()` now uses `tapers` for the degrees of freedom of the
+  multitaper F-test (`2 * tapers - 2`). Before, it always used 46, the value
+  for the default 24 tapers. `run_ORFquant()` always uses the default, so its
+  results are unchanged; only direct calls to `calc_orf_pval()` with another
+  `tapers` get different `pval` and `pval_uniq`.
 
 ## Bug fixes
 
+- `run_ORFquant()` no longer fails with `NA/NaN argument` when exactly one
+  genomic region has ORFs, for example in a run on one gene
+  (lcalviell/ORFquant#26).
+- `run_ORFquant()` no longer drops the names of `ORFs_tx` (the ORF ids) when
+  every region with ORFs (or every one in a block of 1000 such regions) has
+  the same number of ORFs, 2 or more, for example in a run on one gene with
+  2 ORFs. The `ORF_id_tr` column was not affected.
+- `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
+  the annotation has exactly one protein-coding transcript.
+- `prepare_for_ORFquant()` now reads the cutoff table's columns by name. It
+  needs the columns `read_length`, `cutoff` and `compartment`, in any order,
+  and ignores any others. Before, it checked only that the table had 3
+  columns and took the compartment from the third. A table headed `rl` (as
+  the error message said) gave no P-sites and no error, and so did one with
+  `compartment` first. Tables with the documented header give the same
+  results as before. Some headers with other names, for example
+  `read_lengths` or a third column `comp`, worked before and now stop with an
+  error. The error message now names `read_length`, not `rl`.
 - `prepare_for_ORFquant()` now stops with an error when only one bigWig of a
   pair is given, for example `path_to_P_sites_plus_bw` without
   `path_to_P_sites_minus_bw` (likewise for the `uniq` and `uniq_mm` pairs), or
@@ -58,3 +81,18 @@
   track then held only the plus strand when only the plus bigWig was given,
   and nothing when only the minus bigWig was given; with a cutoff table, it
   replaced the P-sites computed from the BAM. Other calls are not affected.
+- `plot_ORFquant_results()` no longer fails with `'breaks' are not unique`
+  when the largest number of selected transcripts per gene is 3, 6 or 9
+  (lcalviell/ORFquant#18). All other plots are unchanged.
+- `create_ORFquant_html_report()` now renders the report from a copy of the
+  template in a temporary directory, not in the installed package. It now
+  works when the R library is read-only (containers, shared conda
+  environments), and reports rendered at the same time from one installation
+  no longer share intermediate files, which could make a report list another
+  report's input or fail.
+- `create_ORFquant_html_report()` now ends its `sink()` when rendering fails.
+  Before, the rest of the session's console output went to
+  `<output>_ORFquant_report_output.txt`.
+- The `getSeq()` error for ranges that wrap twice around a circular
+  chromosome now reads "Ranges wrapping twice isn't implemented yet...",
+  without the stray quote, line break and spaces it had.
