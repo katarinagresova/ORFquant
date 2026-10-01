@@ -4052,15 +4052,15 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
   if(!is.na(path_to_rl_cutoff_file)){
     rl_cutoff<-read.table(path_to_rl_cutoff_file,header = T,sep = "\t",stringsAsFactors = F)
     
-    if(dim(rl_cutoff)[2]!=3){stop(
-      paste("Error: please format the rl_cutoff file correctly, using 3 tab-separated columns with 'rl', 'cutoff' and 'compartment' as column names! ",date(),sep="")
+    if(!all(c("read_length","cutoff","compartment")%in%colnames(rl_cutoff))){stop(
+      paste("Error: please format the rl_cutoff file correctly, using a tab-separated table with 'read_length', 'cutoff' and 'compartment' as column names! ",date(),sep="")
     )}
     
-    rl_cutoffs_comp<-split(rl_cutoff,rl_cutoff[,3])
+    rl_cutoffs_comp<-split(rl_cutoff,rl_cutoff$compartment)
     compnms<-names(rl_cutoffs_comp)
     
     for(compar in compnms){
-      cat(paste("Using ",paste(rl_cutoffs_comp[[compar]][,1],collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]][,2],collapse=",")," as cutoffs, '", compar,"' compartment ... ","\n",sep=""))
+      cat(paste("Using ",paste(rl_cutoffs_comp[[compar]]$read_length,collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]]$cutoff,collapse=",")," as cutoffs, '", compar,"' compartment ... ","\n",sep=""))
     }
   }
   
