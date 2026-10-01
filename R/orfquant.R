@@ -4048,8 +4048,20 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
   }
   
-  if(!is.na(path_to_rl_cutoff_file) & !is.na(path_to_P_sites_plus_bw) & !is.na(path_to_P_sites_minus_bw)){
+  if(!is.na(path_to_rl_cutoff_file) & (!is.na(path_to_P_sites_plus_bw) | !is.na(path_to_P_sites_minus_bw))){
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_plus_bw),is.na(path_to_P_sites_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_plus_bw and path_to_P_sites_minus_bw, or neither! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_uniq_plus_bw),is.na(path_to_P_sites_uniq_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_uniq_plus_bw and path_to_P_sites_uniq_minus_bw, or neither! ", date(),sep=""))
+  }
+  
+  if(xor(is.na(path_to_P_sites_uniq_mm_plus_bw),is.na(path_to_P_sites_uniq_mm_minus_bw))){
+    stop(paste("Please input both path_to_P_sites_uniq_mm_plus_bw and path_to_P_sites_uniq_mm_minus_bw, or neither! ", date(),sep=""))
   }
   
   if(!is.na(path_to_rl_cutoff_file)){

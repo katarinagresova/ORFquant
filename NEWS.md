@@ -40,3 +40,14 @@
   Files made without these two bigWigs, from a BAM and a cutoff table, or by
   RiboseQC are not affected. Re-run `prepare_for_ORFquant()` for files made
   with them.
+
+## Bug fixes
+
+- `prepare_for_ORFquant()` now stops with an error when only one bigWig of a
+  pair is given, for example `path_to_P_sites_plus_bw` without
+  `path_to_P_sites_minus_bw` (likewise for the `uniq` and `uniq_mm` pairs), or
+  when a cutoff table is given with `path_to_P_sites_plus_bw` or
+  `path_to_P_sites_minus_bw`. Before, these calls ran without a warning. The
+  track then held only the plus strand when only the plus bigWig was given,
+  and nothing when only the minus bigWig was given; with a cutoff table, it
+  replaced the P-sites computed from the BAM. Other calls are not affected.
