@@ -27,3 +27,16 @@
   the ORFs are unchanged, and only the transcripts selected there (2 on
   chr21) are no longer in `selected_txs` and `ORFs_txs_feats`. The default,
   `unique_reads_only = FALSE`, is unaffected.
+- `prepare_for_ORFquant()` now stores the bigWigs of uniquely mapping P-sites
+  with mismatches (`path_to_P_sites_uniq_mm_plus_bw` and
+  `path_to_P_sites_uniq_mm_minus_bw`) in `P_sites_uniq_mm`. Before, it stored
+  them in `P_sites_uniq`, replacing the unique P-sites, and left
+  `P_sites_uniq_mm` empty. ORFs called from such a file had `P_sites_raw_uniq`
+  and `pval_uniq` computed on the mismatch track and `P_sites_raw_uniq_mm` 0,
+  and `ORFs_feat` and `ORFs_txs_feats` had wrong `unique_reads`. With
+  `unique_reads_only = TRUE`, ORFs were also detected and quantified on the
+  mismatch track: on chr21 of a human sample, 5 ORFs were found instead of 76.
+  With the default, `unique_reads_only = FALSE`, the same ORFs were found.
+  Files made without these two bigWigs, from a BAM and a cutoff table, or by
+  RiboseQC are not affected. Re-run `prepare_for_ORFquant()` for files made
+  with them.
