@@ -40,6 +40,13 @@
   Files made without these two bigWigs, from a BAM and a cutoff table, or by
   RiboseQC are not affected. Re-run `prepare_for_ORFquant()` for files made
   with them.
+- With `canonical_start_only = FALSE`, `run_ORFquant()` no longer reads a TTG
+  or CTG as M when it starts the stretch of the annotated CDS that
+  `NC_protein_isoform` compares with the ORF's last 10 amino acids. These
+  ORFs were labelled `C` instead of `same` (or `N_C` instead of `N`); on
+  chr21 of a human sample, 5 of 87 ORFs change from `C` to `same`. Nothing
+  else changes, and the default, `canonical_start_only = TRUE`, is
+  unaffected.
 
 ## Bug fixes
 

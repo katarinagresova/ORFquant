@@ -2916,7 +2916,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
       N_ann<-translate(max_cds_seq[1:(segm*3)],genetic.code = genetic_code,if.fuzzy.codon="solve")
-      C_ann<-translate(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,if.fuzzy.codon="solve")
+      C_ann<-translate(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,if.fuzzy.codon="solve",no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       ORFs_tx[[i]]$NC_protein_isoform<-"N_C"
