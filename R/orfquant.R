@@ -3048,7 +3048,7 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
   
   res_orfs<-list()
   minimum_reads<-length(P_sites_region)>4
-  if(unique_reads){length(P_sites_uniq_region)>4}
+  if(unique_reads){minimum_reads<-length(P_sites_uniq_region)>4}
   
   if(minimum_reads){
     

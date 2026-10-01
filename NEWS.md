@@ -18,3 +18,12 @@
   but not which ORFs were found, their coordinates, P-sites or p-values.
   Serial runs now give the same results as parallel runs, which are
   unchanged.
+- With `unique_reads_only = TRUE`, `run_ORFquant()` now skips genomic regions
+  with too little signal from uniquely mapping reads. A region needs more
+  than 4 P-site entries (ranges in `for_ORFquant`) to be analysed. The check
+  on the unique P-sites was computed but its result was dropped, so only the
+  check on all P-sites applied. In our test data and on chr21 of a human
+  sample (30 such regions), no ORF was found in these regions before either:
+  the ORFs are unchanged, and only the transcripts selected there (2 on
+  chr21) are no longer in `selected_txs` and `ORFs_txs_feats`. The default,
+  `unique_reads_only = FALSE`, is unaffected.
