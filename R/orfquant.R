@@ -5831,12 +5831,13 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
   rmd_path <- paste(rmd_dir,"ORFquant_template.Rmd",sep="/")
   
   sink(file = paste(output_file,"_ORFquant_report_output.txt",sep = ""))
+  on.exit(sink(), add = TRUE)
   # render RMarkdown file > html report
   suppressWarnings(rmarkdown::render(rmd_path, 
                           params = list(input_files = input_files,
                                         input_sample_names = input_sample_names),
                           output_file = output_file))
-  sink()
+  invisible()
 }
 
 
