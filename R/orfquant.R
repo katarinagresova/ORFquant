@@ -3214,6 +3214,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
       gen_region<-genes_red[g]
       genetcd<-GTF_annotation$genetic_codes$genetic_code[rownames(GTF_annotation$genetic_codes)==as.character(seqnames(gen_region))]
       genetcd<-getGeneticCode(genetcd)
+      if(canonical_start_only){
+        attributes(genetcd)$alt_init_codons<-names(which(genetcd=="M"))
+      }
       
       ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code_region=genetcd,
                                 orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
