@@ -5062,7 +5062,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   tpms<-cnts[match(names(ch_txs_sel),cnts$gene_id),"TPM"]
   pct_sel<-(elementNROWS(ch_txs_sel))/tot_n_tx*100
   nsels<-elementNROWS(ch_txs_sel)
-  qnt<-cut(nsels,breaks = c(0,3,6,9,max(nsels)),include.lowest = T)
+  qnt<-cut(nsels,breaks = unique(c(0,3,6,9,max(nsels))),include.lowest = T)
   qnt<-gsub(qnt,pattern = ",",replacement = "-")
   qnt<-gsub(qnt,pattern = "\\[",replacement = "")
   qnt<-gsub(qnt,pattern = "]",replacement = "")
