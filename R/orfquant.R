@@ -5929,13 +5929,13 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   
   orfquantgrscores = mcols(orfs_quantified_gen)[[quantcol]][match(names(orfquantgr),orfs_quantified_gen$ORF_id_tr)]
   
-  orfcols <- orfquantgrscores%>% vapply(function(.)tryCatch({rgb(0,.,0)},error=function(e){'white'}),'foo')%>%setNames(c('0',orfquantgr$feature%>%unique))
+  orfcols <- orfcols%>% vapply(function(.)tryCatch({rgb(0,.,0)},error=function(e){'white'}),'foo')%>%setNames(c('0',ufeats))
   
   
   ###Define non selected
   disctxs<-anno$txs_gene[selgene]%>%unlist%>%.$tx_name%>%unique%>%setdiff(seltxs)
   disctxsint <- disctxs%>%intersect(seqnames(anno$cds_txs_coords))%>%as.character 
-  disc_orfquantgr <- anno$cds_txs_coords%>%
+  disc_orfquantgr <- if(length(disctxsint)==0) GRanges(transcript=character(0),feature=character(0)) else anno$cds_txs_coords%>%
     GenomeInfoDb::keepSeqlevels(disctxsint,'coarse')%>%
     {seqinfo(.)<-seqinf[disctxsint];.}%>%  coverage%>%
     as('GRanges')%>%
@@ -5949,10 +5949,10 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
     {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
     {.$feature=ifelse(.$score==0,'utr','CDS');.}
   disc_orfquantgr <- disc_orfquantgr%>% c(.,anno$cds_txs[disctxsint]%>%unlist%>%{.$feature=rep('CDS',length(.));.$transcript=names(.);.})
-  discORFnames<-paste0(disctxs,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
+  discORFnames<-paste0(disctxsint,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
   disc_orfquantgr$symbol = discORFnames[disc_orfquantgr$transcript]
   fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
-    {.$cigar <- paste0('1M',width(.)-2,'N','1M');.}
+    {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
   fakejreads <- fakejreads[mapply(seq_along(fakejreads[]),fakejreads$reads,FUN=rep)%>%unlist]
   ncols <- 2
   nrows <- 1
@@ -5983,7 +5983,11 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   legendwidth=1/10
   plottitle <- paste0('ORFquant: ',selgene)
   #write to pdf
-  pdf(plotfile,width=14+2,height=7)
+  #Gviz needs 3 points per row of a stacked track: a track with more than 21 transcripts gets more height, and the page with it (1 inch per unit of sizes)
+  plotsizes <- pmax(1,c(1,length(disctxs),length(seltxs),1,1,length(disctxsint),length(selorfs))/21)
+  pdf(plotfile,width=14+2,height=sum(plotsizes))
+  pdfdev <- grDevices::dev.cur()
+  on.exit(dev.off(pdfdev),add=TRUE)
   #code for arranging legend next to the locus plot
   grid.newpage()
   vp1 <- viewport(x = 0, y = 0, width = 1-legendwidth*1.5, height = 1,
@@ -5996,7 +6000,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   #finally plot the locus
   Gviz::plotTracks(main=plottitle,cex.main=2,legend=TRUE,add=TRUE,
                    from=plotstart,to=plotend,#zoomed in on the orf in question
-                   sizes=c(1,1,1,1,1,1,1),rot.title=0,cex.title=1,title.width=2.5,
+                   sizes=plotsizes,rot.title=0,cex.title=1,title.width=2.5,
                    c(
                      Gviz::GenomeAxisTrack(range=selgenerange),
                      # Gviz::rnaseqtrack, # plot the riboseq signal
@@ -6026,7 +6030,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   #create barchart of intensities
   popViewport(1)
   pushViewport(vp2)
-  cols = I(c(orfcols[which.min(orfscores)],orfcols[which.max(orfscores)]))
+  cols = I(c(orfcols[names(which.min(orfscores))],orfcols[names(which.max(orfscores))]))
   grid.draw(lemon::g_legend(qplot(x=1:2,y=1:2,color=range(orfscores,na.rm=T))+
                               scale_color_gradient(name='Normalized ORF Expr\n(ORFs_pM)',
                                                    breaks = setNames(sort(na.omit(orfscores)),floor(na.omit(sort(orfscores)))%>% format(big.mark=",",scientific=FALSE) ),
@@ -6034,7 +6038,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   ))
   popViewport(1)
   pushViewport(vp3)
-  dev.off()
   normalizePath(plotfile)
   #return file name
   return(plotfile)
