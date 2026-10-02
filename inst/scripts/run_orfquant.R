@@ -1,5 +1,5 @@
-## Run the three steps of ORFquant from the command line, in one R process:
-## prepare_annotation_files(), prepare_for_ORFquant() and run_ORFquant().
+## Run the three steps of ORFquant from the command line, each in a new R
+## process: prepare_annotation_files(), prepare_for_ORFquant() and run_ORFquant().
 ## Run it with Rscript; --help lists the options. The installed copy is at
 ## system.file("scripts", "run_orfquant.R", package = "ORFquant").
 
@@ -7,7 +7,8 @@ usage <- "Usage: Rscript run_orfquant.R (--gtf FILE --fasta FILE | --annotation 
                              --bam FILE --offsets FILE --outdir DIR [options]
 
 Runs prepare_annotation_files(), prepare_for_ORFquant() and run_ORFquant(),
-with their default parameters, and writes all output files to DIR.
+with their default parameters, each in a new R process, and writes all output
+files to DIR.
 
   --gtf FILE         annotation in GTF format (may be gzipped)
   --fasta FILE       genome sequence in FASTA format (may be bgzipped), indexed
@@ -84,6 +85,22 @@ if (!grepl("^[1-9][0-9]*$", opts[["cores"]])) {
 gene_list <- function(x) {
   if (is.na(x)) NA else trimws(strsplit(x, ",")[[1]])
 }
+if (!nzchar(system.file(package = "ORFquant"))) {
+  stop("ORFquant is not installed in this R")
+}
+## Each step runs in a new R process: the worker processes of run_ORFquant()
+## would copy the memory left by earlier steps in the same process (with a
+## human annotation and 16 cores, 100 GB instead of 25 GB). library() first:
+## loaded by ORFquant::f(), its dependency SparseArray makes R warn "stack
+## imbalance".
+run_step <- function(call) {
+  status <- system2(file.path(R.home("bin"), "Rscript"),
+                    c("-e", shQuote("suppressPackageStartupMessages(library(ORFquant))"),
+                      "-e", shQuote(deparse1(call))))
+  if (status != 0) {
+    stop(deparse(call[[1]]), "() failed", call. = FALSE)
+  }
+}
 
 dir.create(opts[["outdir"]], recursive = TRUE, showWarnings = FALSE)
 outdir <- normalizePath(opts[["outdir"]])
@@ -95,27 +112,28 @@ prefix <- file.path(outdir, sample)
 
 if (from_gtf) {
   annotation_dir <- file.path(outdir, "annotation")
-  ORFquant::prepare_annotation_files(annotation_directory = annotation_dir,
-                                     gtf_file = opts[["gtf"]],
-                                     genome_seq = opts[["fasta"]],
-                                     forge_BSgenome = FALSE)
+  run_step(bquote(ORFquant::prepare_annotation_files(annotation_directory = .(annotation_dir),
+                                                     gtf_file = .(opts[["gtf"]]),
+                                                     genome_seq = .(opts[["fasta"]]),
+                                                     forge_BSgenome = FALSE)))
   annotation_file <- file.path(annotation_dir, paste0(basename(opts[["gtf"]]), "_Rannot"))
 } else {
   annotation_file <- opts[["annotation"]]
 }
 
-for_ORFquant_file <- ORFquant::prepare_for_ORFquant(annotation_file = annotation_file,
-                                                    bam_file = opts[["bam"]],
-                                                    path_to_rl_cutoff_file = opts[["offsets"]],
-                                                    dest_name = prefix)
+run_step(bquote(ORFquant::prepare_for_ORFquant(annotation_file = .(annotation_file),
+                                               bam_file = .(opts[["bam"]]),
+                                               path_to_rl_cutoff_file = .(opts[["offsets"]]),
+                                               dest_name = .(prefix))))
+for_ORFquant_file <- paste(prefix, "for_ORFquant", sep = "_")
 
-ORFquant::run_ORFquant(for_ORFquant_file = for_ORFquant_file,
-                       annotation_file = annotation_file,
-                       n_cores = as.integer(opts[["cores"]]),
-                       prefix = prefix,
-                       gene_name = gene_list(opts[["gene-names"]]),
-                       gene_id = gene_list(opts[["gene-ids"]]),
-                       interactive = FALSE)
+run_step(bquote(ORFquant::run_ORFquant(for_ORFquant_file = .(for_ORFquant_file),
+                                       annotation_file = .(annotation_file),
+                                       n_cores = .(as.integer(opts[["cores"]])),
+                                       prefix = .(prefix),
+                                       gene_name = .(gene_list(opts[["gene-names"]])),
+                                       gene_id = .(gene_list(opts[["gene-ids"]])),
+                                       interactive = FALSE)))
 
 outputs <- c(annotation = annotation_file,
              for_ORFquant = for_ORFquant_file,

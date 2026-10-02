@@ -88,7 +88,7 @@ create_ORFquant_html_report(input_files = "sample_final_ORFquant_results_plots/s
                             output_file = "sample_ORFquant_report.html")
 ```
 
-The script `run_orfquant.R`, installed with the package, runs the three steps in one R process from the command line, with their default parameters:
+The script `run_orfquant.R`, installed with the package, runs the three steps from the command line, each in a new R process, with their default parameters:
 
 ```sh
 Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))') \
