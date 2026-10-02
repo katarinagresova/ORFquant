@@ -65,7 +65,8 @@ prepare_for_ORFquant(annotation_file = "annotation/genes.gtf_Rannot",
                      dest_name = "sample")
 
 # 3. Find and quantify ORFs: writes sample_final_ORFquant_results,
-#    sample_Detected_ORFs.gtf and sample_Protein_sequences.fasta
+#    sample_Detected_ORFs.gtf, sample_Detected_ORFs.tsv and
+#    sample_Protein_sequences.fasta
 run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
              annotation_file = "annotation/genes.gtf_Rannot",
              n_cores = 4,
@@ -74,7 +75,7 @@ run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
 
 The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package can also create the input of step 3 from a Ribo-seq BAM file.
 
-`sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. See `?run_ORFquant` and `?ORFquant`.
+`sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. `sample_Detected_ORFs.tsv` has the `ORFs_tx` table, one row per ORF, for use without R. See `?run_ORFquant` and `?ORFquant`.
 
 Plots and an HTML report of the results:
 

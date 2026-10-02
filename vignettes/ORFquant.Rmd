@@ -161,7 +161,8 @@ ORFquant_results <- run_ORFquant(for_ORFquant_file = for_ORFquant_file,
 
 It writes the results to `<prefix>_final_ORFquant_results` (load them with
 `get(load())`), the detected ORFs and the selected transcripts to
-`<prefix>_Detected_ORFs.gtf`, and the ORFs' protein sequences to
+`<prefix>_Detected_ORFs.gtf`, the `ORFs_tx` table below, one row per ORF, to
+`<prefix>_Detected_ORFs.tsv`, and the ORFs' protein sequences to
 `<prefix>_Protein_sequences.fasta`:
 
 ```{r output_files}

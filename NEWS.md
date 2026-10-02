@@ -40,6 +40,15 @@ None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
 deprecation warnings.
 
+## New features
+
+- `run_ORFquant()` also writes `<prefix>_Detected_ORFs.tsv`, a tab-separated
+  table with one row per ORF: the columns of `ORFs_tx`, starting with its
+  transcript coordinates, so the results can be read without R. Columns with
+  several values per ORF have them separated by commas, and ranges are written
+  as `seqname:start-end:strand`. `write_TSV_file = FALSE` turns it off. The
+  other output files don't change.
+
 ## Changes in results
 
 - `run_ORFquant()` now applies `canonical_start_only = TRUE` (the default)

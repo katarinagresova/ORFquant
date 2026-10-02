@@ -3081,6 +3081,22 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
   return(res_orfs)
 }
 
+# ORFs_tx as a data.frame: one row per ORF, multiple values joined with ","
+ORFs_tx_as_table<-function(ORFs_tx){
+  df<-data.frame(seqnames=as.character(seqnames(ORFs_tx)),start=start(ORFs_tx),end=end(ORFs_tx),
+                 width=width(ORFs_tx),strand=as.character(strand(ORFs_tx)),stringsAsFactors=F)
+  for(n in names(mcols(ORFs_tx))){
+    v<-mcols(ORFs_tx)[[n]]
+    if(is(v,"GRanges") || is(v,"XStringSet") || is.factor(v)){
+      v<-as.character(v)
+    }else if(is(v,"List") || is.list(v)){
+      v<-vapply(as.list(v),function(x){paste(as.character(x),collapse=",")},"",USE.NAMES=F)
+    }
+    df[[n]]<-v
+  }
+  df
+}
+
 #' Run the ORFquant pipeline
 #'
 #' This wrapper function runs the entire ORFquant pipeline
@@ -3109,12 +3125,14 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
 #' @param unique_reads_only Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @param stn.orf_quant.scaling \code{orf_quant.scaling} parameter for the \code{ORFquant} function. Defaults to total_Psites
 #' @param canonical_start_only Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}.
-#' @return A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF and protein fasta files.\cr\cr
+#' @param write_TSV_file write a tab-separated file with one row per ORF, the \code{ORFs_tx} table. Defaults to \code{TRUE}
+#' @return A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF, TSV and protein fasta files.\cr\cr
 #' The description for each list object is as follows:\cr\cr
 #' \code{tmp_ORFquant_results}: (Optional) RData object file containing the entire set of results for each genomic region.\cr
 #' \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 #' \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
-#' \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr\cr
+#' \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
+#' \code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}.\cr\cr
 #' In addition, new columns are added in the ORFs_tx file:\cr\cr
 #' \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
 #' @seealso \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}
@@ -3124,7 +3142,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                        write_temp_files=T,write_GTF_file=T,write_protein_fasta=T,interactive=T,
                        stn.orf_find.all_starts=T,stn.orf_find.nostarts=F,stn.orf_find.start_sel_cutoff = NA,
                        stn.orf_find.start_sel_cutoff_ave = .5,stn.orf_find.cutoff_fr_ave=.5,
-                       stn.orf_quant.cutoff_cums = NA,stn.orf_quant.cutoff_pct = 2,stn.orf_quant.cutoff_P_sites=NA,unique_reads_only=F,canonical_start_only=T,stn.orf_quant.scaling="total_Psites"){    
+                       stn.orf_quant.cutoff_cums = NA,stn.orf_quant.cutoff_pct = 2,stn.orf_quant.cutoff_P_sites=NA,unique_reads_only=F,canonical_start_only=T,stn.orf_quant.scaling="total_Psites",write_TSV_file=T){    
   
   if(!stn.orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("stn.orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage"),date())}
   
@@ -3323,6 +3341,10 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFquant_results$psite_data_file <- for_ORFquant_file
   
   save(ORFquant_results ,file = paste(prefix,"final_ORFquant_results",sep="_"))
+  
+  if(write_TSV_file){
+    write.table(ORFs_tx_as_table(ORFquant_results$ORFs_tx),file=paste(prefix,"Detected_ORFs.tsv",sep="_"),sep="\t",quote=F,row.names=F)
+  }
   
   if(write_GTF_file){
     map_tx_genes<-mcols(ORFs_tx)[,c("ORF_id_tr","gene_id","gene_biotype","gene_name","transcript_id","transcript_biotype","P_sites","ORF_pct_P_sites","ORF_pct_P_sites_pN","ORFs_pM")]

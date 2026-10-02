@@ -26,7 +26,8 @@ run_ORFquant(
   stn.orf_quant.cutoff_P_sites = NA,
   unique_reads_only = F,
   canonical_start_only = T,
-  stn.orf_quant.scaling = "total_Psites"
+  stn.orf_quant.scaling = "total_Psites",
+  write_TSV_file = T
 )
 }
 \arguments{
@@ -73,14 +74,17 @@ run_ORFquant(
 \item{canonical_start_only}{Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}.}
 
 \item{stn.orf_quant.scaling}{\code{orf_quant.scaling} parameter for the \code{ORFquant} function. Defaults to total_Psites}
+
+\item{write_TSV_file}{write a tab-separated file with one row per ORF, the \code{ORFs_tx} table. Defaults to \code{TRUE}}
 }
 \value{
-A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF and protein fasta files.\cr\cr
+A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF, TSV and protein fasta files.\cr\cr
 The description for each list object is as follows:\cr\cr
 \code{tmp_ORFquant_results}: (Optional) RData object file containing the entire set of results for each genomic region.\cr
 \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
-\code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr\cr
+\code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
+\code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}.\cr\cr
 In addition, new columns are added in the ORFs_tx file:\cr\cr
 \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
 }
