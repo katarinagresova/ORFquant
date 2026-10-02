@@ -5929,7 +5929,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   
   orfquantgrscores = mcols(orfs_quantified_gen)[[quantcol]][match(names(orfquantgr),orfs_quantified_gen$ORF_id_tr)]
   
-  orfcols <- orfquantgrscores%>% vapply(function(.)tryCatch({rgb(0,.,0)},error=function(e){'white'}),'foo')%>%setNames(c('0',orfquantgr$feature%>%unique))
+  orfcols <- orfcols%>% vapply(function(.)tryCatch({rgb(0,.,0)},error=function(e){'white'}),'foo')%>%setNames(c('0',ufeats))
   
   
   ###Define non selected
@@ -6030,7 +6030,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   #create barchart of intensities
   popViewport(1)
   pushViewport(vp2)
-  cols = I(c(orfcols[which.min(orfscores)],orfcols[which.max(orfscores)]))
+  cols = I(c(orfcols[names(which.min(orfscores))],orfcols[names(which.max(orfscores))]))
   grid.draw(lemon::g_legend(qplot(x=1:2,y=1:2,color=range(orfscores,na.rm=T))+
                               scale_color_gradient(name='Normalized ORF Expr\n(ORFs_pM)',
                                                    breaks = setNames(sort(na.omit(orfscores)),floor(na.omit(sort(orfscores)))%>% format(big.mark=",",scientific=FALSE) ),
