@@ -1,6 +1,6 @@
 Package: ORFquant
 Title: Splice-Aware Translatome Annotation
-Version: 1.02.0
+Version: 1.03.0
 Authors@R: 
     c(person(given = "Lorenzo",
              family = "Calviello",
