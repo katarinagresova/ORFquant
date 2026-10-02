@@ -1,0 +1,302 @@
+---
+title: "ORFquant: splice-aware quantification of translation"
+author: "Lorenzo Calviello"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{ORFquant: splice-aware quantification of translation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup_vig, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Introduction
+
+*ORFquant* detects and quantifies ORF translation using Ribo-seq [1] data,
+taking into account the presence of multiple transcripts expressed by each
+gene [2]. It selects the transcripts supported by the data, finds ORFs on them
+*de novo*, quantifies their translation and annotates each ORF, in transcript
+and genomic space.
+
+This vignette runs the three steps of an analysis on the small example data
+included in the package:
+
+1. `prepare_annotation_files()`: parse the annotation and link it to the genome
+   sequence, once per annotation;
+2. `prepare_for_ORFquant()`: compute P-site positions and junction reads from a
+   BAM file, once per sample;
+3. `run_ORFquant()`: find and quantify ORFs.
+
+```{r load_lib, message = FALSE}
+library(ORFquant)
+```
+
+
+## Example data
+
+The example data cover 7 genes on human chr22 (*TXNRD2*, *RANBP1*, *PPIL2*,
+*TOP3B*, *DDT*, *TCN2* and *PISD*):
+
+- `chr22_example.gtf.gz`: their annotation, from GENCODE 47 [3];
+- `chr22_example.fa.gz`: the sequence of chr22 (GRCh38), with every base more
+  than 1 kb from these genes replaced by N. It is compressed with `bgzip` and
+  indexed (`.fai` and `.gzi` files);
+- `chr22_example.bam`: the Ribo-seq reads aligned to these genes, from a sample
+  of human aortic endothelial cells (SRA run SRR15513199, GEO sample
+  GSM5527724) [4], aligned with STAR;
+- `chr22_example_cutoffs.tsv`: the P-site offset for each read length in this
+  sample.
+
+`inst/scripts/make_example_data.R` in the package source describes how they
+were made.
+
+```{r example_data}
+extdata <- system.file("extdata", package = "ORFquant")
+list.files(extdata)
+```
+
+All output files go to a temporary directory:
+
+```{r out_dir}
+out_dir <- file.path(tempdir(), "ORFquant_example")
+dir.create(out_dir)
+```
+
+
+## Prepare the annotation
+
+`prepare_annotation_files()` reads a GTF file and the genome sequence, and
+writes a *TxDb* and an `_Rannot` file to `annotation_directory`. The `_Rannot`
+file holds the annotated transcript and genomic features (exons, CDS, UTRs,
+introns, start and stop codons, ...) that the other steps use. The genome
+sequence is a FASTA file indexed with `samtools faidx` (`genome_seq`); the
+`_Rannot` file refers to it by its path.
+
+```{r prepare_annotation, results = "hide", message = FALSE, warning = FALSE}
+prepare_annotation_files(annotation_directory = out_dir,
+                         gtf_file = file.path(extdata, "chr22_example.gtf.gz"),
+                         genome_seq = file.path(extdata, "chr22_example.fa.gz"),
+                         forge_BSgenome = FALSE)
+annotation_file <- file.path(out_dir, "chr22_example.gtf.gz_Rannot")
+```
+
+(*txdbmaker* warns that it ignores the phase of the `stop_codon` lines and that
+the *TxDb* has no genome version; both are harmless.)
+
+`load_annotation()` loads it into two global variables: `GTF_annotation`, a
+list of the annotated features, and `genome_seq`, the genome sequence. The
+other functions load the annotation themselves: run each analysis in a new R
+session, and don't load two annotations in one session.
+
+```{r load_annotation}
+load_annotation(annotation_file)
+names(GTF_annotation)
+```
+
+For example, for the *TCN2* transcript ENST00000698268.1, its exons, its CDS
+in transcript coordinates, its gene and transcript ids, names and biotypes, and
+its CDS sequence, translated with the genetic code of its chromosome:
+
+```{r annotation_features}
+GTF_annotation$exons_txs[["ENST00000698268.1"]]
+GTF_annotation$cds_txs_coords["ENST00000698268.1"]
+GTF_annotation$trann[GTF_annotation$trann$transcript_id == "ENST00000698268.1", ]
+GTF_annotation$genetic_codes
+cds <- GTF_annotation$cds_txs[["ENST00000698268.1"]]
+Biostrings::translate(unlist(getSeq(genome_seq, cds)))
+```
+
+
+## Prepare the P-sites
+
+`prepare_for_ORFquant()` needs the Ribo-seq reads, aligned to the genome with
+a spliced aligner, sorted by coordinate and indexed, and a table of the
+P-site offset (`cutoff`, the distance of the P-site from the read's 5' end)
+for each read length. The `compartment` column is `nucl` for all chromosomes
+that are not circular, or the name of a circular one, such as `chrM`.
+
+```{r cutoffs}
+read.delim(file.path(extdata, "chr22_example_cutoffs.tsv"))
+```
+
+It writes the P-site positions, of all reads and of uniquely mapping reads
+(mapping quality above 50), and the number of reads on each annotated
+exon-exon junction to `<dest_name>_for_ORFquant`:
+
+```{r prepare_psites, results = "hide"}
+prepare_for_ORFquant(annotation_file = annotation_file,
+                     bam_file = file.path(extdata, "chr22_example.bam"),
+                     path_to_rl_cutoff_file = file.path(extdata, "chr22_example_cutoffs.tsv"),
+                     dest_name = file.path(out_dir, "SRR15513199"))
+for_ORFquant_file <- file.path(out_dir, "SRR15513199_for_ORFquant")
+```
+
+The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package [5] also
+writes such a file, together with statistics on the Ribo-seq data.
+
+```{r psites}
+for_ORFquant <- get(load(for_ORFquant_file))
+names(for_ORFquant)
+for_ORFquant$P_sites_all
+for_ORFquant$junctions[for_ORFquant$junctions$reads > 0]
+```
+
+
+## Run ORFquant
+
+`run_ORFquant()` analyses each genomic region with P-sites, here with one
+core. `gene_name`, `gene_id` or `genomic_region` restrict the analysis to
+part of the annotation.
+
+```{r run_orfquant, results = "hide"}
+ORFquant_results <- run_ORFquant(for_ORFquant_file = for_ORFquant_file,
+                                 annotation_file = annotation_file,
+                                 n_cores = 1,
+                                 prefix = file.path(out_dir, "SRR15513199"))
+```
+
+It writes the results to `<prefix>_final_ORFquant_results` (load them with
+`get(load())`), the detected ORFs and the selected transcripts to
+`<prefix>_Detected_ORFs.gtf`, and the ORFs' protein sequences to
+`<prefix>_Protein_sequences.fasta`:
+
+```{r output_files}
+list.files(out_dir, pattern = "^SRR15513199")
+```
+
+The results are a list:
+
+```{r results}
+names(ORFquant_results)
+```
+
+`ORFs_tx` has one range per ORF, in transcript coordinates, with its P-sites,
+p-values, annotation and `ORFs_pM` (P-sites per ORF length, scaled to sum to a
+million over all ORFs, akin to TPM). `ORF_category_Tx` compares the ORF with
+the CDS annotated on the same transcript (for example `ORF_annotated`, `uORF`,
+`dORF` or `N_truncation`; `novel` on transcripts without an annotated CDS), and
+`ORF_category_Gen` with all CDS annotated in the genomic region (for example
+`exact_start_stop` or `Alt3_start`):
+
+```{r orfs_tx}
+orfs <- ORFquant_results$ORFs_tx
+data.frame(gene = orfs$gene_name, category_tx = orfs$ORF_category_Tx,
+           category_gen = orfs$ORF_category_Gen, P_sites = round(orfs$P_sites, 1),
+           pval = signif(orfs$pval, 2), ORFs_pM = round(orfs$ORFs_pM),
+           row.names = NULL)
+```
+
+On *TCN2*, ORFquant finds the annotated ORF of ENST00000698268.1 and a short
+ORF on ENST00000450638.5. That transcript has an extra exon, and its annotated
+CDS starts after it. The short ORF starts at the same codon as the annotated
+ORF of ENST00000698268.1 but ends in the extra exon: it is a `uORF` on its
+transcript, and `Alt5_stop` in genomic space. `ORFs_gen` has the ORFs' genomic
+coordinates, one range per exon:
+
+```{r orfs_gen}
+tcn2_orfs <- orfs$ORF_id_tr[orfs$gene_name == "TCN2"]
+ORFquant_results$ORFs_gen[names(ORFquant_results$ORFs_gen) %in% tcn2_orfs]
+```
+
+`selected_txs` lists the transcripts selected for quantification:
+
+```{r selected_txs}
+ORFquant_results$selected_txs
+```
+
+`?run_ORFquant` and `?ORFquant` describe every element of the results.
+
+
+## Plots and report
+
+`plot_ORFquant_results()` summarises the results in plots, for example of the
+number of ORFs in each category, written as PDF files to `<results>_plots`. It
+saves them in an `_ORFquant_plots_RData` file too. (This example has so few
+ORFs that some groups in these plots have fewer than two; *ggplot2* can't draw
+their distributions and warns about it.)
+
+```{r plot_results, results = "hide", message = FALSE, warning = FALSE}
+results_file <- file.path(out_dir, "SRR15513199_final_ORFquant_results")
+plot_ORFquant_results(for_ORFquant_file = for_ORFquant_file,
+                      ORFquant_output_file = results_file,
+                      annotation_file = annotation_file)
+plots_file <- file.path(out_dir, "SRR15513199_final_ORFquant_results_plots",
+                        "SRR15513199_ORFquant_plots_RData")
+```
+
+```{r show_plot, fig.width = 14, fig.height = 4, out.width = "100%"}
+ORFquant_plots <- get(load(plots_file))
+names(ORFquant_plots)
+ORFquant_plots[["ORFs_found"]]
+```
+
+This plot counts the ORFs by `ORF_category_Tx_compatible`, their category on a
+transcript compatible with their structure (`compatible_tx`, a protein-coding
+one if possible), so its counts differ from those of `ORF_category_Tx` above.
+
+`create_ORFquant_html_report()` puts these plots into an HTML report, for one
+or more samples. It needs [pandoc](https://pandoc.org):
+
+```{r report, eval = FALSE}
+create_ORFquant_html_report(input_files = plots_file,
+                            input_sample_names = "SRR15513199",
+                            output_file = file.path(out_dir, "SRR15513199_ORFquant_report.html"))
+```
+
+`plot_orfquant_locus()` plots the P-sites, junction reads, transcripts and ORFs
+of one gene to a PDF file; it needs the *Gviz*, *lemon*, *dplyr* and
+*GenomeInfoDb* packages:
+
+```{r locus_plot, eval = FALSE}
+plot_orfquant_locus(locus = orfs$gene_id[orfs$gene_name == "TCN2"][1],
+                    orfquant_results = ORFquant_results,
+                    bam_files = NULL,
+                    plotfile = file.path(out_dir, "TCN2.pdf"))
+```
+
+
+## Running ORFquant on your own data
+
+Your data need:
+
+- a GTF file with `exon` and `CDS` lines, each with `transcript_id` and
+  `gene_id`;
+- the genome sequence as a FASTA file indexed with `samtools faidx`, with the
+  same chromosome names as the GTF and the BAM file;
+- the Ribo-seq reads aligned to the genome with a spliced aligner such as STAR,
+  sorted by coordinate and indexed with `samtools index`;
+- the P-site offsets for each read length, as above.
+
+A whole transcriptome takes much longer than this example: for the whole
+sample SRR15513199 and GENCODE 47, `run_ORFquant()` took 55 minutes
+with `n_cores = 36` and used about 63 GB of memory. Run it on a compute
+cluster; `n_cores` above 1 uses forked processes, on Linux or macOS. Run each
+step in a new R session, for example with `Rscript`.
+
+
+## References
+
+1. Ingolia NT, Ghaemmaghami S, Newman JRS, Weissman JS (2009). Genome-wide
+   analysis in vivo of translation with nucleotide resolution using ribosome
+   profiling. *Science* 324, 218–223.
+2. Calviello L, Hirsekorn A, Ohler U (2020). Quantification of translation
+   uncovers the functions of the alternative transcriptome. *Nature
+   Structural & Molecular Biology* 27, 717–725.
+3. Mudge JM et al. (2025). GENCODE 2025: reference gene annotation for human
+   and mouse. *Nucleic Acids Research* 53, D966–D975.
+4. Chothani SP et al. (2022). A high-resolution map of human RNA translation.
+   *Molecular Cell* 82, 2885–2899.
+5. Calviello L, Sydow D, Harnett D, Ohler U (2019). Ribo-seQC: comprehensive
+   analysis of cytoplasmic and organellar ribosome profiling data. *bioRxiv*
+   601468.
+
+
+## Session info
+
+```{r session_info}
+sessionInfo()
+```

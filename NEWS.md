@@ -1,5 +1,45 @@
 # ORFquant 1.03.0
 
+## Installation and dependencies
+
+- ORFquant now installs and runs on current Bioconductor, and needs
+  Bioconductor 3.22 or later (R 4.5 or later). Before, on Bioconductor 3.22,
+  `prepare_annotation_files()` and `run_ORFquant()` failed, because
+  GenomicFeatures' `makeTxDbFromGFF()` and `makeTxDb()` are defunct; they now
+  come from txdbmaker. `prepare_for_ORFquant()` no longer warns that
+  `cigarRangesAlongQuerySpace()` and `cigarRangesAlongReferenceSpace()` are
+  deprecated: it uses cigarillo's functions instead.
+- devtools and GenomicFiles are no longer needed.
+  `prepare_annotation_files(forge_BSgenome = TRUE)` installs the forged
+  BSgenome package with `install.packages()`.
+- `library(ORFquant)` now attaches only GenomicRanges and the packages it
+  attaches (IRanges, S4Vectors, Seqinfo, BiocGenerics, generics and stats4).
+  Before, it attached the 18 packages of its Depends field and theirs.
+  Scripts that relied on it to attach others, for example Biostrings,
+  rtracklayer or ggplot2, need their own `library()` calls.
+- ORFquant's functions now work when called as `ORFquant::f()` without
+  `library(ORFquant)`, and when other attached packages mask names they use.
+  Before, `prepare_annotation_files()` failed with `could not find function
+  "scanFaIndex"` in the first case, and with `type 'S4' passed to shift()`
+  with data.table attached after ORFquant.
+- knitr and rmarkdown are no longer required. They, Gviz, lemon, dplyr and
+  GenomeInfoDb are now suggested packages: `create_ORFquant_html_report()`
+  and `plot_orfquant_locus()` stop with a message when the ones they use are
+  missing. `plot_orfquant_locus()` no longer fails with `could not find
+  function "keepSeqlevels"` when GenomeInfoDb isn't attached, or partway
+  through the plot when lemon isn't installed, and no longer attaches Gviz.
+- Loading ORFquant no longer warns "replacing previous import".
+- The repository no longer holds the source tarballs of earlier versions
+  (`ORFquant_0.99.0.tar.gz` to `ORFquant_1.02.0.tar.gz`, and
+  `ORFquant_manuscript_version.tar.gz`); they are still in its history, for
+  example at commit `01b2da8`. `ORFquant_1.02.0.tar.gz` held older code than
+  the repository's version 1.02.0, which still called `disjointExons()`, no
+  longer in GenomicFeatures.
+
+None of these changes affect results. On our test data, all outputs are the
+same as before them (run with txdbmaker attached), apart from the two
+deprecation warnings.
+
 ## Changes in results
 
 - `run_ORFquant()` now applies `canonical_start_only = TRUE` (the default)
@@ -112,3 +152,13 @@
 - The `getSeq()` error for ranges that wrap twice around a circular
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.
+
+## Documentation
+
+- The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
+  data included in the package (`inst/extdata`): 7 genes of human chr22, with
+  their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
+  their P-site offsets, and the sequence of chr22, replaced by N away from
+  these genes. `inst/scripts/make_example_data.R` describes how they were
+  made. Before, the vignette was not installed with the package, and it
+  downloaded its data from links that no longer work.

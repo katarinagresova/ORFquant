@@ -1,0 +1,51 @@
+# Conda environment with everything ORFquant needs: R 4.5, Bioconductor 3.22,
+# the packages in DESCRIPTION's Imports and Suggests, and pandoc for the HTML
+# report. ORFquant itself is installed from GitHub (see README.md):
+#
+#   conda env create -f environment.yml
+#   conda activate orfquant
+#   Rscript -e 'remotes::install_github("katarinagresova/ORFquant", upgrade = "never")'
+name: orfquant
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - r-base=4.5
+  - bioconductor-biocversion=3.22
+
+  # Depends and Imports
+  - bioconductor-annotationdbi
+  - bioconductor-biocgenerics
+  - bioconductor-biostrings
+  - bioconductor-bsgenome
+  - bioconductor-cigarillo
+  - r-cowplot
+  - r-domc
+  - r-foreach
+  - bioconductor-genomicalignments
+  - bioconductor-genomicfeatures
+  - bioconductor-genomicranges
+  - r-ggplot2
+  - r-gridextra
+  - bioconductor-iranges
+  - r-multitaper
+  - r-reshape2
+  - bioconductor-rsamtools
+  - bioconductor-rtracklayer
+  - bioconductor-s4vectors
+  - bioconductor-seqinfo
+  - bioconductor-summarizedexperiment
+  - bioconductor-txdbmaker
+
+  # Suggests: plot_orfquant_locus() and create_ORFquant_html_report()
+  - r-dplyr
+  - bioconductor-genomeinfodb
+  - bioconductor-gviz
+  - r-knitr
+  - r-lemon
+  - r-rmarkdown
+  - pandoc
+
+  # To install ORFquant from GitHub
+  - r-remotes

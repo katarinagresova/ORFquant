@@ -1,6 +1,6 @@
 Package: ORFquant
 Title: Splice-Aware Translatome Annotation
-Version: 1.02.0
+Version: 1.03.0
 Authors@R: 
     c(person(given = "Lorenzo",
              family = "Calviello",
@@ -54,6 +54,7 @@ Suggests:
     knitr,
     lemon,
     rmarkdown
+VignetteBuilder: knitr
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0
