@@ -168,6 +168,19 @@ deprecation warnings.
   column of `ORFs_tx` and of `<prefix>_Detected_ORFs.tsv`, how ORFquant
   computes it, and the values of `ORF_category_Tx`,
   `ORF_category_Tx_compatible` and `ORF_category_Gen`.
+- Help pages that contradicted the code are corrected:
+  - `?select_quantify_ORFs` gave the defaults of `cutoff_cums`, `cutoff_pct`
+    and `cutoff_P_sites` as 99, 1 and 10; they are `NA` (not applied), 2 and
+    `NA`. It also said that `P_sites` is `P_sites_raw` divided by the scaling
+    factor, but it is multiplied by it.
+  - `?annotate_ORFs` called `N_truncation` an N-terminal extension. It said
+    that `compatible_with` holds transcript ids, but it holds ORF ids. Its
+    return value was described as that of `annotate_splicing()`.
+  - `?detect_translated_orfs` called `pct_fr` a percentage, but it is a
+    fraction.
+  - `?calc_orf_pval` said that `cutoff` applies to the average in-frame
+    signal per codon, but it applies to `pct_fr`. Its return value was
+    described as that of `select_start()`.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
