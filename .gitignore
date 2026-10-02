@@ -17,7 +17,6 @@ PLAN.md
 rsconnect/
 
 # R CMD build / check / install output
-# (the historical tarballs already tracked in the repo root are unaffected)
 /*.tar.gz
 /*.Rcheck/
 *-Ex.R

@@ -29,6 +29,12 @@
   function "keepSeqlevels"` when GenomeInfoDb isn't attached, or partway
   through the plot when lemon isn't installed, and no longer attaches Gviz.
 - Loading ORFquant no longer warns "replacing previous import".
+- The repository no longer holds the source tarballs of earlier versions
+  (`ORFquant_0.99.0.tar.gz` to `ORFquant_1.02.0.tar.gz`, and
+  `ORFquant_manuscript_version.tar.gz`); they are still in its history, for
+  example at commit `01b2da8`. `ORFquant_1.02.0.tar.gz` held older code than
+  the repository's version 1.02.0, which still called `disjointExons()`, no
+  longer in GenomicFeatures.
 
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
