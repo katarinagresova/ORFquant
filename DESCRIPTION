@@ -54,6 +54,7 @@ Suggests:
     knitr,
     lemon,
     rmarkdown
+VignetteBuilder: knitr
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0

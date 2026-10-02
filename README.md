@@ -42,6 +42,8 @@ conda activate orfquant
 Rscript -e 'remotes::install_github("katarinagresova/ORFquant", upgrade = "never")'
 ```
 
+To also install the vignette, add `build_vignettes = TRUE` to either install command (this needs pandoc), and read it with `vignette("ORFquant")`.
+
 
 ## Usage
 
@@ -84,6 +86,8 @@ create_ORFquant_html_report(input_files = "sample_final_ORFquant_results_plots/s
                             input_sample_names = "sample",
                             output_file = "sample_ORFquant_report.html")
 ```
+
+The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
 
 ### Input files

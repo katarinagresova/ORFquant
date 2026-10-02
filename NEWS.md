@@ -152,3 +152,13 @@ deprecation warnings.
 - The `getSeq()` error for ranges that wrap twice around a circular
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.
+
+## Documentation
+
+- The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
+  data included in the package (`inst/extdata`): 7 genes of human chr22, with
+  their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
+  their P-site offsets, and the sequence of chr22, replaced by N away from
+  these genes. `inst/scripts/make_example_data.R` describes how they were
+  made. Before, the vignette was not installed with the package, and it
+  downloaded its data from links that no longer work.
