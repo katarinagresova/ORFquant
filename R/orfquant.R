@@ -5949,7 +5949,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
     {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
     {.$feature=ifelse(.$score==0,'utr','CDS');.}
   disc_orfquantgr <- disc_orfquantgr%>% c(.,anno$cds_txs[disctxsint]%>%unlist%>%{.$feature=rep('CDS',length(.));.$transcript=names(.);.})
-  discORFnames<-paste0(disctxs,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
+  discORFnames<-paste0(disctxsint,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
   disc_orfquantgr$symbol = discORFnames[disc_orfquantgr$transcript]
   fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
     {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
