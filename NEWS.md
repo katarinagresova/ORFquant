@@ -84,6 +84,22 @@
 - `plot_ORFquant_results()` no longer fails with `'breaks' are not unique`
   when the largest number of selected transcripts per gene is 3, 6 or 9
   (lcalviell/ORFquant#18). All other plots are unchanged.
+- `plot_orfquant_locus()`:
+  - no longer fails for genes none of whose discarded transcripts is coding,
+    or without junction reads;
+  - no longer fails with `Too many stacks to draw` for genes with many
+    transcripts: a track with more than 21 transcripts gets more height, and
+    the page with it. Plots with up to 21 transcripts in every track keep
+    their 7-inch page;
+  - closes its PDF when plotting fails. Before, the device stayed open, and
+    the session's later plots went into that file;
+  - labels each discarded ORF with its own transcript. Before, in most genes,
+    many labels named another discarded transcript (with the right
+    coordinates);
+  - colours the selected ORFs by `ORFs_pM`, from dark green (lowest) to
+    bright green (highest), as in the legend. Before, they were all white.
+
+  In our test data, 17 of 63 genes failed; all 63 plot now.
 - `create_ORFquant_html_report()` now renders the report from a copy of the
   template in a temporary directory, not in the installed package. It now
   works when the R library is read-only (containers, shared conda
