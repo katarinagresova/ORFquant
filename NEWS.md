@@ -48,6 +48,15 @@ deprecation warnings.
   several values per ORF have them separated by commas, and ranges are written
   as `seqname:start-end:strand`. `write_TSV_file = FALSE` turns it off. The
   other output files don't change.
+- The script `run_orfquant.R`, installed with the package
+  (`system.file("scripts", "run_orfquant.R", package = "ORFquant")`), runs
+  `prepare_annotation_files()`, `prepare_for_ORFquant()` and `run_ORFquant()`
+  from the command line, in one R process, with their default parameters, for
+  example `Rscript run_orfquant.R --gtf genes.gtf --fasta genome.fa --bam
+  sample.bam --offsets cutoffs.tsv --outdir results`, and lists the files it
+  writes. `--annotation` reuses the annotation of an earlier run; `--cores`,
+  `--gene-names` and `--gene-ids` are passed to `run_ORFquant()`; `--help`
+  lists all options.
 
 ## Changes in results
 

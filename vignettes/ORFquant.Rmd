@@ -281,6 +281,21 @@ with `n_cores = 36` and used about 63 GB of memory. Run it on a compute
 cluster; `n_cores` above 1 uses forked processes, on Linux or macOS. Run each
 step in a new R session, for example with `Rscript`.
 
+The script `run_orfquant.R`, installed with ORFquant, runs the three steps in
+one R process from the command line, with their default parameters, and lists
+the files it writes:
+
+```sh
+Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam \
+  --offsets sample_cutoffs.tsv --outdir results --cores 4
+```
+
+With `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and
+`--fasta`, it reuses the annotation for other samples. `--gene-names` and
+`--gene-ids` restrict the analysis to some genes, and `--help` lists all
+options.
+
 
 ## References
 

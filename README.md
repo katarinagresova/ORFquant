@@ -88,6 +88,16 @@ create_ORFquant_html_report(input_files = "sample_final_ORFquant_results_plots/s
                             output_file = "sample_ORFquant_report.html")
 ```
 
+The script `run_orfquant.R`, installed with the package, runs the three steps in one R process from the command line, with their default parameters:
+
+```sh
+Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam --offsets sample_cutoffs.tsv \
+  --outdir results --cores 4
+```
+
+It writes the annotation to `results/annotation` and the other files to `results/sample_*`, as above, and lists them at the end. For other samples, `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and `--fasta` reuses the annotation. `--gene-names` and `--gene-ids` restrict the analysis to the genomic regions of some genes; `--help` lists all options.
+
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
 
