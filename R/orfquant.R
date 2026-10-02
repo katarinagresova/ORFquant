@@ -5983,7 +5983,9 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   legendwidth=1/10
   plottitle <- paste0('ORFquant: ',selgene)
   #write to pdf
-  pdf(plotfile,width=14+2,height=7)
+  #Gviz needs 3 points per row of a stacked track: a track with more than 21 transcripts gets more height, and the page with it (1 inch per unit of sizes)
+  plotsizes <- pmax(1,c(1,length(disctxs),length(seltxs),1,1,length(disctxsint),length(selorfs))/21)
+  pdf(plotfile,width=14+2,height=sum(plotsizes))
   pdfdev <- grDevices::dev.cur()
   on.exit(dev.off(pdfdev),add=TRUE)
   #code for arranging legend next to the locus plot
@@ -5998,7 +6000,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   #finally plot the locus
   Gviz::plotTracks(main=plottitle,cex.main=2,legend=TRUE,add=TRUE,
                    from=plotstart,to=plotend,#zoomed in on the orf in question
-                   sizes=c(1,1,1,1,1,1,1),rot.title=0,cex.title=1,title.width=2.5,
+                   sizes=plotsizes,rot.title=0,cex.title=1,title.width=2.5,
                    c(
                      Gviz::GenomeAxisTrack(range=selgenerange),
                      # Gviz::rnaseqtrack, # plot the riboseq signal
