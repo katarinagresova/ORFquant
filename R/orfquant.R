@@ -5935,7 +5935,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   ###Define non selected
   disctxs<-anno$txs_gene[selgene]%>%unlist%>%.$tx_name%>%unique%>%setdiff(seltxs)
   disctxsint <- disctxs%>%intersect(seqnames(anno$cds_txs_coords))%>%as.character 
-  disc_orfquantgr <- anno$cds_txs_coords%>%
+  disc_orfquantgr <- if(length(disctxsint)==0) GRanges(transcript=character(0),feature=character(0)) else anno$cds_txs_coords%>%
     GenomeInfoDb::keepSeqlevels(disctxsint,'coarse')%>%
     {seqinfo(.)<-seqinf[disctxsint];.}%>%  coverage%>%
     as('GRanges')%>%
@@ -5952,7 +5952,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   discORFnames<-paste0(disctxs,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
   disc_orfquantgr$symbol = discORFnames[disc_orfquantgr$transcript]
   fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
-    {.$cigar <- paste0('1M',width(.)-2,'N','1M');.}
+    {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
   fakejreads <- fakejreads[mapply(seq_along(fakejreads[]),fakejreads$reads,FUN=rep)%>%unlist]
   ncols <- 2
   nrows <- 1
