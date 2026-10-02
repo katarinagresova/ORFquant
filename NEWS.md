@@ -1,5 +1,39 @@
 # ORFquant 1.03.0
 
+## Installation and dependencies
+
+- ORFquant now installs and runs on current Bioconductor, and needs
+  Bioconductor 3.22 or later (R 4.5 or later). Before, on Bioconductor 3.22,
+  `prepare_annotation_files()` and `run_ORFquant()` failed, because
+  GenomicFeatures' `makeTxDbFromGFF()` and `makeTxDb()` are defunct; they now
+  come from txdbmaker. `prepare_for_ORFquant()` no longer warns that
+  `cigarRangesAlongQuerySpace()` and `cigarRangesAlongReferenceSpace()` are
+  deprecated: it uses cigarillo's functions instead.
+- devtools and GenomicFiles are no longer needed.
+  `prepare_annotation_files(forge_BSgenome = TRUE)` installs the forged
+  BSgenome package with `install.packages()`.
+- `library(ORFquant)` now attaches only GenomicRanges and the packages it
+  attaches (IRanges, S4Vectors, Seqinfo, BiocGenerics, generics and stats4).
+  Before, it attached the 18 packages of its Depends field and theirs.
+  Scripts that relied on it to attach others, for example Biostrings,
+  rtracklayer or ggplot2, need their own `library()` calls.
+- ORFquant's functions now work when called as `ORFquant::f()` without
+  `library(ORFquant)`, and when other attached packages mask names they use.
+  Before, `prepare_annotation_files()` failed with `could not find function
+  "scanFaIndex"` in the first case, and with `type 'S4' passed to shift()`
+  with data.table attached after ORFquant.
+- knitr and rmarkdown are no longer required. They, Gviz, lemon, dplyr and
+  GenomeInfoDb are now suggested packages: `create_ORFquant_html_report()`
+  and `plot_orfquant_locus()` stop with a message when the ones they use are
+  missing. `plot_orfquant_locus()` no longer fails with `could not find
+  function "keepSeqlevels"` when GenomeInfoDb isn't attached, or partway
+  through the plot when lemon isn't installed, and no longer attaches Gviz.
+- Loading ORFquant no longer warns "replacing previous import".
+
+None of these changes affect results. On our test data, all outputs are the
+same as before them (run with txdbmaker attached), apart from the two
+deprecation warnings.
+
 ## Changes in results
 
 - `run_ORFquant()` now applies `canonical_start_only = TRUE` (the default)
