@@ -5984,6 +5984,8 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   plottitle <- paste0('ORFquant: ',selgene)
   #write to pdf
   pdf(plotfile,width=14+2,height=7)
+  pdfdev <- grDevices::dev.cur()
+  on.exit(dev.off(pdfdev),add=TRUE)
   #code for arranging legend next to the locus plot
   grid.newpage()
   vp1 <- viewport(x = 0, y = 0, width = 1-legendwidth*1.5, height = 1,
@@ -6034,7 +6036,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   ))
   popViewport(1)
   pushViewport(vp3)
-  dev.off()
   normalizePath(plotfile)
   #return file name
   return(plotfile)
