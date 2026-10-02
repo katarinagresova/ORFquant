@@ -79,7 +79,7 @@ This function detects translated ORFs
 A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
 }
 \seealso{
-\code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}
+\code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

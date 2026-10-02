@@ -79,7 +79,7 @@ Another layer of annotation is performed by checking the position of the ORF sto
 with respect to the last exon-exon junction.
 }
 \seealso{
-\code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}
+\code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

@@ -164,6 +164,10 @@ deprecation warnings.
 
 ## Documentation
 
+- The new help page `?ORFquant_output` (also `?ORFs_tx`) describes each
+  column of `ORFs_tx` and of `<prefix>_Detected_ORFs.tsv`, how ORFquant
+  computes it, and the values of `ORF_category_Tx`,
+  `ORF_category_Tx_compatible` and `ORF_category_Gen`.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

@@ -84,7 +84,7 @@ The description for each list object is as follows:\cr\cr
 \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
 \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
-\code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}.\cr\cr
+\code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}. \code{\link{ORFquant_output}} describes its columns.\cr\cr
 In addition, new columns are added in the ORFs_tx file:\cr\cr
 \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
 }
@@ -95,7 +95,7 @@ This wrapper function runs the entire ORFquant pipeline
 A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
 }
 \seealso{
-\code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}
+\code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

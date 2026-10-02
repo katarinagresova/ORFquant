@@ -50,7 +50,7 @@ ORFquant(
 \value{
 A list containing transcript coordinates, exonic coordinates and annotation for each ORF.\cr\cr
 The description for each list object is as follows:\cr\cr
-\code{ORFs_tx}: transcript coordinates of the detected ORFs.\cr
+\code{ORFs_tx}: transcript coordinates of the detected ORFs, with the columns described in \code{\link{ORFquant_output}}.\cr
 \code{ORFs_gen}: genomic (exon) coordinates of the detected ORFs.\cr
 \code{ORFs_feat}: list of ORF features together with mapping reads and uniqueness.\cr
 \code{ORFs_txs_feats}: list of transcript features present in the genomic region, together with mapping reads and uniqueness.\cr
@@ -66,7 +66,7 @@ This function detects, quantifies and annotates actively translated ORF in a gen
 A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
 }
 \seealso{
-\code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}
+\code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

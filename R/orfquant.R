@@ -398,7 +398,7 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
 #' \code{gene_name}: gene name for the corresponding analyzed transcript
 #' \code{transcript_id}: transcript_id for the corresponding analyzed ORF
 #' \code{transcript_biotype}: transcript biotype for the corresponding analyzed ORF
-#' @seealso \code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}
+#' @seealso \code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}, \code{\link{ORFquant_output}}
 #' @export
 
 detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites,P_sites_uniq,P_sites_uniq_mm,genomic_region,genetic_code,
@@ -1155,7 +1155,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
 #' Can be average_coverage or total_Psites. Defaults to total_Psites for consistency.
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @return modified \code{results_ORFs} object with the selected ORFs including quantification estimates.
-#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_txs}}
+#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_txs}}, \code{\link{ORFquant_output}}
 #' @export
 
 
@@ -2548,7 +2548,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' \code{NMD_candidate_compatible_txs}: same as NMD_candidate, but for all transcripts compatible with the ORF structure.\cr
 #' \code{Distance_to_lastExEx}: Distance (in nt) between the last exon-exon junction and the stop codon.\cr
 #' \code{Distance_to_lastExEx_compatible_txs}: same as  Distance_to_lastExEx, but for all transcripts compatible with the ORF structure.
-#' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}
+#' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 #' @export
 
 annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_code){
@@ -3026,7 +3026,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
 #' @param orf_quant.scaling \code{scaling} parameter for the \code{select_quantify_ORFs} function. Defaults to total_Psites 
 #' @return A list containing transcript coordinates, exonic coordinates and annotation for each ORF.\cr\cr
 #' The description for each list object is as follows:\cr\cr
-#' \code{ORFs_tx}: transcript coordinates of the detected ORFs.\cr
+#' \code{ORFs_tx}: transcript coordinates of the detected ORFs, with the columns described in \code{\link{ORFquant_output}}.\cr
 #' \code{ORFs_gen}: genomic (exon) coordinates of the detected ORFs.\cr
 #' \code{ORFs_feat}: list of ORF features together with mapping reads and uniqueness.\cr
 #' \code{ORFs_txs_feats}: list of transcript features present in the genomic region, together with mapping reads and uniqueness.\cr
@@ -3034,7 +3034,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
 #' \code{ORFs_spl_feat_maxORF}: splicing annotation for each ORF exon, with respect to the most translated ORF in each gene.\cr
 #' \code{selected_txs}: character vector containing the transcript ids of the selected transcripts.\cr
 #' \code{ORFs_readthroughs}: (Beta) transcript coordinates of the detected ORFs readthroughs.\cr
-#' @seealso \code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}
+#' @seealso \code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}, \code{\link{ORFquant_output}}
 #' @export
 
 ORFquant<-function(region,for_ORFquant,genetic_code_region,
@@ -3132,10 +3132,10 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 #' \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
 #' \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
-#' \code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}.\cr\cr
+#' \code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}. \code{\link{ORFquant_output}} describes its columns.\cr\cr
 #' In addition, new columns are added in the ORFs_tx file:\cr\cr
 #' \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
-#' @seealso \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}
+#' @seealso \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}, \code{\link{ORFquant_output}}
 #' @export
 
 run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFquant_file,gene_name=NA,gene_id=NA,genomic_region=NA,

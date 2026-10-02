@@ -63,7 +63,7 @@ Additional columns are added to the ORFs_tx object:\cr
 \code{scaling_factors}: Set of 3 scaling factors assigned to the ORF using intial unique ORF features, after adjusting for the presence of ORFs with no unique features, and final scaling factor after correcting for average Ribo-seq coverage (or total number of reads) on the ORFs.
 }
 \seealso{
-\code{\link{detect_translated_orfs}}, \code{\link{select_txs}}
+\code{\link{detect_translated_orfs}}, \code{\link{select_txs}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}
