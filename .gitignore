@@ -1,6 +1,7 @@
-# Local working notes (not part of the package)
+# Local working notes and dev harness (not part of the package)
 CLAUDE.md
 PLAN.md
+/dev/
 .claude/settings.local.json
 
 # R session / RStudio
