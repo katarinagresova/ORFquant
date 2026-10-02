@@ -104,6 +104,35 @@ deprecation warnings.
   2 ORFs. The `ORF_id_tr` column was not affected.
 - `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
   the annotation has exactly one protein-coding transcript.
+- `prepare_annotation_files()` now reads the GTF's ids, biotypes and gene
+  names by attribute name, one row per transcript, taking each value from
+  any line of the transcript (for genes, also from a line of the gene).
+  Before, it kept one row per distinct set of values and named the columns
+  it found by their position:
+  - GTFs with biotypes on only some lines or transcripts failed with
+    `subscript contains invalid names`, for example NCBI RefSeq GTFs (only
+    their gene lines have `gene_biotype`) and GTFs written by
+    `gffread -F -T` (biotypes on transcript lines only);
+  - GTFs with both `gene_type` and `gene_biotype` (or both
+    `transcript_type` and `transcript_biotype`) gave an annotation with its
+    columns mixed up, for example gene names as transcript ids, without an
+    error.
+
+  Missing biotypes are now `no_type`, as all were when no line had one. Gene
+  names are also read from `gene` (NCBI) and `ref_gene_name` (StringTie)
+  values, so `run_ORFquant(gene_name = ...)` works with these GTFs.
+  `?prepare_annotation_files` lists the attributes read. GTFs that worked
+  before give the same annotation, apart from these gene names and from
+  biotypes that were missing (`NA`) for some transcripts, now `no_type`.
+- `prepare_annotation_files()` now stops with an error saying that the GTF
+  file has no CDS lines when it has none, for example StringTie's output.
+  Before, it failed with `wrong sign in 'by' argument`.
+- `run_ORFquant()` no longer fails with `missing value where TRUE/FALSE
+  needed` (with more than one core, `task 1 failed - "missing value where
+  TRUE/FALSE needed"`) when the transcript of an ORF has no biotype in the
+  annotation (lcalviell/ORFquant#25), as in annotations made by RiboseQC or
+  earlier versions from GTFs where some transcripts have none. These
+  transcripts are taken as not protein-coding.
 - `prepare_for_ORFquant()` now reads the cutoff table's columns by name. It
   needs the columns `read_length`, `cutoff` and `compartment`, in any order,
   and ignores any others. Before, it checked only that the table had 3

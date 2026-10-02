@@ -2670,7 +2670,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     ok_id<-compss[compss_txs==ORFs_tx[[i]]$compatible_tx_longest]
     comp_ln<-ORFs_tx[[i]]$compatible_biotype_longest
     comp_prev<-ORFs_tx[[i]]$compatible_biotype
-    if(comp_ln=="protein_coding" | (comp_prev!="protein_coding" & comp_ln!="protein_coding") ){
+    if(comp_ln%in%"protein_coding" | (!comp_prev%in%"protein_coding" & !comp_ln%in%"protein_coding") ){
       ORFs_tx[[i]]$compatible_ORF_id_tr<-ok_id
       ORFs_tx[[i]]$compatible_tx<-ORFs_tx[[i]]$compatible_tx_longest
       ORFs_tx[[i]]$compatible_biotype<-ORFs_tx[[i]]$compatible_biotype_longest
@@ -3431,8 +3431,12 @@ load_annotation<-function(path){
 #' @param create_TxDb Create a \code{TxDb} object and a *Rannot object? It defaults to \code{TRUE}
 #' @details This function uses the \code{makeTxDbFromGFF} function to  create a TxDb object and extract
 #' genomic regions and other info to a *Rannot R file; the \code{mapToTranscripts} and \code{mapFromTranscripts} functions are used to 
-#' map features to genomic or transcript-level coordinates. GTF file mist contain "exon" and "CDS" lines,
-#' where each line contains "transcript_id" and "gene_id" values. Additional values such as "gene_biotype" or "gene_name" are also extracted.
+#' map features to genomic or transcript-level coordinates. GTF file must contain "exon" and "CDS" lines,
+#' where each line contains "transcript_id" and "gene_id" values. The CDS must include the stop codon, or the file must have
+#' "stop_codon" lines (as GENCODE and Ensembl files do): otherwise ORFs ending at an annotated stop codon get other categories, e.g.
+#' "C_extension" instead of "ORF_annotated". Biotypes and gene names are read from "gene_biotype" or "gene_type", "transcript_biotype" or
+#' "transcript_type", and "gene_name", "gene_symbol", "gene" (NCBI) or "ref_gene_name" (StringTie) values, on any line of the transcript
+#' or (for genes) of the gene. Missing biotypes are "no_type"; if no gene has a name, all are "no_name".
 #' Regarding sequences, the twobit file, together with input scientific and annotation names, is used to forge and install a 
 #' BSgenome package using the \code{forgeBSgenomeDataPkg} function.\cr\cr
 #' The resulting GTF_annotation object (obtained after runnning \code{load_annotation}) contains:\cr\cr
@@ -3586,6 +3590,9 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     cat(paste("Creating the TxDb object ... ",date(),"\n",sep = ""))
     
     annotation<-txdbmaker::makeTxDbFromGFF(file=gtf_file,format="gtf",chrominfo = seqinfotwob)
+    if(length(GenomicFeatures::cds(annotation))==0){
+      stop("The GTF file has no CDS lines: ORFquant needs the annotated coding sequences (CDS) of the transcripts")
+    }
     
     saveDb(annotation, file=paste(annotation_directory,"/",basename(gtf_file),"_TxDb",sep=""))
     cat(paste("Creating the TxDb object --- Done! ",date(),"\n",sep = ""))
@@ -3660,36 +3667,37 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     cds_txscoords<-unlist(mapp)
     
     
-    #extract biotypes and ids
+    #extract biotypes and ids, one row per transcript: each value comes from the first line of the transcript
+    #with it (e.g. gffread writes biotypes on transcript lines only), and for genes from a line of the gene
+    #(e.g. NCBI's gene lines, with transcript_id ""). gene_type and transcript_type are GENCODE's names,
+    #gene NCBI's and ref_gene_name StringTie's
     
     cat(paste("Extracting ids and biotypes ... ",date(),"\n",sep = ""))
     
-    trann<-unique(mcols(import.gff2(gtf_file,colnames=c("gene_id","gene_biotype","gene_type","gene_name","gene_symbol","transcript_id","transcript_biotype","transcript_type"))))
-    trann<-trann[!is.na(trann$transcript_id),]
-    trann<-data.frame(unique(trann),stringsAsFactors=F)
-    
-    if(sum(!is.na(trann$transcript_biotype))==0 & sum(!is.na(trann$transcript_type))==0 ){
-      trann$transcript_biotype<-"no_type"
+    gtf_ids<-data.frame(unique(mcols(import.gff2(gtf_file,colnames=c("gene_id","gene_biotype","gene_type","gene_name","gene_symbol","gene","ref_gene_name","transcript_id","transcript_biotype","transcript_type")))),stringsAsFactors=F)
+    gtf_ids$transcript_id[gtf_ids$transcript_id%in%""]<-NA
+    first_value<-function(cols,by,ids){
+      res<-rep(NA_character_,length(ids))
+      for(cl in cols){
+        ok<-!is.na(gtf_ids[,cl]) & !is.na(gtf_ids[,by])
+        res[is.na(res)]<-gtf_ids[ok,cl][match(ids[is.na(res)],gtf_ids[ok,by])]
+      }
+      res
     }
-    if(sum(!is.na(trann$transcript_biotype))==0){trann$transcript_biotype<-NULL}
-    if(sum(!is.na(trann$transcript_type))==0){trann$transcript_type<-NULL}
-    
-    
-    if(sum(!is.na(trann$gene_biotype))==0 & sum(!is.na(trann$gene_type))==0 ){
-      
-      trann$gene_type<-"no_type"
-      
+    txs_ids<-unique(gtf_ids$transcript_id[!is.na(gtf_ids$transcript_id)])
+    trann<-data.frame(gene_id=first_value("gene_id","transcript_id",txs_ids),stringsAsFactors=F)
+    gene_cols<-list(gene_biotype=c("gene_biotype","gene_type"),gene_name=c("gene_name","gene_symbol","gene","ref_gene_name"))
+    for(cl in names(gene_cols)){
+      trann[,cl]<-first_value(gene_cols[[cl]],"transcript_id",txs_ids)
+      miss<-is.na(trann[,cl])
+      trann[miss,cl]<-first_value(gene_cols[[cl]],"gene_id",trann$gene_id[miss])
     }
-    if(sum(!is.na(trann$gene_name))==0 & sum(!is.na(trann$gene_symbol))==0 ){
-      
-      trann$gene_name<-"no_name"
-      
-    }
-    if(sum(!is.na(trann$gene_biotype))==0){trann$gene_biotype<-NULL}
-    if(sum(!is.na(trann$gene_type))==0){trann$gene_type<-NULL}
-    if(sum(!is.na(trann$gene_name))==0){trann$gene_name<-NULL}
-    if(sum(!is.na(trann$gene_symbol))==0){trann$gene_symbol<-NULL}
-    colnames(trann)<-c("gene_id","gene_biotype","gene_name","transcript_id","transcript_biotype")
+    trann$transcript_id<-txs_ids
+    trann$transcript_biotype<-first_value(c("transcript_biotype","transcript_type"),"transcript_id",txs_ids)
+    
+    trann$gene_biotype[is.na(trann$gene_biotype)]<-"no_type"
+    trann$transcript_biotype[is.na(trann$transcript_biotype)]<-"no_type"
+    if(all(is.na(trann$gene_name))){trann$gene_name<-"no_name"}
     
     trann<-DataFrame(trann)
     
