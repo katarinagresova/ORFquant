@@ -118,12 +118,17 @@ deprecation warnings.
     columns mixed up, for example gene names as transcript ids, without an
     error.
 
-  Missing biotypes are now `no_type`, as all were when no line had one. Gene
+  Missing biotypes are now `no_type`, as all were when no line had one. The
+  transcript biotype `mRNA`, NCBI's name for coding transcripts, is read as
+  `protein_coding`. `run_ORFquant()` then prefers these transcripts as an
+  ORF's compatible transcript (`compatible_tx`), and `plot_ORFquant_results()`
+  no longer labels their ORFs "non-coding isoform", as with GENCODE. Gene
   names are also read from `gene` (NCBI) and `ref_gene_name` (StringTie)
   values, so `run_ORFquant(gene_name = ...)` works with these GTFs.
   `?prepare_annotation_files` lists the attributes read. GTFs that worked
-  before give the same annotation, apart from these gene names and from
-  biotypes that were missing (`NA`) for some transcripts, now `no_type`.
+  before give the same annotation, apart from these gene names, the `mRNA`
+  biotype, and biotypes that were missing (`NA`) for some transcripts, now
+  `no_type`.
 - `prepare_annotation_files()` now stops with an error saying that the GTF
   file has no CDS lines when it has none, for example StringTie's output.
   Before, it failed with `wrong sign in 'by' argument`.

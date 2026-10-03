@@ -54,7 +54,8 @@ where each line contains "transcript_id" and "gene_id" values. The CDS must incl
 "stop_codon" lines (as GENCODE and Ensembl files do): otherwise ORFs ending at an annotated stop codon get other categories, e.g.
 "C_extension" instead of "ORF_annotated". Biotypes and gene names are read from "gene_biotype" or "gene_type", "transcript_biotype" or
 "transcript_type", and "gene_name", "gene_symbol", "gene" (NCBI) or "ref_gene_name" (StringTie) values, on any line of the transcript
-or (for genes) of the gene. Missing biotypes are "no_type"; if no gene has a name, all are "no_name".
+or (for genes) of the gene. Missing biotypes are "no_type", and the transcript biotype "mRNA" (NCBI) is read as "protein_coding";
+if no gene has a name, all are "no_name".
 Regarding sequences, the twobit file, together with input scientific and annotation names, is used to forge and install a 
 BSgenome package using the \code{forgeBSgenomeDataPkg} function.\cr\cr
 The resulting GTF_annotation object (obtained after runnning \code{load_annotation}) contains:\cr\cr
