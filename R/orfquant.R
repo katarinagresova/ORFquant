@@ -34,6 +34,110 @@ translate_solve<-function(x,...){
   translate(x,...,if.fuzzy.codon=if(hasOnlyBaseLetters(x)) "error" else "solve")
 }
 
+# GRangesList(x) for a list x of GRanges, faster. GRangesList() binds the
+# elements with c(), which makes a few S4 calls per element and mcols column,
+# and merges their Seqinfo one element at a time: minutes for the thousands of
+# regions or ORFs that run_ORFquant exports. bind_GRanges does the same bind on
+# the slots; where it can't (see there), GRangesList() is called.
+GRangesList_fast<-function(x){
+  #GRangesList() suppresses the warnings of its bind too
+  unl<-suppressWarnings(bind_GRanges(unname(x)))
+  if(is.null(unl)){
+    return(GRangesList(x))
+  }
+  relist(unl,IRanges::PartitioningByEnd(x))
+}
+
+# do.call(c,x) for a list x of GRanges, or NULL where this can't give the same
+# result: x has other classes or only empty elements; an element has only some
+# of the mcols columns (empty elements may have none); a column is Rle, factor
+# or list, or its class differs between elements (unless all are plain
+# vectors); or the Seqinfo don't merge. As in c(), each column is bound with
+# bindROWS() after dropping empty elements; GRanges and GRangesList columns
+# with bind_GRanges where it can. Seqinfo are merged pairwise in a tree, which
+# gives the same seqlevels in the same order as merging them one by one.
+bind_GRanges<-function(x){
+  if(length(x)==0 || !all(vapply(x,function(g){class(g)[1]},"")=="GRanges")){
+    return(NULL)
+  }
+  bind_rows<-function(v){
+    v<-v[!vapply(v,is.null,TRUE)]
+    if((length(unique(lapply(v,class)))>1 && !all(vapply(v,function(i){is.atomic(i) && !is.factor(i)},TRUE))) ||
+       is.list(v[[1]]) || is(v[[1]],"Rle") || is.factor(v[[1]])){
+      return(NULL)
+    }
+    v_ne<-v[vapply(v,NROW,1L)>0]
+    if(length(v_ne)==0){
+      return(v[[1]])
+    }
+    if(length(v_ne)==1){
+      return(v_ne[[1]])
+    }
+    if(is(v_ne[[1]],"GRanges")){
+      unl<-bind_GRanges(v_ne)
+      if(!is.null(unl)){
+        return(unl)
+      }
+    }
+    #a CompressedGRangesList binds its unlistData with bindROWS() (empty elements kept) and has no other
+    #parallel slots than mcols, here without columns
+    if(is(v_ne[[1]],"CompressedGRangesList") && all(vapply(v_ne,function(i){class(i@elementMetadata)[1]=="DFrame" && length(i@elementMetadata)==0 && is.null(i@elementMetadata@rownames)},TRUE))){
+      unl<-bind_GRanges(lapply(v_ne,function(i){i@unlistData}))
+      if(!is.null(unl)){
+        ans<-v_ne[[1]]
+        ans@unlistData<-unl
+        ans@partitioning<-IRanges::PartitioningByEnd(cumsum(unlist(lapply(v_ne,S4Vectors::elementNROWS))))
+        ans@elementMetadata@nrows<-length(ans@partitioning)
+        return(ans)
+      }
+    }
+    S4Vectors::bindROWS(v_ne[[1]],v_ne[-1])
+  }
+  len<-vapply(x,length,1L)
+  mc<-lapply(x,function(g){g@elementMetadata})
+  nc<-vapply(mc,function(m){length(m@listData)},1L)
+  cn<-names(mc[[which.max(nc>0)]]@listData)
+  ok<-vapply(seq_along(mc),function(i){
+    class(mc[[i]])[1]=="DFrame" && is.null(mc[[i]]@rownames) &&
+      ((nc[i]==length(cn) && setequal(names(mc[[i]]@listData),cn)) || (nc[i]==0 && len[i]==0))
+  },TRUE)
+  if(sum(len)==0 || anyDuplicated(cn) || !all(ok)){
+    return(NULL)
+  }
+  cols<-lapply(setNames(cn,cn),function(j){bind_rows(lapply(mc,function(m){m@listData[[j]]}))})
+  rngs<-bind_rows(lapply(x,function(g){g@ranges}))
+  if(any(vapply(cols,is.null,TRUE)) || is.null(rngs)){
+    return(NULL)
+  }
+  #merging is needed (it rebuilds the Seqinfo) from 2 elements on, also if theirs are identical
+  si<-lapply(x,function(g){g@seqinfo})
+  si<-si[c(TRUE,!vapply(seq_along(si)[-1],function(i){identical(si[[i]],si[[i-1]])},TRUE))]
+  if(length(si)==1 && length(x)>1){
+    si<-c(si,si)
+  }
+  si<-tryCatch({
+    while(length(si)>1){
+      i<-seq(1,length(si)-1,by=2)
+      si<-c(Map(Seqinfo::merge,si[i],si[i+1]),si[-c(i,i+1)])
+    }
+    si[[1]]
+  },error=function(e){NULL})
+  if(is.null(si)){
+    return(NULL)
+  }
+  ans<-x[[1]]
+  ans@seqnames<-Rle(factor(unlist(lapply(x,function(g){as.character(g@seqnames@values)})),levels=seqlevels(si)),
+                    unlist(lapply(x,function(g){g@seqnames@lengths})))
+  ans@ranges<-rngs
+  ans@strand<-Rle(unlist(lapply(x,function(g){g@strand@values})),unlist(lapply(x,function(g){g@strand@lengths})))
+  ans@seqinfo<-si
+  mcs<-mc[[1]]
+  mcs@listData<-cols
+  mcs@nrows<-sum(len)
+  ans@elementMetadata<-mcs
+  ans
+}
+
 
 #' Find ATG-starting ORFs in a sequence
 #'
@@ -3283,7 +3387,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFs_found<-ORFs_found[lens>0]
   if(length(ORFs_found)==0){stop(paste("No ORFs found! Please check sub-codon resolution of Ribo-seq reads and ensure the annotation is correct --- ",date(),"\n"))}
   
-  ORFs_txs_feats<-unlist(GRangesList(lapply(ORFs_found,function(x){unlist(x$genomic_features)})))
+  ORFs_txs_feats<-unlist(GRangesList_fast(lapply(ORFs_found,function(x){unlist(x$genomic_features)})))
   ORFs_txs_feats<-ORFs_txs_feats[!duplicated(mcols(ORFs_txs_feats)) | !duplicated(ORFs_txs_feats)]
   
   selected_txs<-sort(unique(unlist(ORFs_txs_feats$txs_selected)))
@@ -3301,19 +3405,20 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   for(i in 1:(length(chunks)-1)){
   
     if(i!=(length(chunks)-1)){
-    ao<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
+    ao<-unlist(GRangesList_fast(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1]-1)],function(x){unlist(x$ORFs_tx_position)}))))
     ORFs_tx[[i]]<-ao
   }
   if(i==(length(chunks)-1)){
-    ORFs_tx[[i]]<-unlist(GRangesList(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
+    ORFs_tx[[i]]<-unlist(GRangesList_fast(unlist(lapply(ORFs_found[chunks[i]:(chunks[i+1])],function(x){unlist(x$ORFs_tx_position)}))))
   }
   }
 
   ORFs_tx<-unlist(ORFs_tx)
 
   ORFs_feat<-unlist(sapply(ORFs_found,function(x){unlist(x$selected_ORFs_features)}))
-  ORFs_feat<-GRangesList(sapply(ORFs_feat,function(x){
-    x$X$tx_name<-NULL
+  ORFs_feat<-GRangesList_fast(sapply(ORFs_feat,function(x){
+    #x$X$tx_name<-NULL, on the slots: the $<- calls check the objects, 12 ms per region
+    x@elementMetadata@listData$X@elementMetadata@listData$tx_name<-NULL
     return(x)
   }))
   
@@ -3328,11 +3433,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFs_tx$P_sites_pN<-NULL
   
   
-  ORFs_gen<-unlist(GRangesList(sapply(ORFs_found,function(x){unlist(x$ORFs_genomic_position)})))
+  ORFs_gen<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_genomic_position)})))
   
-  ORFs_spl_feat_longest<-unlist(GRangesList(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_longest)})))
-  ORFs_spl_feat_maxORF<-unlist(GRangesList(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_maxORF)})))
-  ORFs_readthroughs<-unlist(GRangesList(unlist(sapply(ORFs_found,function(x){unlist(x$readthrough)}))))
+  ORFs_spl_feat_longest<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_longest)})))
+  ORFs_spl_feat_maxORF<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_maxORF)})))
+  ORFs_readthroughs<-unlist(GRangesList_fast(unlist(sapply(ORFs_found,function(x){unlist(x$readthrough)}))))
   if(length(ORFs_readthroughs)>0){
     ORFs_readthroughs<-ORFs_readthroughs[order(ORFs_readthroughs$P_sites_raw,decreasing = T)]
   }
