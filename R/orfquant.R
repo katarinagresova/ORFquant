@@ -226,13 +226,11 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
     fra<-apply(fr,2,function(y){y/sum(y)})
     infr_freq<-rowMeans(fra)[1]
     infr<-((rowSums(fr))[1])/sum(fr)
-    y<-DataFrame(ave_pct_fr=round(infr_freq*100,digits = 4))
-    y$pct_fr<-round(infr*100,digits = 4)
-    y$ave_pct_fr_st<-NA
-    y$pct_fr_st<-NA
-    y
+    c(round(infr_freq*100,digits = 4),round(infr*100,digits = 4))
   })
-  mcols(ORFs)<-do.call(rrr,what = rbind)
+  # one DataFrame for all ORFs: building one per ORF and rbind-ing them is slow
+  rrr<-matrix(as.numeric(unlist(rrr)),ncol = 2,byrow = T)
+  mcols(ORFs)<-DataFrame(ave_pct_fr=rrr[,1],pct_fr=rrr[,2],ave_pct_fr_st=rep(NA,nrow(rrr)),pct_fr_st=rep(NA,nrow(rrr)))
   
   if(!is.na(cutoff)){
     covss<-covss[ORFs$pct_fr>=cutoff]
@@ -243,12 +241,11 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
     ORFs<-ORFs[ORFs$ave_pct_fr>=cutoff_ave]
   }
   if(length(ORFs)==0){return(GRanges())}
-  ORFs$endorf<-end(ORFs)
   orfs_spl<-split(ORFs,end(ORFs))
   names(covss)<-end(ORFs)
   ORFs<-endoapply(orfs_spl,function(x){
-    if(length(x)==1){x$endorf<-NULL;return(x)}
-    covo<-covss[names(covss)%in%as.character(x$endorf[1])]
+    if(length(x)==1){return(x)}
+    covo<-covss[names(covss)%in%as.character(end(x)[1])]
     okorfa<-c()
     for(cnt in 1:length(x)){
       psit<-as.vector(covo[[cnt]])
@@ -286,7 +283,6 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       
     }
     x<-x[okorfa]
-    x$endorf<-NULL
     return(x)
   })
   ORFs<-unlist(ORFs)
@@ -315,45 +311,55 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
 #' @export
 
 calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cutoff=.5,tapers=24,bw=12){
-  ORFs$pval<-NA
-  ORFs$pval_uniq<-NA
-  ORFs$P_sites_raw<-NA
-  ORFs$P_sites_raw_uniq<-NA
-  ORFs$P_sites_raw_uniq_mm<-NA
-  ORFs$pct_fr<-NA
+  # columns are filled as plain vectors and set once at the end: assigning
+  # one element of a GRanges column (ORFs$pval[i]<-) costs ~6 ms
+  pval<-rep(NA,length(ORFs))
+  pval_uniq<-rep(NA,length(ORFs))
+  P_sites_raw<-rep(NA,length(ORFs))
+  P_sites_raw_uniq<-rep(NA,length(ORFs))
+  P_sites_raw_uniq_mm<-rep(NA,length(ORFs))
+  pct_fr<-rep(NA,length(ORFs))
+  ORF_id_tr<-ORFs$ORF_id_tr
   
   
   for(i in 1:length(ORFs)){
     psit<-as.vector(P_sites_rle[ORFs[i]@ranges])
     psit_uniq<-as.vector(P_sites_uniq_rle[ORFs[i]@ranges])
     psit_uniq_mm<-as.vector(P_sites_uniq_mm_rle[ORFs[i]@ranges])
-    ORFs$P_sites_raw[i]<-sum(psit)
+    P_sites_raw[i]<-sum(psit)
     ps_unq<-round(sum(psit_uniq)/sum(psit)*100,digits = 2)
     if(is.na(ps_unq)){ps_unq<-0}
-    ORFs$P_sites_raw_uniq[i]<-sum(psit_uniq)
+    P_sites_raw_uniq[i]<-sum(psit_uniq)
     
     ps_unq<-round((sum(psit_uniq)-sum(psit_uniq_mm))/sum(psit)*100,digits = 2)
     if(is.na(ps_unq)){ps_unq<-0}
     
-    ORFs$P_sites_raw_uniq_mm[i]<-sum(psit_uniq_mm)
-    ORFs$ORF_id_tr[i]<-paste(as.character(seqnames(ORFs[i])[1]),start(ORFs[i]),end(ORFs[i]),sep = "_")
+    P_sites_raw_uniq_mm[i]<-sum(psit_uniq_mm)
+    ORF_id_tr[i]<-paste(as.character(seqnames(ORFs[i])[1]),start(ORFs[i]),end(ORFs[i]),sep = "_")
     if(sum(psit)>0){
       infr<-round(sum(psit[seq(1,length(psit),by=3)])/sum(psit),digits = 4)
-      ORFs$pct_fr[i]<-infr
+      pct_fr[i]<-infr
     }
     if(sum(psit>0)>2){
       if(infr>cutoff){
         if(length(psit)<25){slepians<-dpss(n=length(psit)+(50-length(psit)),k=tapers,nw=bw)}
         if(length(psit)>=25){slepians<-dpss(n=length(psit),k=tapers,nw=bw)}
         vals<-take_Fvals_spect(x = psit,n_tapers = tapers,time_bw = bw,slepians_values = slepians)
-        ORFs$pval[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
+        pval[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
         vals<-take_Fvals_spect(x = psit_uniq,n_tapers = tapers,time_bw = bw,slepians_values = slepians)
-        ORFs$pval_uniq[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
+        pval_uniq[i]<-pf(q=vals[1],df1=2,df2=(2*tapers)-2,lower.tail=F)
         
         
       }
     }
   }
+  ORFs$pval<-pval
+  ORFs$pval_uniq<-pval_uniq
+  ORFs$P_sites_raw<-P_sites_raw
+  ORFs$P_sites_raw_uniq<-P_sites_raw_uniq
+  ORFs$P_sites_raw_uniq_mm<-P_sites_raw_uniq_mm
+  ORFs$pct_fr<-pct_fr
+  ORFs$ORF_id_tr<-ORF_id_tr
   return(ORFs)
 }
 
@@ -495,10 +501,10 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     orfs$transcript_biotype<-unique(as.character(tr_gen_tx[,"transcript_biotype"]))
     
     #must add the other compatible txs, to avoid calculating same stuff
+    orfs$compatible_with<-NA
     for(w in 1:length(orfs)){
       orf<-orfs[w]
       nam<-orf$ORF_id_tr
-      orf$compatible_with<-NA
       orfs_gr[[nam]]<-orf
       orfs_gen_gr[[nam]]<-orfs_gen[[nam]]
       
@@ -2119,80 +2125,83 @@ annotate_splicing<-function(orf_gen,ref_cds){
   if(length(orf_gen)>0){
     for(f in 1:length(orf_gen)){
       ran<-orf_gen[f]
+      # ref and spl_type are set on ran once, below: each GRanges $<- costs ~6 ms
+      ref<-NULL
+      spl_type<-NULL
       last_ex<-length(orf_gen)
       if(overref[f]==T){
         ref_over<-ref_cds[ref_cds%over%ran]
         #annotate for 5' and 3'; porcoddio
         
         if(length(ref_over)>1){
-          ran$ref<-GRangesList(ref_over)
-          ran$spl_type<-"CDS_spanning"
+          ref<-GRangesList(ref_over)
+          spl_type<-"CDS_spanning"
           if(as.vector(strand(orf_gen[1]))=="+"){
             if(start(ran)==min(start(ref_over))){
               if(end(ran)==max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;same_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;same_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;same_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)>max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;same_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;same_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;same_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;down_3monoCDS"}
               }
               if(end(ran)<max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;same_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;same_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;same_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;up_3monoCDS"}
               }
               
             }
             if(end(ran)==max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;down_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;down_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;down_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;same_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;up_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;up_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;up_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;same_3monoCDS"}
               }
               
             }
             
             if(end(ran)>max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;down_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;down_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;down_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;down_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;up_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;up_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;up_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)<max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;down_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;down_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;down_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"CDS_spanning;up_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"CDS_spanning;up_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"CDS_spanning;up_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;up_3monoCDS"}
               }
               
             }
@@ -2207,69 +2216,69 @@ annotate_splicing<-function(orf_gen,ref_cds){
           if(as.vector(strand(orf_gen[1]))=="-"){
             if(start(ran)==min(start(ref_over))){
               if(end(ran)==max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;same_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;same_3ss"
+                if(f==1){spl_type<-"CDS_spanning;same_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;same_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)>max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;up_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;same_3ss"
+                if(f==1){spl_type<-"CDS_spanning;up_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;up_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)<max(end(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;down_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;same_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;same_3ss"
+                if(f==1){spl_type<-"CDS_spanning;down_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;down_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;same_3monoCDS"}
               }
               
             }
             if(end(ran)==max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;same_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;up_3ss"
+                if(f==1){spl_type<-"CDS_spanning;same_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;same_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;same_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;same_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;same_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;same_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;same_5ss;down_3ss"
+                if(f==1){spl_type<-"CDS_spanning;same_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;same_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;same_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)>max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;up_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;up_3ss"
+                if(f==1){spl_type<-"CDS_spanning;up_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;up_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;up_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;up_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;up_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;up_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;up_5ss;down_3ss"
+                if(f==1){spl_type<-"CDS_spanning;up_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;up_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;up_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)<max(end(ref_over))){
               if(start(ran)>min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;down_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;up_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;up_3ss"
+                if(f==1){spl_type<-"CDS_spanning;down_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;down_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<min(start(ref_over))){
-                ran$spl_type<-"CDS_spanning;down_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"CDS_spanning;down_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"CDS_spanning;down_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"CDS_spanning;down_5monoCDS;down_3monoCDS"}
+                spl_type<-"CDS_spanning;down_5ss;down_3ss"
+                if(f==1){spl_type<-"CDS_spanning;down_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"CDS_spanning;down_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"CDS_spanning;down_5monoCDS;down_3monoCDS"}
               }
               
             }
@@ -2278,74 +2287,74 @@ annotate_splicing<-function(orf_gen,ref_cds){
           
         }
         if(length(ref_over)==1){
-          ran$ref<-GRangesList(ref_over)
-          ran$spl_type<-NA
+          ref<-GRangesList(ref_over)
+          spl_type<-NA
           if(as.vector(strand(orf_gen[1]))=="+"){
             if(start(ran)==(start(ref_over))){
               if(end(ran)==(end(ref_over))){
-                ran$spl_type<-"same_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"same_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"same_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;same_3monoCDS"}
+                spl_type<-"same_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"same_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"same_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)>(end(ref_over))){
-                ran$spl_type<-"same_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"same_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"same_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;down_3monoCDS"}
+                spl_type<-"same_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"same_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"same_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;down_3monoCDS"}
               }
               if(end(ran)<(end(ref_over))){
-                ran$spl_type<-"same_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"same_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"same_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;up_3monoCDS"}
+                spl_type<-"same_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"same_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"same_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;up_3monoCDS"}
               }
               
             }
             if(end(ran)==(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"down_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"down_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"down_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;same_3monoCDS"}
+                spl_type<-"down_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"down_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"down_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;same_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"up_5ss;same_3ss"
-                if(f==last_ex){ran$spl_type<-"up_5ss;same_lastCDS"}
-                if(f==1){ran$spl_type<-"up_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;same_3monoCDS"}
+                spl_type<-"up_5ss;same_3ss"
+                if(f==last_ex){spl_type<-"up_5ss;same_lastCDS"}
+                if(f==1){spl_type<-"up_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;same_3monoCDS"}
               }
               
             }
             
             if(end(ran)>(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"down_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"down_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"down_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;down_3monoCDS"}
+                spl_type<-"down_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"down_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"down_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;down_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"up_5ss;down_3ss"
-                if(f==last_ex){ran$spl_type<-"up_5ss;down_lastCDS"}
-                if(f==1){ran$spl_type<-"up_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;down_3monoCDS"}
+                spl_type<-"up_5ss;down_3ss"
+                if(f==last_ex){spl_type<-"up_5ss;down_lastCDS"}
+                if(f==1){spl_type<-"up_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)<(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"down_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"down_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"down_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;up_3monoCDS"}
+                spl_type<-"down_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"down_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"down_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"up_5ss;up_3ss"
-                if(f==last_ex){ran$spl_type<-"up_5ss;up_lastCDS"}
-                if(f==1){ran$spl_type<-"up_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;up_3monoCDS"}
+                spl_type<-"up_5ss;up_3ss"
+                if(f==last_ex){spl_type<-"up_5ss;up_lastCDS"}
+                if(f==1){spl_type<-"up_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;up_3monoCDS"}
               }
               
             }
@@ -2358,69 +2367,69 @@ annotate_splicing<-function(orf_gen,ref_cds){
           if(as.vector(strand(orf_gen[1]))=="-"){
             if(start(ran)==(start(ref_over))){
               if(end(ran)==(end(ref_over))){
-                ran$spl_type<-"same_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"same_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"same_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;same_3monoCDS"}
+                spl_type<-"same_5ss;same_3ss"
+                if(f==1){spl_type<-"same_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"same_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)>(end(ref_over))){
-                ran$spl_type<-"up_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"up_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"up_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;same_3monoCDS"}
+                spl_type<-"up_5ss;same_3ss"
+                if(f==1){spl_type<-"up_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"up_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;same_3monoCDS"}
               }
               if(end(ran)<(end(ref_over))){
-                ran$spl_type<-"down_5ss;same_3ss"
-                if(f==1){ran$spl_type<-"down_5ss;same_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"down_firstCDS;same_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;same_3monoCDS"}
+                spl_type<-"down_5ss;same_3ss"
+                if(f==1){spl_type<-"down_5ss;same_lastCDS"}
+                if(f==last_ex){spl_type<-"down_firstCDS;same_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;same_3monoCDS"}
               }
               
             }
             if(end(ran)==(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"same_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"same_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"same_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;up_3monoCDS"}
+                spl_type<-"same_5ss;up_3ss"
+                if(f==1){spl_type<-"same_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"same_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"same_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"same_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"same_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"same_5monoCDS;down_3monoCDS"}
+                spl_type<-"same_5ss;down_3ss"
+                if(f==1){spl_type<-"same_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"same_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"same_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)>(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"up_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"up_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"up_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;up_3monoCDS"}
+                spl_type<-"up_5ss;up_3ss"
+                if(f==1){spl_type<-"up_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"up_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"up_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"up_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"up_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"up_5monoCDS;down_3monoCDS"}
+                spl_type<-"up_5ss;down_3ss"
+                if(f==1){spl_type<-"up_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"up_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"up_5monoCDS;down_3monoCDS"}
               }
               
             }
             
             if(end(ran)<(end(ref_over))){
               if(start(ran)>(start(ref_over))){
-                ran$spl_type<-"down_5ss;up_3ss"
-                if(f==1){ran$spl_type<-"down_5ss;up_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"down_firstCDS;up_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;up_3monoCDS"}
+                spl_type<-"down_5ss;up_3ss"
+                if(f==1){spl_type<-"down_5ss;up_lastCDS"}
+                if(f==last_ex){spl_type<-"down_firstCDS;up_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;up_3monoCDS"}
               }
               if(start(ran)<(start(ref_over))){
-                ran$spl_type<-"down_5ss;down_3ss"
-                if(f==1){ran$spl_type<-"down_5ss;down_lastCDS"}
-                if(f==last_ex){ran$spl_type<-"down_firstCDS;down_3ss"}
-                if(1==last_ex){ran$spl_type<-"down_5monoCDS;down_3monoCDS"}
+                spl_type<-"down_5ss;down_3ss"
+                if(f==1){spl_type<-"down_5ss;down_lastCDS"}
+                if(f==last_ex){spl_type<-"down_firstCDS;down_3ss"}
+                if(1==last_ex){spl_type<-"down_5monoCDS;down_3monoCDS"}
               }
               
             }
@@ -2433,31 +2442,33 @@ annotate_splicing<-function(orf_gen,ref_cds){
         
       }
       if(overref[f]==F){
-        if(length(ref_cds)>0){ran$ref<-GRangesList(ref_cds[nearest(x=ran,subject=ref_cds)])}
-        if(length(ref_cds)==0){ran$ref<-GRangesList(GRanges())}
-        ran$spl_type<-"new_CDS"
+        if(length(ref_cds)>0){ref<-GRangesList(ref_cds[nearest(x=ran,subject=ref_cds)])}
+        if(length(ref_cds)==0){ref<-GRangesList(GRanges())}
+        spl_type<-"new_CDS"
         if(f==last_ex){
           if(as.vector(strand(orf_gen[1]))=="+"){
-            ran$spl_type<-"new_lastCDS"
+            spl_type<-"new_lastCDS"
           }
           if(as.vector(strand(orf_gen[1]))=="-"){
-            ran$spl_type<-"new_firstCDS"
+            spl_type<-"new_firstCDS"
           }
         }
         if(f==1){
           
           if(as.vector(strand(orf_gen[1]))=="-"){
-            ran$spl_type<-"new_lastCDS"
+            spl_type<-"new_lastCDS"
           }
           if(as.vector(strand(orf_gen[1]))=="+"){
-            ran$spl_type<-"new_firstCDS"
+            spl_type<-"new_firstCDS"
           }                                       
         }
         if(1==last_ex){
-          ran$spl_type<-"new_monoCDS"
+          spl_type<-"new_monoCDS"
           
         }
       }
+      ran$ref<-ref
+      ran$spl_type<-spl_type
       spl_ran<-sort(c(spl_ran,ran))
       
       
