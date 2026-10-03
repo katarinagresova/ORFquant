@@ -244,9 +244,9 @@ deprecation warnings.
 ## Performance
 
 - `run_ORFquant()` is faster. With one core, a run on chr21 of a human
-  sample takes 607 s instead of 706 s (14% less), and with 8 cores 128 s
-  instead of 146 s. Results don't change: on our test data and on chr21,
-  all outputs are the same as before. Two changes make it faster:
+  sample takes 431 s instead of 704 s (39% less), and with 8 cores 90 s
+  instead of 145 s. Results don't change: on our test data and on chr21,
+  all outputs are the same as before. Four changes make it faster:
   - It translated transcripts and ORFs with
     `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per
     call building a table of the codons with ambiguous bases, such as N. It
@@ -256,6 +256,17 @@ deprecation warnings.
     example each ORF's p-values in `calc_orf_pval()` and each exon's splice
     type in `annotate_splicing()`, and each assignment takes 6 to 37 ms. It
     now keeps the values in plain vectors and sets each column once.
+  - `annotate_ORFs()` mapped each ORF to the annotated transcripts one
+    transcript at a time; it now maps it to all of them in one call.
+    `annotate_splicing()` looked for the annotated CDS exons overlapping
+    each exon of an ORF, and added the exon to its result with `c()` and
+    `sort()`, one exon at a time; it now does each once per ORF.
+  - The last step, which combines the results of all genomic regions,
+    combined them with `GRangesList()`, which handles the columns and the
+    sequence information (Seqinfo) of its elements one element at a time.
+    It now gathers each column from all elements and binds it once, and
+    merges the Seqinfo pairwise. On the results of a whole human genome,
+    this step takes 108 s instead of 490 s.
 
 ## Documentation
 
