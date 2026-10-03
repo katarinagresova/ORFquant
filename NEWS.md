@@ -92,6 +92,26 @@ deprecation warnings.
   for the default 24 tapers. `run_ORFquant()` always uses the default, so its
   results are unchanged; only direct calls to `calc_orf_pval()` with another
   `tapers` get different `pval` and `pval_uniq`.
+- `prepare_annotation_files()` now gives the biotype `protein_coding` to
+  transcripts without a biotype that have CDS lines, and to their genes.
+  Before, they were `no_type`, as are all transcripts and genes of GTFs
+  without biotypes, such as UCSC's RefSeq GTF (`hg38.ncbiRefSeq.gtf`).
+  `run_ORFquant()` then prefers these transcripts as an ORF's compatible
+  transcript, taking the first in sorted order, as with GENCODE's
+  `protein_coding` transcripts (before, the first one found), and
+  `plot_ORFquant_results()` labels their ORFs `protein_coding`, not
+  "non-coding RNA". On chr21 of a human sample with UCSC's RefSeq GTF, all 89
+  ORFs change their `gene_biotype`, `transcript_biotype` and
+  `compatible_biotype` from `no_type` to `protein_coding`, and 6 their
+  compatible transcript (`compatible_tx`, `compatible_ORF_id_tr` and
+  `compatible_ORF_id_tr_longest`). Which ORFs are found, their categories,
+  P-sites and p-values don't change. Without biotypes, transcripts with a CDS
+  that GENCODE calls `nonsense_mediated_decay` are `protein_coding` too, so an
+  ORF on one can be its own compatible transcript and get another
+  `ORF_category_Tx_compatible`: on GENCODE's chr22 transcripts with their
+  biotypes removed, 1 of 16 ORFs gets `overl_dORF` instead of GENCODE's
+  `N_truncation`. GTFs in which every transcript has a biotype, such as
+  GENCODE, Ensembl and NCBI RefSeq GTFs, are not affected.
 
 ## Bug fixes
 
@@ -118,7 +138,8 @@ deprecation warnings.
     columns mixed up, for example gene names as transcript ids, without an
     error.
 
-  Missing biotypes are now `no_type`, as all were when no line had one. The
+  Missing biotypes are now `no_type`, as all were when no line had one (or
+  `protein_coding`, see "Changes in results"). The
   transcript biotype `mRNA`, NCBI's name for coding transcripts, is read as
   `protein_coding`. `run_ORFquant()` then prefers these transcripts as an
   ORF's compatible transcript (`compatible_tx`), and `plot_ORFquant_results()`
@@ -128,7 +149,7 @@ deprecation warnings.
   `?prepare_annotation_files` lists the attributes read. GTFs that worked
   before give the same annotation, apart from these gene names, the `mRNA`
   biotype, and biotypes that were missing (`NA`) for some transcripts, now
-  `no_type`.
+  `no_type` or `protein_coding`.
 - `prepare_annotation_files()` now stops with an error saying that the GTF
   file has no CDS lines when it has none, for example StringTie's output.
   Before, it failed with `wrong sign in 'by' argument`.
