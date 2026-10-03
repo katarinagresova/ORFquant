@@ -2237,10 +2237,12 @@ annotate_splicing<-function(orf_gen,ref_cds){
   if(length(orf_gen)>0){
     # overlaps found and exons combined once, not per exon: each GRanges op costs several ms
     ov_ref<-findOverlaps(orf_gen,ref_cds)
-    rans<-list()
+    refs<-list()
+    spl_types<-list()
     for(f in 1:length(orf_gen)){
       ran<-orf_gen[f]
-      # ref and spl_type are set on ran once, below: each GRanges $<- costs ~6 ms
+      # ref and spl_type are kept, and set on all exons at once below: per exon, GRangesList() and
+      # each GRanges $<- cost several ms, and binding the exons' GRangesList columns even more
       ref<-NULL
       spl_type<-NULL
       last_ex<-length(orf_gen)
@@ -2249,7 +2251,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
         #annotate for 5' and 3'; porcoddio
         
         if(length(ref_over)>1){
-          ref<-GRangesList(ref_over)
+          ref<-ref_over
           spl_type<-"CDS_spanning"
           if(as.vector(strand(orf_gen[1]))=="+"){
             if(start(ran)==min(start(ref_over))){
@@ -2402,7 +2404,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
           
         }
         if(length(ref_over)==1){
-          ref<-GRangesList(ref_over)
+          ref<-ref_over
           spl_type<-NA
           if(as.vector(strand(orf_gen[1]))=="+"){
             if(start(ran)==(start(ref_over))){
@@ -2557,8 +2559,8 @@ annotate_splicing<-function(orf_gen,ref_cds){
         
       }
       if(overref[f]==F){
-        if(length(ref_cds)>0){ref<-GRangesList(ref_cds[nearest(x=ran,subject=ref_cds)])}
-        if(length(ref_cds)==0){ref<-GRangesList(GRanges())}
+        if(length(ref_cds)>0){ref<-ref_cds[nearest(x=ran,subject=ref_cds)]}
+        if(length(ref_cds)==0){ref<-GRanges()}
         spl_type<-"new_CDS"
         if(f==last_ex){
           if(as.vector(strand(orf_gen[1]))=="+"){
@@ -2582,13 +2584,26 @@ annotate_splicing<-function(orf_gen,ref_cds){
           
         }
       }
-      ran$ref<-ref
-      ran$spl_type<-spl_type
-      rans[[f]]<-ran
+      refs[f]<-list(ref)
+      spl_types[f]<-list(spl_type)
       
       
     }
-    spl_ran<-sort(do.call(c,c(list(spl_ran),rans)))
+    if(!any(vapply(refs,is.null,NA)) & !any(vapply(spl_types,is.null,NA))){
+      ran<-orf_gen
+      ran$ref<-GRangesList(refs)
+      ran$spl_type<-unlist(spl_types)
+      spl_ran<-sort(c(spl_ran,ran))
+    }else{
+      #an exon without ref and spl_type gets no such columns: exons combined one by one, as before
+      rans<-lapply(1:length(orf_gen),function(f){
+        ran<-orf_gen[f]
+        if(!is.null(refs[[f]])){ran$ref<-GRangesList(refs[[f]])}
+        ran$spl_type<-spl_types[[f]]
+        ran
+      })
+      spl_ran<-sort(do.call(c,c(list(spl_ran),rans)))
+    }
     
   }
   
