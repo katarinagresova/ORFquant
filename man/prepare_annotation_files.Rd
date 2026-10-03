@@ -49,8 +49,13 @@ This function processes a gtf file and a twobit file (created using faToTwoBit f
 \details{
 This function uses the \code{makeTxDbFromGFF} function to  create a TxDb object and extract
 genomic regions and other info to a *Rannot R file; the \code{mapToTranscripts} and \code{mapFromTranscripts} functions are used to 
-map features to genomic or transcript-level coordinates. GTF file mist contain "exon" and "CDS" lines,
-where each line contains "transcript_id" and "gene_id" values. Additional values such as "gene_biotype" or "gene_name" are also extracted.
+map features to genomic or transcript-level coordinates. GTF file must contain "exon" and "CDS" lines,
+where each line contains "transcript_id" and "gene_id" values. The CDS must include the stop codon, or the file must have
+"stop_codon" lines (as GENCODE and Ensembl files do): otherwise ORFs ending at an annotated stop codon get other categories, e.g.
+"C_extension" instead of "ORF_annotated". Biotypes and gene names are read from "gene_biotype" or "gene_type", "transcript_biotype" or
+"transcript_type", and "gene_name", "gene_symbol", "gene" (NCBI) or "ref_gene_name" (StringTie) values, on any line of the transcript
+or (for genes) of the gene. Missing biotypes are "no_type", and the transcript biotype "mRNA" (NCBI) is read as "protein_coding";
+if no gene has a name, all are "no_name".
 Regarding sequences, the twobit file, together with input scientific and annotation names, is used to forge and install a 
 BSgenome package using the \code{forgeBSgenomeDataPkg} function.\cr\cr
 The resulting GTF_annotation object (obtained after runnning \code{load_annotation}) contains:\cr\cr
