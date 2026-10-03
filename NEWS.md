@@ -243,14 +243,19 @@ deprecation warnings.
 
 ## Performance
 
-- `run_ORFquant()` is faster. It translated transcripts and ORFs with
-  `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per call
-  building a table of the codons with ambiguous bases, such as N. It now
-  skips that for sequences with only A, C, G and T, which give the same
-  protein without it. With one core, a run on chr21 of a human sample took
-  659 s instead of 717 s (8% less); with 8 cores, the expected saving (about
-  7 s) was smaller than the variation between runs. Results don't change: on
-  our test data and on chr21, all outputs are the same as before.
+- `run_ORFquant()` is faster. With one core, a run on chr21 of a human
+  sample takes 607 s instead of 706 s (14% less), and with 8 cores 128 s
+  instead of 146 s. Results don't change: on our test data and on chr21,
+  all outputs are the same as before. Two changes make it faster:
+  - It translated transcripts and ORFs with
+    `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per
+    call building a table of the codons with ambiguous bases, such as N. It
+    now skips that for sequences with only A, C, G and T, which give the
+    same protein without it.
+  - It set columns of GRanges objects many times per ORF or per exon, for
+    example each ORF's p-values in `calc_orf_pval()` and each exon's splice
+    type in `annotate_splicing()`, and each assignment takes 6 to 37 ms. It
+    now keeps the values in plain vectors and sets each column once.
 
 ## Documentation
 
