@@ -3170,11 +3170,13 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   
   if(!is.na(gene_name[1])){
     gnid<-unique(GTF_annotation$trann$gene_id[GTF_annotation$trann$gene_name%in%gene_name])
-    genes_red<-genes_red[genes_red%over%GTF_annotation$genes[gnid]]
+    #the genes' ranges from their transcripts, as genes() makes them, also for genes on several chromosomes
+    #or strands (e.g. UCSC's PAR genes), which aren't in GTF_annotation$genes
+    genes_red<-genes_red[genes_red%over%unlist(range(GTF_annotation$txs_gene[gnid]))]
   }
   
   if(!is.na(gene_id[1])){
-    genes_red<-genes_red[genes_red%over%GTF_annotation$genes[gene_id]]
+    genes_red<-genes_red[genes_red%over%unlist(range(GTF_annotation$txs_gene[gene_id]))]
   }
   
   if(!is.na(genomic_region[1])){
@@ -3480,7 +3482,7 @@ load_annotation<-function(path){
 #' \code{exons_txs}: GRangesList including exons grouped by transcript.\cr
 #' \code{exons_bins}: the list of exonic bins with associated transcripts and genes.\cr
 #' \code{junctions}: the list of annotated splice junctions, with associated transcripts and genes.\cr
-#' \code{genes}: annotated genes coordinates.\cr
+#' \code{genes}: annotated genes coordinates, without genes with exons on both strands or on more than one chromosome.\cr
 #' \code{threeutrs}: collapsed set of 3'UTR regions, with correspinding gene_ids. This set does not overlap CDS region.\cr
 #' \code{fiveutrs}: collapsed set of 5'UTR regions, with correspinding gene_ids. This set does not overlap CDS region.\cr
 #' \code{ncIsof}: collapsed set of exonic regions of protein_coding genes, with correspinding gene_ids. This set does not overlap CDS region.\cr
@@ -3644,18 +3646,19 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     nc_exons<-reduce(GenomicRanges::setdiff(unlist(exons_ge),reduce(c(unlist(cds_ge),fiveutrs,threeutrs)),ignore.strand=FALSE))
     
-    #assign gene ids (mutiple when overlapping multiple genes)
+    #assign gene ids (mutiple when overlapping multiple genes; none for regions of genes that genes() drops,
+    #with exons on both strands or on several chromosomes, e.g. UCSC's PAR genes)
     ov<-findOverlaps(threeutrs,genes)
-    ov<-split(subjectHits(ov),queryHits(ov))
+    ov<-split(subjectHits(ov),factor(queryHits(ov),levels=seq_along(threeutrs)))
     threeutrs$gene_id<-CharacterList(lapply(ov,FUN = function(x){names(genes)[x]}))
     ov<-findOverlaps(fiveutrs,genes)
-    ov<-split(subjectHits(ov),queryHits(ov))
+    ov<-split(subjectHits(ov),factor(queryHits(ov),levels=seq_along(fiveutrs)))
     fiveutrs$gene_id<-CharacterList(lapply(ov,FUN = function(x){names(genes)[x]}))
     ov<-findOverlaps(introns,genes)
-    ov<-split(subjectHits(ov),queryHits(ov))
+    ov<-split(subjectHits(ov),factor(queryHits(ov),levels=seq_along(introns)))
     introns$gene_id<-CharacterList(lapply(ov,FUN = function(x){names(genes)[x]}))
     ov<-findOverlaps(nc_exons,genes)
-    ov<-split(subjectHits(ov),queryHits(ov))
+    ov<-split(subjectHits(ov),factor(queryHits(ov),levels=seq_along(nc_exons)))
     nc_exons$gene_id<-CharacterList(lapply(ov,FUN = function(x){names(genes)[x]}))
     
     intergenicRegions<-genes
@@ -3757,8 +3760,8 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     
     #filter ncRNA and ncIsof regions
-    ncrnas<-nc_exons[!nc_exons%over%genes[trann$gene_id[trann$gene_biotype=="protein_coding"]]]
-    ncisof<-nc_exons[nc_exons%over%genes[trann$gene_id[trann$gene_biotype=="protein_coding"]]]
+    ncrnas<-nc_exons[!nc_exons%over%genes[names(genes)%in%trann$gene_id[trann$gene_biotype=="protein_coding"]]]
+    ncisof<-nc_exons[nc_exons%over%genes[names(genes)%in%trann$gene_id[trann$gene_biotype=="protein_coding"]]]
     
     
     # define genetic codes to use
@@ -5214,11 +5217,6 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   b$tx_cds<-0
   b$tx_cds[as.numeric(names(ov))]<-elementNROWS(ov)
   
-  ov<-findOverlaps(b,GTF_annotation$genes[gens_sel])
-  ov<-split(subjectHits(ov),queryHits(ov))
-  b$gene<-ov
-  nms<-names(GTF_annotation$genes)
-  b$gene_id<-CharacterList(lapply(b$gene,function(x){nms[x]}))
   nts_all<-c()
   nts_cds<-c()
   nts_sel<-c()
@@ -6019,7 +6017,10 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   # disc_orfquantgrfix<-fix_utrs(disc_orfquantgr)
   disc_orfquantgrfix<-(disc_orfquantgr)
   #dimenions, extent of the plot
-  selgenerange <-  anno$genes[selgene]
+  #genes on several chromosomes or strands (e.g. UCSC's PAR genes) aren't in anno$genes: then the range of the
+  #gene's transcripts on the chromosome and strand of the first selected transcript
+  selgenerange <-  if(selgene%in%names(anno$genes)) anno$genes[selgene] else
+    range(anno$txs_gene[[selgene]])%>%subsetByOverlaps(anno$exons_txs[[seltxs[1]]])
   plotstart = start(selgenerange) - (0.2 * (end(selgenerange)-start(selgenerange)))
   plotend = end(selgenerange) + (0 * (end(selgenerange)-start(selgenerange)))
   legendwidth=1/10
@@ -6067,7 +6068,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
                        {Gviz::displayPars(.)[names(orfcols)]<-orfcols;.}
                    ),
                    col.labels='black',
-                   chr=seqnames(selgenerange)
+                   chromosome=as.character(seqnames(selgenerange))
   )
   #create barchart of intensities
   popViewport(1)
