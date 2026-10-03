@@ -3436,8 +3436,9 @@ load_annotation<-function(path){
 #' "stop_codon" lines (as GENCODE and Ensembl files do): otherwise ORFs ending at an annotated stop codon get other categories, e.g.
 #' "C_extension" instead of "ORF_annotated". Biotypes and gene names are read from "gene_biotype" or "gene_type", "transcript_biotype" or
 #' "transcript_type", and "gene_name", "gene_symbol", "gene" (NCBI) or "ref_gene_name" (StringTie) values, on any line of the transcript
-#' or (for genes) of the gene. Missing biotypes are "no_type", and the transcript biotype "mRNA" (NCBI) is read as "protein_coding";
-#' if no gene has a name, all are "no_name".
+#' or (for genes) of the gene. Missing biotypes are "no_type", apart from those of transcripts with CDS lines and of their genes,
+#' which are "protein_coding" (without biotypes, e.g. in UCSC's GTFs, transcripts with a CDS that GENCODE calls "nonsense_mediated_decay"
+#' are "protein_coding" too). The transcript biotype "mRNA" (NCBI) is read as "protein_coding"; if no gene has a name, all are "no_name".
 #' Regarding sequences, the twobit file, together with input scientific and annotation names, is used to forge and install a 
 #' BSgenome package using the \code{forgeBSgenomeDataPkg} function.\cr\cr
 #' The resulting GTF_annotation object (obtained after runnning \code{load_annotation}) contains:\cr\cr
@@ -3700,6 +3701,10 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     trann$transcript_biotype[is.na(trann$transcript_biotype)]<-"no_type"
     #NCBI's coding transcripts are "mRNA"
     trann$transcript_biotype[trann$transcript_biotype=="mRNA"]<-"protein_coding"
+    #without biotypes (e.g. UCSC's GTFs), transcripts with a CDS and their genes are taken as protein_coding
+    tx_cds<-trann$transcript_id%in%names(cds_tx)
+    trann$transcript_biotype[trann$transcript_biotype=="no_type" & tx_cds]<-"protein_coding"
+    trann$gene_biotype[trann$gene_biotype=="no_type" & trann$gene_id%in%trann$gene_id[tx_cds]]<-"protein_coding"
     if(all(is.na(trann$gene_name))){trann$gene_name<-"no_name"}
     
     trann<-DataFrame(trann)
