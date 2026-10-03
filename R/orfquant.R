@@ -27,6 +27,13 @@ DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
                               "Chloro","2micron","2-micron","2uM",
                               "Mt", "NC_001879.2", "NC_006581.1","ChrM"))
 
+# translate(x, ..., if.fuzzy.codon = "solve"), faster. "solve" costs a fixed
+# ~80 ms per call, to build the lookup of all fuzzy codons; a sequence with
+# only A/C/G/T has none and gives the same protein with the default ("error").
+translate_solve<-function(x,...){
+  translate(x,...,if.fuzzy.codon=if(hasOnlyBaseLetters(x)) "error" else "solve")
+}
+
 
 #' Find ATG-starting ORFs in a sequence
 #'
@@ -49,7 +56,7 @@ get_orfs<-function(tx_name,sequence,get_all_starts=T,Stop_Stop=F,scores=c(1,.5),
   length<-nchar(sequence)
   for(u in 0:2){
     pept<-NA
-    pept<-unlist(strsplit(as.character(suppressWarnings(translate(subseq(sequence,start=u+1),genetic.code = genetic_code_table,if.fuzzy.codon = "solve"))),split=""))
+    pept<-unlist(strsplit(as.character(suppressWarnings(translate_solve(subseq(sequence,start=u+1),genetic.code = genetic_code_table))),split=""))
     
     
     starts<-pept=="M"
@@ -479,7 +486,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     #orfs$gene_id<-mapIds(keys = tx,x = annot,column = "GENEID",keytype = "TXNAME")
     orfs$Protein<-AAStringSet(rep("NA",length(orfs)))
     for(h in 1:length(orfs)){
-      orfs$Protein[h]<-AAStringSet(as.character(translate(seq_tx[orfs@ranges[h]],genetic.code = genetic_code,if.fuzzy.codon = "solve")))
+      orfs$Protein[h]<-AAStringSet(as.character(translate_solve(seq_tx[orfs@ranges[h]],genetic.code = genetic_code)))
     }
     #orfs$Protein<-AAStringSet(orfs$Protein)
     orfs_gen<-from_tx_togen(ORFs = orfs,exons = ex_txs,introns = intr_tx)
@@ -900,7 +907,7 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
   u=start(orf)%%3-1
   if(u==-1){u=2}
   pept<-NA
-  pept<-unlist(strsplit(as.character(suppressWarnings(translate(subseq(sequence,start=u+1),genetic.code = genetic_code,if.fuzzy.codon = "solve"))),split=""))
+  pept<-unlist(strsplit(as.character(suppressWarnings(translate_solve(subseq(sequence,start=u+1),genetic.code = genetic_code))),split=""))
   
   
   starts<-pept=="M"
@@ -1036,7 +1043,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
       if(uniq_signal){
         if(is.na(vals1$pval_uniq) | vals1$pct_fr<.5 | vals1$pval_uniq>.05 ){next}
       }
-      vals1$Protein<-AAStringSet(as.character(translate(seq_tx[vals1@ranges],genetic.code = genetic_code_table,if.fuzzy.codon = "solve")))
+      vals1$Protein<-AAStringSet(as.character(translate_solve(seq_tx[vals1@ranges],genetic.code = genetic_code_table)))
       vals1$ORF_orig_tr<-orf_tx$ORF_id_tr
       vals1$n_stops_readth<-1
       vals1$compatible_id<-CharacterList("")
@@ -1059,7 +1066,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
             if(!is.na(vals$pval) & vals$pct_fr>.5 & vals$pval<.05 ){
               end(vals1)<-end(vals)
               vals1<-calc_orf_pval(ORFs = vals1,P_sites_rle = covtx,P_sites_uniq_rle = covtx_uniq,P_sites_uniq_mm_rle = covtx_uniq_mm,cutoff = cutoff_fr_ave)
-              vals1$Protein<-AAStringSet(as.character(translate(seq_tx[vals1@ranges],genetic.code = genetic_code_table,if.fuzzy.codon = "solve")))
+              vals1$Protein<-AAStringSet(as.character(translate_solve(seq_tx[vals1@ranges],genetic.code = genetic_code_table)))
               vals1$ORF_orig_tr<-orf_tx$ORF_id_tr
               vals1$n_stops_readth<-keep
               vals1$compatible_id<-CharacterList("")
@@ -1075,7 +1082,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
             if(!is.na(vals$pval_uniq) & vals$pct_fr>.5 & vals$pval_uniq<.05 ){
               end(vals1)<-end(vals)
               vals1<-calc_orf_pval(ORFs = vals1,P_sites_rle = covtx,P_sites_uniq_rle = covtx_uniq,P_sites_uniq_mm_rle = covtx_uniq_mm,cutoff = cutoff_fr_ave)
-              vals1$Protein<-AAStringSet(as.character(translate(seq_tx[vals1@ranges],genetic.code = genetic_code_table,if.fuzzy.codon = "solve")))
+              vals1$Protein<-AAStringSet(as.character(translate_solve(seq_tx[vals1@ranges],genetic.code = genetic_code_table)))
               vals1$ORF_orig_tr<-orf_tx$ORF_id_tr
               vals1$n_stops_readth<-keep
               vals1$compatible_id<-CharacterList("")
@@ -2919,8 +2926,8 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
-      N_ann<-translate(max_cds_seq[1:(segm*3)],genetic.code = genetic_code,if.fuzzy.codon="solve")
-      C_ann<-translate(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,if.fuzzy.codon="solve",no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
+      N_ann<-translate_solve(max_cds_seq[1:(segm*3)],genetic.code = genetic_code)
+      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       ORFs_tx[[i]]$NC_protein_isoform<-"N_C"
