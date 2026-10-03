@@ -1,0 +1,247 @@
+#' Columns of ORFs_tx and Detected_ORFs.tsv, and the ORF categories
+#'
+#' \code{\link{run_ORFquant}} saves its results as a list (see
+#' \code{\link{ORFquant}}). Its element \code{ORFs_tx} has one range per
+#' detected ORF, and \code{<prefix>_Detected_ORFs.tsv} has the same table, one
+#' row per ORF. This page describes each of their columns, how ORFquant
+#' computes it, and the values of the ORF categories.
+#'
+#' @details
+#' Each range of \code{ORFs_tx} is an ORF in the coordinates of the transcript
+#' it was found on: \code{seqnames} is the \code{transcript_id}, the strand is
+#' always \code{+}, and the range goes from the first nucleotide of the start
+#' codon to the last nucleotide before the stop codon. The stop codon is not
+#' included, so the width is 3 times the number of amino acids in
+#' \code{Protein}. The names of the ranges are the \code{ORF_id_tr}.
+#' \code{ORFs_gen} has the exons of the same ORFs in genomic coordinates, named
+#' by \code{ORF_id_tr}.
+#'
+#' The TSV file starts with the columns \code{seqnames}, \code{start},
+#' \code{end}, \code{width} and \code{strand} of these ranges, followed by the
+#' columns below, in the same order. Columns with several values per ORF have
+#' them separated by commas, ranges are written as
+#' \code{seqname:start-end:strand}, and missing values as \code{NA}.
+#'
+#' The thresholds named below are arguments of \code{\link{run_ORFquant}},
+#' given with their defaults.
+#'
+#' @section Columns:
+#' In the order of the TSV file:
+#' \describe{
+#' \item{\code{ave_pct_fr}}{For each codon of the ORF with P-sites, the
+#'   percentage of them on its first nucleotide, averaged over these codons
+#'   (0 to 100).}
+#' \item{\code{pct_fr}}{The fraction of the ORF's P-sites on the first
+#'   nucleotide of a codon (in frame), from 0 to 1 despite its name.}
+#' \item{\code{ave_pct_fr_st}, \code{pct_fr_st}}{Like \code{ave_pct_fr} and
+#'   \code{pct_fr}, but both in percent and on the stretch used to choose the
+#'   start codon: from the start codon to the next candidate start codon (ATG)
+#'   downstream in the same frame, or to the stop codon for the last one. Of
+#'   the candidate start codons for a stop codon, ORFquant takes the most
+#'   upstream one whose stretch has an \code{ave_pct_fr_st} of at least 50
+#'   (\code{stn.orf_find.start_sel_cutoff_ave = 0.5}), or else the most
+#'   downstream one. \code{NA} when the ORF had no other candidate start codon,
+#'   or when no stretch passed.}
+#' \item{\code{pval}}{The p-value of the multitaper F-test for 3-nucleotide
+#'   periodicity of the ORF's P-sites, at frequency 1/3 (24 tapers, bandwidth
+#'   12, as in RiboTaper). ORFs with P-sites at more than 2 positions and a
+#'   \code{pct_fr} above 0.5 (\code{stn.orf_find.cutoff_fr_ave}) are tested,
+#'   and kept if \code{pval} is below 0.05 (\code{pval_uniq}, with
+#'   \code{unique_reads_only = TRUE}). The p-values are not corrected for
+#'   multiple testing.}
+#' \item{\code{pval_uniq}}{The same test on the P-sites of uniquely mapping
+#'   reads. \code{NA} when the ORF has none.}
+#' \item{\code{P_sites_raw}}{The number of P-sites in the ORF.}
+#' \item{\code{P_sites_raw_uniq}}{The same, from uniquely mapping reads
+#'   (mapping quality above 50).}
+#' \item{\code{P_sites_raw_uniq_mm}}{The same, from uniquely mapping reads
+#'   with mismatches.}
+#' \item{\code{ORF_id_tr}}{The ORF's id, \code{<transcript_id>_<start>_<end>},
+#'   in the coordinates of its transcript.}
+#' \item{\code{Protein}}{The ORF's amino-acid sequence, without the stop codon.
+#'   An \code{AAStringSet} in R.}
+#' \item{\code{region}}{The genomic region the ORF was found in: overlapping
+#'   genes on one strand, merged. ORFquant analyses each region separately. A
+#'   \code{GRanges} in R.}
+#' \item{\code{gene_id}, \code{gene_biotype}, \code{gene_name},
+#'   \code{transcript_id}, \code{transcript_biotype}}{Of the ORF's transcript,
+#'   from the annotation.}
+#' \item{\code{P_sites}}{The number of P-sites assigned to the translation of
+#'   this ORF: \code{P_sites_raw} times the final scaling factor, the third
+#'   value of \code{scaling_factors} (\code{P_sites_raw_uniq} times it, with
+#'   \code{unique_reads_only = TRUE}). It can be lower than
+#'   \code{P_sites_raw} when other ORFs overlap the ORF.}
+#' \item{\code{ORF_pct_P_sites}}{The ORF's \code{P_sites} as a percentage
+#'   of the \code{P_sites} of all ORFs of the gene (\code{gene_id}), so they
+#'   sum to 100 per gene. ORFs below 2 (\code{stn.orf_quant.cutoff_pct}) are
+#'   removed, and the quantification repeated until none is, so all ORFs have
+#'   at least 2.}
+#' \item{\code{ORF_pct_P_sites_pN}}{The same, with \code{P_sites} divided by
+#'   the ORF's length.}
+#' \item{\code{unique_features_reads}}{The reads on each of the ORF's unique
+#'   features, the exonic bins (P-sites) and splice junctions (junction reads)
+#'   of the ORF that no other ORF of the region shares. \code{NA} when it has
+#'   none.}
+#' \item{\code{adj_unique_features_reads}}{The same, for ORFs with unique
+#'   features. For ORFs without, the reads on the features that they share
+#'   only with ORFs that already have a scaling factor (see
+#'   \code{scaling_factors}); \code{NA} when there are none.}
+#' \item{\code{scaling_factors}}{Three factors, from 0 to 1, for the share of
+#'   the P-sites on the ORF that comes from its translation, in this order
+#'   (named in R):
+#'   \code{unq_feats}, the mean coverage on the ORF's unique features divided
+#'   by the mean coverage on all its features (P-sites per nucleotide on exonic
+#'   bins, junction reads divided by 60 on junctions), at most 1, and
+#'   \code{NA} without unique features;
+#'   \code{adj_feats}, the same, after ORFs without unique features get a
+#'   factor from the coverage that the factors of the other ORFs leave them;
+#'   \code{optim_feats}, the final factor: \code{adj_feats} rescaled so that
+#'   the P-sites assigned to a group of ORFs that share features add up to the
+#'   P-sites on their exonic bins (\code{stn.orf_quant.scaling =
+#'   "total_Psites"}; with \code{"average_coverage"}, their coverage), at most
+#'   1.}
+#' \item{\code{compatible_with}}{The ORF on each annotated transcript of the
+#'   region that contains all of it, with the same exons and junctions, as
+#'   \code{<transcript_id>_<start>_<end>} in that transcript's coordinates.
+#'   It includes \code{ORF_id_tr}.}
+#' \item{\code{compatible_biotype}}{The \code{transcript_biotype} of
+#'   \code{compatible_tx}.}
+#' \item{\code{compatible_tx}}{One transcript of \code{compatible_with}, on
+#'   which \code{ORF_category_Tx_compatible} is computed. ORFquant takes a
+#'   protein-coding one if it can: one that also contains the ORF extended to
+#'   \code{longest_ORF} (see \code{compatible_with_longest}), else any, and of
+#'   several the first in alphabetical order. Without a protein-coding one, it
+#'   takes the first transcript that contains the extended ORF.}
+#' \item{\code{compatible_ORF_id_tr}}{The ORF on \code{compatible_tx}, one of
+#'   \code{compatible_with}.}
+#' \item{\code{compatible_with_longest}}{Like \code{compatible_with}, for the
+#'   ORF extended to \code{longest_ORF}: the same when the ORF starts there.}
+#' \item{\code{compatible_ORF_id_tr_longest}}{The id of \code{longest_ORF}
+#'   on one transcript of \code{compatible_with_longest}, protein-coding if
+#'   possible.}
+#' \item{\code{ref_id}}{The reference transcript for \code{ORF_category_Gen},
+#'   \code{NC_protein_isoform} and \code{ORFs_spl_feat_longest}: the one with
+#'   the longest annotated CDS in the ORF's gene (for a gene without one, the
+#'   transcript of the region whose CDS covers most of the gene's ORFs).
+#'   \code{NA} when the ORF overlaps no annotated CDS.}
+#' \item{\code{ref_id_maxORF}}{The most translated ORF of the gene (the
+#'   highest \code{ORF_pct_P_sites}), the reference for
+#'   \code{ORFs_spl_feat_maxORF}. It can be the ORF itself.}
+#' \item{\code{NC_protein_isoform}}{Compares the first and the last 10 amino
+#'   acids of \code{Protein} with those of the CDS of \code{ref_id}:
+#'   \code{same} (both the same), \code{N} (the first differ), \code{C} (the
+#'   last differ) or \code{N_C} (both differ). Fewer amino acids are compared
+#'   when the protein or the CDS is shorter. \code{NA} when the ORF overlaps
+#'   no annotated CDS.}
+#' \item{\code{ORF_category_Tx}}{The ORF's position relative to the CDS
+#'   annotated on its transcript (see Transcript categories below).}
+#' \item{\code{ORF_category_Tx_compatible}}{The same on \code{compatible_tx},
+#'   with the ORF at \code{compatible_ORF_id_tr}. It can differ from
+#'   \code{ORF_category_Tx} when \code{compatible_tx} isn't the ORF's
+#'   transcript, for example when the ORF was found on a retained-intron
+#'   isoform, which has no annotated CDS. The protein FASTA headers and
+#'   \code{\link{plot_ORFquant_results}} use this one.}
+#' \item{\code{ORF_category_Gen}}{The ORF's position relative to the annotated
+#'   CDS in genomic coordinates (see Genomic categories below).}
+#' \item{\code{NMD_candidate}}{Is \code{TRUE} when
+#'   \code{Distance_to_lastExEx} is positive: the transcript's last exon-exon
+#'   junction is downstream of the ORF's end, which can make the transcript a
+#'   target of nonsense-mediated decay. ORFquant doesn't apply the usual
+#'   minimum distance (often 50 nucleotides); filter on
+#'   \code{Distance_to_lastExEx} for it.}
+#' \item{\code{Distance_to_lastExEx}}{The start of the transcript's last exon
+#'   minus the ORF's end, in nucleotides along the transcript: 0 or negative
+#'   when the ORF ends in the last exon.}
+#' \item{\code{NMD_candidate_compatible_txs},
+#'   \code{Distance_to_lastExEx_compatible_txs}}{The same for the ORF on each
+#'   transcript of \code{compatible_with}, in that order. In R, the distances
+#'   are text (a \code{CharacterList}); \code{as(x, "IntegerList")} converts
+#'   them.}
+#' \item{\code{ORFs_pM}}{The ORF's \code{P_sites} divided by its length,
+#'   scaled to sum to a million over all ORFs of the run (ORFs per million,
+#'   akin to TPM). A run on some genes only (\code{gene_name}, \code{gene_id} or
+#'   \code{genomic_region}) gives other values than a run on all.}
+#' \item{\code{longest_ORF}}{The longest ORF on the transcript with the same
+#'   stop codon, from the most upstream start codon in frame, translated or
+#'   not. It is the ORF itself when the ORF starts there. A \code{GRanges} in
+#'   R.}
+#' }
+#'
+#' @section Transcript categories:
+#' \code{ORF_category_Tx} compares the ORF with the CDS annotated on its
+#' transcript, and \code{ORF_category_Tx_compatible} with the CDS annotated on
+#' \code{compatible_tx}. The start and the end are compared in the
+#' transcript's coordinates, without the stop codons:
+#' \describe{
+#' \item{\code{novel}}{The transcript has no annotated CDS.}
+#' \item{\code{ORF_annotated}}{Same start and end as the CDS.}
+#' \item{\code{N_extension}}{Same end; starts upstream of the CDS.}
+#' \item{\code{N_truncation}}{Same end; starts downstream of the CDS start.}
+#' \item{\code{C_extension}}{Same start; ends downstream of the CDS end.}
+#' \item{\code{C_truncation}}{Same start; ends upstream of the CDS end.}
+#' \item{\code{uORF}}{Starts upstream of the CDS and ends before the CDS
+#'   start (its stop codon can overlap the start codon).}
+#' \item{\code{overl_uORF}}{Starts upstream of the CDS and ends within it.}
+#' \item{\code{NC_extension}}{Starts upstream of the CDS and ends downstream of
+#'   it.}
+#' \item{\code{nested_ORF}}{Starts and ends within the CDS.}
+#' \item{\code{overl_dORF}}{Starts within the CDS and ends downstream of it.}
+#' \item{\code{dORF}}{Starts downstream of the CDS end.}
+#' }
+#' On the ORF's own transcript, a CDS with a stop codon at its end and none
+#' within ends every ORF in its frame that starts within it, or upstream of it
+#' without an earlier stop codon. So for \code{ORF_category_Tx},
+#' \code{overl_uORF}, \code{NC_extension}, \code{nested_ORF} and
+#' \code{overl_dORF} are in another frame than the CDS, and
+#' \code{C_extension} and \code{C_truncation} need another CDS: for example a
+#' selenoprotein's, whose UGA codons for selenocysteine end the ORF early
+#' (\code{C_truncation}). This doesn't hold for
+#' \code{ORF_category_Tx_compatible}: the transcripts of
+#' \code{compatible_with} contain the ORF, but not necessarily its stop
+#' codon.
+#'
+#' @section Genomic categories:
+#' \code{ORF_category_Gen} compares the ORF with the annotated CDS in genomic
+#' coordinates. For an ORF that overlaps no CDS annotated in its region:
+#' \describe{
+#' \item{\code{novel}}{The region has no annotated CDS.}
+#' \item{\code{novel_Upstream}, \code{novel_Downstream}}{The ORF is upstream
+#'   or downstream, on its strand, of the CDS of the gene with the nearest CDS
+#'   exon.}
+#' \item{\code{novel_Internal}}{The ORF is between the first and the last CDS
+#'   nucleotide of that gene, for example in a retained intron.}
+#' }
+#' For the other ORFs, the start (the first nucleotide of the start codon) and
+#' the stop (the last nucleotide of the stop codon) are compared with those of
+#' the CDS of \code{ref_id}; \code{Alt5} means upstream and \code{Alt3}
+#' downstream, on the ORF's strand:
+#' \describe{
+#' \item{\code{exact_start_stop}}{Same start and stop.}
+#' \item{\code{Alt5_start}, \code{Alt3_start}}{Same stop; the start is
+#'   upstream or downstream.}
+#' \item{\code{Alt5_stop}, \code{Alt3_stop}}{Same start; the stop is upstream
+#'   or downstream.}
+#' \item{\code{Alt5_start_Alt5_stop}, \code{Alt5_start_Alt3_stop},
+#'   \code{Alt3_start_Alt5_stop}, \code{Alt3_start_Alt3_stop}}{The start and
+#'   the stop both differ.}
+#' }
+#' Only the start and the stop are compared: an ORF that skips an exon of the
+#' CDS can be \code{exact_start_stop}. \code{ORFs_spl_feat_longest} has the
+#' ORF's exons compared with those of the CDS of \code{ref_id}.
+#'
+#' @section Stop codons in the annotation:
+#' Both kinds of categories assume that the annotated CDS includes its stop
+#' codon, as it does when the GTF has \code{stop_codon} lines (GENCODE and
+#' Ensembl GTFs do): \code{\link{prepare_annotation_files}} adds them to the
+#' CDS. With a GTF whose CDS lines exclude the stop codon and that has no
+#' \code{stop_codon} lines, ORFs are compared with annotated ends 3
+#' nucleotides too early: the annotated ORF itself becomes \code{C_extension}
+#' and \code{Alt3_stop}, not \code{ORF_annotated} and
+#' \code{exact_start_stop}.
+#'
+#' @seealso \code{\link{run_ORFquant}}, \code{\link{ORFquant}},
+#' \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}},
+#' \code{\link{annotate_ORFs}}
+#' @name ORFquant_output
+#' @aliases ORFs_tx
+NULL

@@ -18,10 +18,12 @@ annotate_ORFs(results_ORFs, Annotation, genome_sequence, region, genetic_code)
 \item{genetic_code}{GENETIC_CODE table to use}
 }
 \value{
-Exon structure of detected ORF including possible missing exons from reference, together with a \code{spl_type} column
+\code{results_ORFs} with a new element \code{ORFs_splice_feats}: a list of two \code{GRangesList}, \code{annotation_wrt_longest} and \code{annotation_wrt_maxORF},
+with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}):
+the exons, including possible missing exons from reference, with a \code{spl_type} column
 including the annotation for each exon (e.g. alternative acceptors or donor).\cr\cr
 Additional columns are added to the ORFs_tx object:\cr
-\code{compatible_with}: Set of transcript ids possibly containing the entire ORF structure.\cr
+\code{compatible_with}: Set of ORF ids (\code{<transcript_id>_<start>_<end>}), one on each transcript containing the entire ORF structure, including \code{ORF_id_tr}.\cr
 \code{compatible_biotype}: Compatible transcript biotype; if a protein coding transcript can contain 
 the ORF, this is set to protein_coding.\cr
 \code{compatible_tx}: One selected compatible transcript (preference if protein_coding).\cr
@@ -30,7 +32,7 @@ the ORF, this is set to protein_coding.\cr
 \code{compatible_ORF_id_tr_longest}: Same as \code{compatible_ORF_id_tr} but using the most upstream start codon .\cr
 \code{ref_id}: transcript_id of the transcript used to annotate splicing (longest) .\cr
 \code{ref_id_maxORF}: ORF_id_tr of the ORF used to annotated splicing (most translated of the gene).\cr
-\code{NC_protein_isoform}: Annotation of possible N or C termini variant (when transcript is protein_coding) .\cr
+\code{NC_protein_isoform}: Annotation of possible N or C termini variant compared with the CDS of \code{ref_id} (when the ORF overlaps an annotated CDS; \code{NA} otherwise).\cr
 \code{ORF_category_Tx}: ORF annotation with respect to ORF position in the transcript .\cr
 \code{ORF_category_Tx_compatible}: ORF annotation with respect to ORF position in the transcript, using the \code{compatible_ORF_id_tr} .\cr
 \code{ORF_category_Gen}: ORF annotation with respect to its genomic position .\cr
@@ -53,7 +55,7 @@ ORF annotation with respect to the annotated transcript is also indicated, as fo
 \code{novel}: no ORF annotated in the transcript.\cr
 \code{ORF_annotated}: same exact ORF as annotated.\cr
 \code{N_extension}: N terminal extension.\cr
-\code{N_truncation}: N terminal extension.\cr
+\code{N_truncation}: N terminal truncation.\cr
 \code{uORF}: upstream ORF.\cr
 \code{overl_uORF}: upstream overlappin uORF.\cr
 \code{NC_extension}: N and C termini extension.\cr
@@ -64,22 +66,24 @@ ORF annotation with respect to the annotated transcript is also indicated, as fo
 \code{C_extension}: C terminal extension.\cr\cr
 As transcipt-specific annotation can be misleading due to a plethora of different transcripts, it is important to distinguish ORFs
 also on the basis of their overlap with know CDS regions.
-ORF annotation with respect to the entire set of CDS exon for the analyzed genomic regions is  indicated as follows:\cr\cr
+ORFs that overlap no CDS exon of the analyzed genomic region are annotated in genome space as follows:\cr\cr
 \code{novel}: No CDS region is annotated in the entire region.\cr
 \code{novel_Upstream}: ORF is upstream of annotated CDS regions (does not overlap).\cr
 \code{novel_Downstream}: ORF is downstream of annotated CDS regions (does not overlap).\cr
 \code{novel_Internal}: genomic location of the ORF is present between the start of the first,
- and the end of the last CDS region (does not overlap).\cr
+ and the end of the last CDS region (does not overlap).\cr\cr
+The start and stop codons of the other ORFs are compared with those of the CDS of \code{ref_id} (the longest annotated CDS of the gene; see \code{\link{ORFquant_output}} for genes without one):\cr\cr
 \code{exact_start_stop}: Same start and end locations.\cr
 \code{Alt5_start}: Different start region, upstream.\cr
 \code{Alt3_start}: Different start region, downstream.\cr
 \code{Alt5_stop}: Different end region, upstream.\cr
-\code{Alt3_stop}: Different end region, downstream.\cr\cr
+\code{Alt3_stop}: Different end region, downstream.\cr
+\code{Alt5_start_Alt5_stop}, \code{Alt5_start_Alt3_stop}, \code{Alt3_start_Alt5_stop}, \code{Alt3_start_Alt3_stop}: Different start and end regions.\cr\cr
 Another layer of annotation is performed by checking the position of the ORF stop codon 
 with respect to the last exon-exon junction.
 }
 \seealso{
-\code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}
+\code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

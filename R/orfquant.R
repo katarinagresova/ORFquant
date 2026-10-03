@@ -307,10 +307,10 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
 #' @param P_sites_rle Rle signal of P_sites along the transcript
 #' @param P_sites_uniq_rle Rle signal of uniquely mapping P_sites along the transcript
 #' @param P_sites_uniq_mm_rle Rle signal of uniquely mapping P_sites with mismatches along the transcript
-#' @param cutoff cutoff of average in-frame signal for each codon in the ORF. Defaults to .5
+#' @param cutoff cutoff of the fraction of the ORF's P_sites that are in frame (\code{pct_fr}): only ORFs above it, with P_sites at more than 2 positions, are tested. Defaults to .5
 #' @param tapers Number of tapers to use in the multitaper analysis. Defaults to 24
 #' @param bw time_bw parameter to use in the multitaper analysis. Defaults to 12
-#' @return Set of detected ORFs, including info about the possible longest ORF for that frame.
+#' @return Set of detected ORFs, with the columns \code{pval}, \code{pval_uniq}, \code{P_sites_raw}, \code{P_sites_raw_uniq}, \code{P_sites_raw_uniq_mm}, \code{pct_fr} (a fraction, replacing the percentage from \code{select_start}) and \code{ORF_id_tr}; \code{pval} is \code{NA} for ORFs not tested.
 #' @seealso \code{\link{detect_translated_orfs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}
 #' @export
 
@@ -381,15 +381,15 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
 #' @return A list with transcript coordinates, exonic coordinates and statistics for each ORF exonic bin and junction(from \code{select_txs}).\cr\cr
 #' The value for each column is as follows:\cr\cr
 #' \code{ave_pct_fr}: average percentage of in-frame reads for each codon in the ORF
-#' \code{pct_fr}: percentage of in-frame reads in the ORF
-#' \code{ave_pct_fr}: average percentage of in-frame reads for each codon in the ORF
+#' \code{pct_fr}: fraction (0 to 1) of in-frame reads in the ORF
 #' \code{ave_pct_fr_st}: average percentage of in-frame reads per each codon between the selected start codon and the next candidate one
 #' \code{pct_fr_st}: percentage of in-frame reads between the selected start codon and the next candidate one
 #' \code{longest_ORF}: GRanges coordinates for the longest ORF with the same stop codon
 #' \code{pval}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile
 #' \code{pval_uniq}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile (only uniquely mapping reads)
 #' \code{P_sites_raw}: Raw number of P_sites mapping to the ORF
-#' \code{P_sites_raw_unique}: Uniquely mapping P_sites mapping to the ORF
+#' \code{P_sites_raw_uniq}: Uniquely mapping P_sites mapping to the ORF
+#' \code{P_sites_raw_uniq_mm}: Uniquely mapping P_sites with mismatches mapping to the ORF
 #' \code{ORF_id_tr}: ORF id containing <tx_id>_<start>_<end>
 #' \code{Protein}: AAString sequence of the translated protein
 #' \code{region}: Genomic coordinates of the analyzed region
@@ -398,7 +398,7 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
 #' \code{gene_name}: gene name for the corresponding analyzed transcript
 #' \code{transcript_id}: transcript_id for the corresponding analyzed ORF
 #' \code{transcript_biotype}: transcript biotype for the corresponding analyzed ORF
-#' @seealso \code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}
+#' @seealso \code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}, \code{\link{ORFquant_output}}
 #' @export
 
 detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites,P_sites_uniq,P_sites_uniq_mm,genomic_region,genetic_code,
@@ -1130,32 +1130,32 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
 #' which indicates how much of the ORF coverage can be assigned to such ORF (1 when no other ORF is present). 
 #' When no unique features are present on an ORF, an adjusted scaling value is calculated subtracting coverage expected from a ORF with a unique feature. 
 #' When no unique features are present on any ORF, scaling values are calculated assuming uniform coverage on each ORF.\cr
-#' Scaling values are then further scaled to adjust for average coverage (recommended) or total number of reads in the region.\cr
+#' Scaling values are then further scaled to adjust for average coverage or for the total number of P_sites on the ORFs' exonic bins (recommended, the default).\cr
 #' ORFs are then further filtered to exclude lowly translated ORFs and quantification/selection is re-iterated until no ORF is further filtered out. 
 #' Percentage of total gene translation and length-adjusted quantification estimates are produced.
 #' More details about the quantificatin procedure can be found in the ORFquant manuscript.\cr\cr
 #' Additional columns are added to the ORFs_tx object:\cr
-#' \code{P_sites}: P_sites_raw value from \code{detect_translated_ORFs} divided by the ORF scaling value.\cr
+#' \code{P_sites}: P_sites_raw value from \code{detect_translated_orfs} (P_sites_raw_uniq with \code{uniq_signal = TRUE}) multiplied by the final ORF scaling factor.\cr
 #' \code{ORF_pct_P_sites}: Percentage of gene translation output for the ORF, derived using P_sites values.\cr
 #' \code{ORF_pct_P_sites_pN}: Percentage of gene translation ouptut (adjusted by length) for the ORF, derived using P_sites values.\cr
 #' \code{unique_features_reads}:  initial number of reads on each unique ORF feature. \code{NA} when no unique feature is present.\cr
-#' \code{adj_unique_features_reads}:  final number of reads on each unique ORF feature after the ORF filtering/quantification procedure. \code{NA} when no unique feature is present.\cr
+#' \code{adj_unique_features_reads}:  same as \code{unique_features_reads} for ORFs with unique features; for the others, number of reads on each feature shared only with ORFs that already have a scaling factor. \code{NA} when there is none.\cr
 #' \code{scaling_factors}: Set of 3 scaling factors assigned to the ORF using intial unique ORF features, after adjusting for the presence of ORFs with no unique features, and final scaling factor after correcting for average Ribo-seq coverage (or total number of reads) on the ORFs.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
-#' @param results_ORFs Full list of detected ORFs, from \code{detect_translated_ORFs}
+#' @param results_ORFs Full list of detected ORFs, from \code{detect_translated_orfs}
 #' @param P_sites GRanges object with P_sites positions
 #' @param P_sites_uniq GRanges object with uniquely mapping P_sites positions
-#' @param cutoff_cums cutoff to select ORFs until <x> percentage of total gene translation. Defaults to 99
-#' @param cutoff_pct minimum percentage of total gene translation for an ORF to be selected. Defaults to 1
-#' @param cutoff_P_sites minimum number of P_sites assigned to the ORF to be selected. Defaults to 10
+#' @param cutoff_cums cutoff to select ORFs until <x> percentage of total gene translation. Defaults to NA (not applied)
+#' @param cutoff_pct minimum percentage of total gene translation for an ORF to be selected. Defaults to 2
+#' @param cutoff_P_sites minimum number of P_sites assigned to the ORF to be selected. Defaults to NA (not applied)
 #' @param optimiz (Beta) should numerical optimization (minimizing distance between observed coverage and expected coverage) 
 #' be used to quantify ORF translation? Defaults to FALSE
 #' @param scaling Additional scaling value taking into account average or total signal on the detected ORFs to adjust quantification estimates. 
 #' Can be average_coverage or total_Psites. Defaults to total_Psites for consistency.
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @return modified \code{results_ORFs} object with the selected ORFs including quantification estimates.
-#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_txs}}
+#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_txs}}, \code{\link{ORFquant_output}}
 #' @export
 
 
@@ -2497,7 +2497,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' \code{novel}: no ORF annotated in the transcript.\cr
 #' \code{ORF_annotated}: same exact ORF as annotated.\cr
 #' \code{N_extension}: N terminal extension.\cr
-#' \code{N_truncation}: N terminal extension.\cr
+#' \code{N_truncation}: N terminal truncation.\cr
 #' \code{uORF}: upstream ORF.\cr
 #' \code{overl_uORF}: upstream overlappin uORF.\cr
 #' \code{NC_extension}: N and C termini extension.\cr
@@ -2508,17 +2508,19 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' \code{C_extension}: C terminal extension.\cr\cr
 #' As transcipt-specific annotation can be misleading due to a plethora of different transcripts, it is important to distinguish ORFs
 #' also on the basis of their overlap with know CDS regions.
-#' ORF annotation with respect to the entire set of CDS exon for the analyzed genomic regions is  indicated as follows:\cr\cr
+#' ORFs that overlap no CDS exon of the analyzed genomic region are annotated in genome space as follows:\cr\cr
 #' \code{novel}: No CDS region is annotated in the entire region.\cr
 #' \code{novel_Upstream}: ORF is upstream of annotated CDS regions (does not overlap).\cr
 #' \code{novel_Downstream}: ORF is downstream of annotated CDS regions (does not overlap).\cr
 #' \code{novel_Internal}: genomic location of the ORF is present between the start of the first,
-#'  and the end of the last CDS region (does not overlap).\cr
+#'  and the end of the last CDS region (does not overlap).\cr\cr
+#' The start and stop codons of the other ORFs are compared with those of the CDS of \code{ref_id} (the longest annotated CDS of the gene; see \code{\link{ORFquant_output}} for genes without one):\cr\cr
 #' \code{exact_start_stop}: Same start and end locations.\cr
 #' \code{Alt5_start}: Different start region, upstream.\cr
 #' \code{Alt3_start}: Different start region, downstream.\cr
 #' \code{Alt5_stop}: Different end region, upstream.\cr
-#' \code{Alt3_stop}: Different end region, downstream.\cr\cr
+#' \code{Alt3_stop}: Different end region, downstream.\cr
+#' \code{Alt5_start_Alt5_stop}, \code{Alt5_start_Alt3_stop}, \code{Alt3_start_Alt5_stop}, \code{Alt3_start_Alt3_stop}: Different start and end regions.\cr\cr
 #' Another layer of annotation is performed by checking the position of the ORF stop codon 
 #' with respect to the last exon-exon junction.
 #' @keywords ORFquant
@@ -2528,10 +2530,12 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' @param genome_sequence BSgenome object
 #' @param region genomic region being analyzed
 #' @param genetic_code GENETIC_CODE table to use
-#' @return Exon structure of detected ORF including possible missing exons from reference, together with a \code{spl_type} column
+#' @return \code{results_ORFs} with a new element \code{ORFs_splice_feats}: a list of two \code{GRangesList}, \code{annotation_wrt_longest} and \code{annotation_wrt_maxORF},
+#' with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}):
+#' the exons, including possible missing exons from reference, with a \code{spl_type} column
 #' including the annotation for each exon (e.g. alternative acceptors or donor).\cr\cr
 #' Additional columns are added to the ORFs_tx object:\cr
-#' \code{compatible_with}: Set of transcript ids possibly containing the entire ORF structure.\cr
+#' \code{compatible_with}: Set of ORF ids (\code{<transcript_id>_<start>_<end>}), one on each transcript containing the entire ORF structure, including \code{ORF_id_tr}.\cr
 #' \code{compatible_biotype}: Compatible transcript biotype; if a protein coding transcript can contain 
 #' the ORF, this is set to protein_coding.\cr
 #' \code{compatible_tx}: One selected compatible transcript (preference if protein_coding).\cr
@@ -2540,7 +2544,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' \code{compatible_ORF_id_tr_longest}: Same as \code{compatible_ORF_id_tr} but using the most upstream start codon .\cr
 #' \code{ref_id}: transcript_id of the transcript used to annotate splicing (longest) .\cr
 #' \code{ref_id_maxORF}: ORF_id_tr of the ORF used to annotated splicing (most translated of the gene).\cr
-#' \code{NC_protein_isoform}: Annotation of possible N or C termini variant (when transcript is protein_coding) .\cr
+#' \code{NC_protein_isoform}: Annotation of possible N or C termini variant compared with the CDS of \code{ref_id} (when the ORF overlaps an annotated CDS; \code{NA} otherwise).\cr
 #' \code{ORF_category_Tx}: ORF annotation with respect to ORF position in the transcript .\cr
 #' \code{ORF_category_Tx_compatible}: ORF annotation with respect to ORF position in the transcript, using the \code{compatible_ORF_id_tr} .\cr
 #' \code{ORF_category_Gen}: ORF annotation with respect to its genomic position .\cr
@@ -2548,7 +2552,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
 #' \code{NMD_candidate_compatible_txs}: same as NMD_candidate, but for all transcripts compatible with the ORF structure.\cr
 #' \code{Distance_to_lastExEx}: Distance (in nt) between the last exon-exon junction and the stop codon.\cr
 #' \code{Distance_to_lastExEx_compatible_txs}: same as  Distance_to_lastExEx, but for all transcripts compatible with the ORF structure.
-#' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}
+#' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 #' @export
 
 annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_code){
@@ -3026,7 +3030,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
 #' @param orf_quant.scaling \code{scaling} parameter for the \code{select_quantify_ORFs} function. Defaults to total_Psites 
 #' @return A list containing transcript coordinates, exonic coordinates and annotation for each ORF.\cr\cr
 #' The description for each list object is as follows:\cr\cr
-#' \code{ORFs_tx}: transcript coordinates of the detected ORFs.\cr
+#' \code{ORFs_tx}: transcript coordinates of the detected ORFs, with the columns described in \code{\link{ORFquant_output}}.\cr
 #' \code{ORFs_gen}: genomic (exon) coordinates of the detected ORFs.\cr
 #' \code{ORFs_feat}: list of ORF features together with mapping reads and uniqueness.\cr
 #' \code{ORFs_txs_feats}: list of transcript features present in the genomic region, together with mapping reads and uniqueness.\cr
@@ -3034,7 +3038,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
 #' \code{ORFs_spl_feat_maxORF}: splicing annotation for each ORF exon, with respect to the most translated ORF in each gene.\cr
 #' \code{selected_txs}: character vector containing the transcript ids of the selected transcripts.\cr
 #' \code{ORFs_readthroughs}: (Beta) transcript coordinates of the detected ORFs readthroughs.\cr
-#' @seealso \code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}
+#' @seealso \code{\link{select_txs}}, \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{detect_readthrough}}, \code{\link{ORFquant_output}}
 #' @export
 
 ORFquant<-function(region,for_ORFquant,genetic_code_region,
@@ -3081,6 +3085,22 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
   return(res_orfs)
 }
 
+# ORFs_tx as a data.frame: one row per ORF, multiple values joined with ","
+ORFs_tx_as_table<-function(ORFs_tx){
+  df<-data.frame(seqnames=as.character(seqnames(ORFs_tx)),start=start(ORFs_tx),end=end(ORFs_tx),
+                 width=width(ORFs_tx),strand=as.character(strand(ORFs_tx)),stringsAsFactors=F)
+  for(n in names(mcols(ORFs_tx))){
+    v<-mcols(ORFs_tx)[[n]]
+    if(is(v,"GRanges") || is(v,"XStringSet") || is.factor(v)){
+      v<-as.character(v)
+    }else if(is(v,"List") || is.list(v)){
+      v<-vapply(as.list(v),function(x){paste(as.character(x),collapse=",")},"",USE.NAMES=F)
+    }
+    df[[n]]<-v
+  }
+  df
+}
+
 #' Run the ORFquant pipeline
 #'
 #' This wrapper function runs the entire ORFquant pipeline
@@ -3109,22 +3129,24 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
 #' @param unique_reads_only Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @param stn.orf_quant.scaling \code{orf_quant.scaling} parameter for the \code{ORFquant} function. Defaults to total_Psites
 #' @param canonical_start_only Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}.
-#' @return A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF and protein fasta files.\cr\cr
+#' @param write_TSV_file write a tab-separated file with one row per ORF, the \code{ORFs_tx} table. Defaults to \code{TRUE}
+#' @return A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF, TSV and protein fasta files.\cr\cr
 #' The description for each list object is as follows:\cr\cr
 #' \code{tmp_ORFquant_results}: (Optional) RData object file containing the entire set of results for each genomic region.\cr
 #' \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 #' \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
-#' \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr\cr
+#' \code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
+#' \code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}. \code{\link{ORFquant_output}} describes its columns.\cr\cr
 #' In addition, new columns are added in the ORFs_tx file:\cr\cr
 #' \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
-#' @seealso \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}
+#' @seealso \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}, \code{\link{ORFquant_output}}
 #' @export
 
 run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFquant_file,gene_name=NA,gene_id=NA,genomic_region=NA,
                        write_temp_files=T,write_GTF_file=T,write_protein_fasta=T,interactive=T,
                        stn.orf_find.all_starts=T,stn.orf_find.nostarts=F,stn.orf_find.start_sel_cutoff = NA,
                        stn.orf_find.start_sel_cutoff_ave = .5,stn.orf_find.cutoff_fr_ave=.5,
-                       stn.orf_quant.cutoff_cums = NA,stn.orf_quant.cutoff_pct = 2,stn.orf_quant.cutoff_P_sites=NA,unique_reads_only=F,canonical_start_only=T,stn.orf_quant.scaling="total_Psites"){    
+                       stn.orf_quant.cutoff_cums = NA,stn.orf_quant.cutoff_pct = 2,stn.orf_quant.cutoff_P_sites=NA,unique_reads_only=F,canonical_start_only=T,stn.orf_quant.scaling="total_Psites",write_TSV_file=T){    
   
   if(!stn.orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("stn.orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage"),date())}
   
@@ -3323,6 +3345,10 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFquant_results$psite_data_file <- for_ORFquant_file
   
   save(ORFquant_results ,file = paste(prefix,"final_ORFquant_results",sep="_"))
+  
+  if(write_TSV_file){
+    write.table(ORFs_tx_as_table(ORFquant_results$ORFs_tx),file=paste(prefix,"Detected_ORFs.tsv",sep="_"),sep="\t",quote=F,row.names=F)
+  }
   
   if(write_GTF_file){
     map_tx_genes<-mcols(ORFs_tx)[,c("ORF_id_tr","gene_id","gene_biotype","gene_name","transcript_id","transcript_biotype","P_sites","ORF_pct_P_sites","ORF_pct_P_sites_pN","ORFs_pM")]

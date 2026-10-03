@@ -40,6 +40,29 @@ None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
 deprecation warnings.
 
+## New features
+
+- `run_ORFquant()` also writes `<prefix>_Detected_ORFs.tsv`, a tab-separated
+  table with one row per ORF: the columns of `ORFs_tx`, starting with its
+  transcript coordinates, so the results can be read without R. Columns with
+  several values per ORF have them separated by commas, and ranges are written
+  as `seqname:start-end:strand`. `write_TSV_file = FALSE` turns it off. The
+  other output files don't change.
+- The script `run_orfquant.R`, installed with the package
+  (`system.file("scripts", "run_orfquant.R", package = "ORFquant")`), runs
+  `prepare_annotation_files()`, `prepare_for_ORFquant()` and `run_ORFquant()`
+  from the command line, each in a new R process, with their default
+  parameters, for example `Rscript run_orfquant.R --gtf genes.gtf --fasta
+  genome.fa --bam sample.bam --offsets cutoffs.tsv --outdir results`, and
+  lists the files it writes. `--annotation` reuses the annotation of an
+  earlier run; `--cores`, `--gene-names` and `--gene-ids` are passed to
+  `run_ORFquant()`; `--help` lists all options.
+- The script `run_orfquant.sbatch`, installed next to `run_orfquant.R`, runs
+  it as a SLURM job: `sbatch run_orfquant.sbatch` followed by
+  `run_orfquant.R`'s options, with `--cores` set to the job's CPUs. It asks
+  for 16 CPUs, 64 GB of memory and 24 hours, and its comments give the time
+  and memory measured on human samples.
+
 ## Changes in results
 
 - `run_ORFquant()` now applies `canonical_start_only = TRUE` (the default)
@@ -210,6 +233,23 @@ deprecation warnings.
 
 ## Documentation
 
+- The new help page `?ORFquant_output` (also `?ORFs_tx`) describes each
+  column of `ORFs_tx` and of `<prefix>_Detected_ORFs.tsv`, how ORFquant
+  computes it, and the values of `ORF_category_Tx`,
+  `ORF_category_Tx_compatible` and `ORF_category_Gen`.
+- Help pages that contradicted the code are corrected:
+  - `?select_quantify_ORFs` gave the defaults of `cutoff_cums`, `cutoff_pct`
+    and `cutoff_P_sites` as 99, 1 and 10; they are `NA` (not applied), 2 and
+    `NA`. It also said that `P_sites` is `P_sites_raw` divided by the scaling
+    factor, but it is multiplied by it.
+  - `?annotate_ORFs` called `N_truncation` an N-terminal extension. It said
+    that `compatible_with` holds transcript ids, but it holds ORF ids. Its
+    return value was described as that of `annotate_splicing()`.
+  - `?detect_translated_orfs` called `pct_fr` a percentage, but it is a
+    fraction.
+  - `?calc_orf_pval` said that `cutoff` applies to the average in-frame
+    signal per codon, but it applies to `pct_fr`. Its return value was
+    described as that of `select_start()`.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

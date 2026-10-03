@@ -23,14 +23,14 @@ calc_orf_pval(
 
 \item{P_sites_uniq_mm_rle}{Rle signal of uniquely mapping P_sites with mismatches along the transcript}
 
-\item{cutoff}{cutoff of average in-frame signal for each codon in the ORF. Defaults to .5}
+\item{cutoff}{cutoff of the fraction of the ORF's P_sites that are in frame (\code{pct_fr}): only ORFs above it, with P_sites at more than 2 positions, are tested. Defaults to .5}
 
 \item{tapers}{Number of tapers to use in the multitaper analysis. Defaults to 24}
 
 \item{bw}{time_bw parameter to use in the multitaper analysis. Defaults to 12}
 }
 \value{
-Set of detected ORFs, including info about the possible longest ORF for that frame.
+Set of detected ORFs, with the columns \code{pval}, \code{pval_uniq}, \code{P_sites_raw}, \code{P_sites_raw_uniq}, \code{P_sites_raw_uniq_mm}, \code{pct_fr} (a fraction, replacing the percentage from \code{select_start}) and \code{ORF_id_tr}; \code{pval} is \code{NA} for ORFs not tested.
 }
 \description{
 This function calculates statistics for the analysis of P_sites profiles for each ORF

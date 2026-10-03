@@ -54,15 +54,15 @@ detect_translated_orfs(
 A list with transcript coordinates, exonic coordinates and statistics for each ORF exonic bin and junction(from \code{select_txs}).\cr\cr
 The value for each column is as follows:\cr\cr
 \code{ave_pct_fr}: average percentage of in-frame reads for each codon in the ORF
-\code{pct_fr}: percentage of in-frame reads in the ORF
-\code{ave_pct_fr}: average percentage of in-frame reads for each codon in the ORF
+\code{pct_fr}: fraction (0 to 1) of in-frame reads in the ORF
 \code{ave_pct_fr_st}: average percentage of in-frame reads per each codon between the selected start codon and the next candidate one
 \code{pct_fr_st}: percentage of in-frame reads between the selected start codon and the next candidate one
 \code{longest_ORF}: GRanges coordinates for the longest ORF with the same stop codon
 \code{pval}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile
 \code{pval_uniq}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile (only uniquely mapping reads)
 \code{P_sites_raw}: Raw number of P_sites mapping to the ORF
-\code{P_sites_raw_unique}: Uniquely mapping P_sites mapping to the ORF
+\code{P_sites_raw_uniq}: Uniquely mapping P_sites mapping to the ORF
+\code{P_sites_raw_uniq_mm}: Uniquely mapping P_sites with mismatches mapping to the ORF
 \code{ORF_id_tr}: ORF id containing <tx_id>_<start>_<end>
 \code{Protein}: AAString sequence of the translated protein
 \code{region}: Genomic coordinates of the analyzed region
@@ -79,7 +79,7 @@ This function detects translated ORFs
 A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
 }
 \seealso{
-\code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}
+\code{\link{select_txs}}, \code{\link{get_orfs}}, \code{\link{take_Fvals_spect}}, \code{\link{select_start}}, \code{\link{prepare_annotation_files}}, \code{\link{ORFquant_output}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

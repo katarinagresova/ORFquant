@@ -161,7 +161,8 @@ ORFquant_results <- run_ORFquant(for_ORFquant_file = for_ORFquant_file,
 
 It writes the results to `<prefix>_final_ORFquant_results` (load them with
 `get(load())`), the detected ORFs and the selected transcripts to
-`<prefix>_Detected_ORFs.gtf`, and the ORFs' protein sequences to
+`<prefix>_Detected_ORFs.gtf`, the `ORFs_tx` table below, one row per ORF, to
+`<prefix>_Detected_ORFs.tsv`, and the ORFs' protein sequences to
 `<prefix>_Protein_sequences.fasta`:
 
 ```{r output_files}
@@ -179,8 +180,10 @@ p-values, annotation and `ORFs_pM` (P-sites per ORF length, scaled to sum to a
 million over all ORFs, akin to TPM). `ORF_category_Tx` compares the ORF with
 the CDS annotated on the same transcript (for example `ORF_annotated`, `uORF`,
 `dORF` or `N_truncation`; `novel` on transcripts without an annotated CDS), and
-`ORF_category_Gen` with all CDS annotated in the genomic region (for example
-`exact_start_stop` or `Alt3_start`):
+`ORF_category_Gen` with the longest CDS annotated in the ORF's gene, in genomic
+coordinates (for example `exact_start_stop` or `Alt3_start`; `novel` and
+`novel_*` for ORFs that overlap no annotated CDS). `?ORFquant_output` describes
+every column and category:
 
 ```{r orfs_tx}
 orfs <- ORFquant_results$ORFs_tx
@@ -208,7 +211,8 @@ ORFquant_results$ORFs_gen[names(ORFquant_results$ORFs_gen) %in% tcn2_orfs]
 ORFquant_results$selected_txs
 ```
 
-`?run_ORFquant` and `?ORFquant` describe every element of the results.
+`?run_ORFquant` and `?ORFquant` describe every element of the results, and
+`?ORFquant_output` the columns of `ORFs_tx`.
 
 
 ## Plots and report
@@ -276,6 +280,23 @@ sample SRR15513199 and GENCODE 47, `run_ORFquant()` took 55 minutes
 with `n_cores = 36` and used about 63 GB of memory. Run it on a compute
 cluster; `n_cores` above 1 uses forked processes, on Linux or macOS. Run each
 step in a new R session, for example with `Rscript`.
+
+The script `run_orfquant.R`, installed with ORFquant, runs the three steps from
+the command line, each in a new R process, with their default parameters, and
+lists the files it writes:
+
+```sh
+Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam \
+  --offsets sample_cutoffs.tsv --outdir results --cores 4
+```
+
+With `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and
+`--fasta`, it reuses the annotation for other samples. `--gene-names` and
+`--gene-ids` restrict the analysis to some genes, and `--help` lists all
+options. On a SLURM cluster, `run_orfquant.sbatch`, installed next to it, runs
+it as a job: `sbatch run_orfquant.sbatch` followed by the same options, without
+`--cores`. Its comments give the time and memory it needs.
 
 
 ## References

@@ -65,7 +65,8 @@ prepare_for_ORFquant(annotation_file = "annotation/genes.gtf_Rannot",
                      dest_name = "sample")
 
 # 3. Find and quantify ORFs: writes sample_final_ORFquant_results,
-#    sample_Detected_ORFs.gtf and sample_Protein_sequences.fasta
+#    sample_Detected_ORFs.gtf, sample_Detected_ORFs.tsv and
+#    sample_Protein_sequences.fasta
 run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
              annotation_file = "annotation/genes.gtf_Rannot",
              n_cores = 4,
@@ -74,7 +75,7 @@ run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
 
 The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package can also create the input of step 3 from a Ribo-seq BAM file.
 
-`sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. See `?run_ORFquant` and `?ORFquant`.
+`sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. `sample_Detected_ORFs.tsv` has the `ORFs_tx` table, one row per ORF, for use without R. `?ORFquant_output` describes each of its columns and the ORF categories; see also `?run_ORFquant` and `?ORFquant`.
 
 Plots and an HTML report of the results:
 
@@ -86,6 +87,26 @@ create_ORFquant_html_report(input_files = "sample_final_ORFquant_results_plots/s
                             input_sample_names = "sample",
                             output_file = "sample_ORFquant_report.html")
 ```
+
+The script `run_orfquant.R`, installed with the package, runs the three steps from the command line, each in a new R process, with their default parameters:
+
+```sh
+Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam --offsets sample_cutoffs.tsv \
+  --outdir results --cores 4
+```
+
+It writes the annotation to `results/annotation` and the other files to `results/sample_*`, as above, and lists them at the end. For other samples, `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and `--fasta` reuses the annotation. `--gene-names` and `--gene-ids` restrict the analysis to the genomic regions of some genes; `--help` lists all options.
+
+On a SLURM cluster, `run_orfquant.sbatch`, installed next to it, runs it as a job, with `--cores` set to the job's CPUs:
+
+```sh
+sbatch $(Rscript -e 'cat(system.file("scripts", "run_orfquant.sbatch", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam --offsets sample_cutoffs.tsv \
+  --outdir results
+```
+
+It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 7 h 46 min and 45 GB. Its comments give more measurements and say how to change these resources.
 
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
