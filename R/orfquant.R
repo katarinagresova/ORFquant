@@ -526,11 +526,12 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   orfs_gen_gr<-GRangesList()
   annot_tx_cds_gr<-GRangesList()
   cdss<-annotation$cds_txs
-  exss<-annotation$exons_txs
   intr_txs<-annotation$introns_txs
   tr_gen<-annotation$trann
   txs_sels<-unique(unlist(selected_txs$txs_selected))
   annot_sels<-annotation$exons_txs[txs_sels]
+  # the selected transcripts' introns, looked up below: a lookup by name in the genome-wide list costs ~20 ms
+  intr_sels<-intr_txs[names(intr_txs)%in%txs_sels]
   mapp<-mapToTranscripts(P_sites,annot_sels)
   mapp$reads<-P_sites$score[mapp$xHits]
   lens_sels<-sum(width(annot_sels))
@@ -562,9 +563,9 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   
   for(tx in txs_sels){
     
-    ex_txs<-exss[tx]
+    ex_txs<-annot_sels[tx]
     ex_tx<-ex_txs[[1]]
-    intr_tx<-intr_txs[[tx]]
+    intr_tx<-intr_sels[[tx]]
     nm_cds<-which(names(cdss)==tx)
     #map cds in tx space
     
@@ -3329,6 +3330,13 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   pcts_leng<-as.integer(seq(1,lengg,length.out = 11))
   labs_top<-paste(c(0,seq(10,100,by = 10)),"% completed\n",sep = "")
   
+  #each region's P-sites and junctions, found once: ORFquant() takes them from the genome-wide
+  #objects with a %over% per region, 10-30 ms each, so it gets only its region's part (as is, in order)
+  regions_idx<-lapply(for_ORFquant_data[c("P_sites_all","P_sites_uniq","P_sites_uniq_mm","junctions")],function(x){
+    hts<-findOverlaps(x,genes_red)
+    split(queryHits(hts),factor(subjectHits(hts),levels=seq_along(genes_red)))
+  })
+  
   if(n_cores>1){
     ORFs_found<-foreach(g=(1:length(genes_red)),.packages=c('GenomicRanges')) %dopar%{
       
@@ -3343,8 +3351,12 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
         attributes(genetcd)$alt_init_codons<-names(which(genetcd=="M"))
       }
       
+      for_ORFquant_region<-for_ORFquant_data
+      for(n in names(regions_idx)){
+        for_ORFquant_region[[n]]<-for_ORFquant_data[[n]][regions_idx[[n]][[g]]]
+      }
       
-      ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code_region=genetcd,
+      ORFquant(region=gen_region,for_ORFquant=for_ORFquant_region,genetic_code_region=genetcd,
                orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
                orf_find.start_sel_cutoff = stn.orf_find.start_sel_cutoff,orf_find.start_sel_cutoff_ave = stn.orf_find.start_sel_cutoff_ave,
                orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
@@ -3369,7 +3381,12 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
         attributes(genetcd)$alt_init_codons<-names(which(genetcd=="M"))
       }
       
-      ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_data,genetic_code_region=genetcd,
+      for_ORFquant_region<-for_ORFquant_data
+      for(n in names(regions_idx)){
+        for_ORFquant_region[[n]]<-for_ORFquant_data[[n]][regions_idx[[n]][[g]]]
+      }
+      
+      ORFs_found[[g]]<-ORFquant(region=gen_region,for_ORFquant=for_ORFquant_region,genetic_code_region=genetcd,
                                 orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
                                 orf_find.start_sel_cutoff = stn.orf_find.start_sel_cutoff,orf_find.start_sel_cutoff_ave = stn.orf_find.start_sel_cutoff_ave,
                                 orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
