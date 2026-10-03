@@ -241,6 +241,17 @@ deprecation warnings.
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.
 
+## Performance
+
+- `run_ORFquant()` is faster. It translated transcripts and ORFs with
+  `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per call
+  building a table of the codons with ambiguous bases, such as N. It now
+  skips that for sequences with only A, C, G and T, which give the same
+  protein without it. With one core, a run on chr21 of a human sample took
+  659 s instead of 717 s (8% less); with 8 cores, the expected saving (about
+  7 s) was smaller than the variation between runs. Results don't change: on
+  our test data and on chr21, all outputs are the same as before.
+
 ## Documentation
 
 - The new help page `?ORFquant_output` (also `?ORFs_tx`) describes each
