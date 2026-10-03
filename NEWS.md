@@ -57,6 +57,11 @@ deprecation warnings.
   lists the files it writes. `--annotation` reuses the annotation of an
   earlier run; `--cores`, `--gene-names` and `--gene-ids` are passed to
   `run_ORFquant()`; `--help` lists all options.
+- The script `run_orfquant.sbatch`, installed next to `run_orfquant.R`, runs
+  it as a SLURM job: `sbatch run_orfquant.sbatch` followed by
+  `run_orfquant.R`'s options, with `--cores` set to the job's CPUs. It asks
+  for 16 CPUs, 64 GB of memory and 24 hours, and its comments give the time
+  and memory measured on human samples.
 
 ## Changes in results
 

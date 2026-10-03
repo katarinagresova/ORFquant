@@ -98,6 +98,16 @@ Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "OR
 
 It writes the annotation to `results/annotation` and the other files to `results/sample_*`, as above, and lists them at the end. For other samples, `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and `--fasta` reuses the annotation. `--gene-names` and `--gene-ids` restrict the analysis to the genomic regions of some genes; `--help` lists all options.
 
+On a SLURM cluster, `run_orfquant.sbatch`, installed next to it, runs it as a job, with `--cores` set to the job's CPUs:
+
+```sh
+sbatch $(Rscript -e 'cat(system.file("scripts", "run_orfquant.sbatch", package = "ORFquant"))') \
+  --gtf genes.gtf --fasta genome.fa --bam sample.bam --offsets sample_cutoffs.tsv \
+  --outdir results
+```
+
+It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 7 h 46 min and 45 GB. Its comments give more measurements and say how to change these resources.
+
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
 

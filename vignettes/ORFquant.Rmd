@@ -294,7 +294,9 @@ Rscript $(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "OR
 With `--annotation results/annotation/genes.gtf_Rannot` instead of `--gtf` and
 `--fasta`, it reuses the annotation for other samples. `--gene-names` and
 `--gene-ids` restrict the analysis to some genes, and `--help` lists all
-options.
+options. On a SLURM cluster, `run_orfquant.sbatch`, installed next to it, runs
+it as a job: `sbatch run_orfquant.sbatch` followed by the same options, without
+`--cores`. Its comments give the time and memory it needs.
 
 
 ## References
