@@ -246,7 +246,7 @@ deprecation warnings.
 - `run_ORFquant()` is faster. With one core, a run on chr21 of a human
   sample takes 431 s instead of 704 s (39% less), and with 8 cores 90 s
   instead of 145 s. Results don't change: on our test data and on chr21,
-  all outputs are the same as before. Four changes make it faster:
+  all outputs are the same as before. Five changes make it faster:
   - It translated transcripts and ORFs with
     `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per
     call building a table of the codons with ambiguous bases, such as N. It
@@ -259,8 +259,17 @@ deprecation warnings.
   - `annotate_ORFs()` mapped each ORF to the annotated transcripts one
     transcript at a time; it now maps it to all of them in one call.
     `annotate_splicing()` looked for the annotated CDS exons overlapping
-    each exon of an ORF, and added the exon to its result with `c()` and
-    `sort()`, one exon at a time; it now does each once per ORF.
+    each exon of an ORF, set the exon's columns, and added the exon to its
+    result with `c()` and `sort()`, one exon at a time; it now does each
+    once per ORF.
+  - Each genomic region looked for its P-sites and junctions among those of
+    the whole genome, which takes 12 to 32 ms per region for each of the
+    three P-site tracks and the junctions on a human sample.
+    `run_ORFquant()` now finds them for all regions at once and gives each
+    region only its own. Likewise, `detect_translated_orfs()` looked up
+    each transcript's exons and introns by name among all annotated
+    transcripts, about 20 ms per lookup with a human annotation; it now
+    looks them up among the region's selected transcripts.
   - The last step, which combines the results of all genomic regions,
     combined them with `GRangesList()`, which handles the columns and the
     sequence information (Seqinfo) of its elements one element at a time.
