@@ -2130,6 +2130,9 @@ annotate_splicing<-function(orf_gen,ref_cds){
   
   orf_gen<-sort(orf_gen)
   if(length(orf_gen)>0){
+    # overlaps found and exons combined once, not per exon: each GRanges op costs several ms
+    ov_ref<-findOverlaps(orf_gen,ref_cds)
+    rans<-list()
     for(f in 1:length(orf_gen)){
       ran<-orf_gen[f]
       # ref and spl_type are set on ran once, below: each GRanges $<- costs ~6 ms
@@ -2137,7 +2140,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
       spl_type<-NULL
       last_ex<-length(orf_gen)
       if(overref[f]==T){
-        ref_over<-ref_cds[ref_cds%over%ran]
+        ref_over<-ref_cds[subjectHits(ov_ref)[queryHits(ov_ref)==f]]
         #annotate for 5' and 3'; porcoddio
         
         if(length(ref_over)>1){
@@ -2476,10 +2479,11 @@ annotate_splicing<-function(orf_gen,ref_cds){
       }
       ran$ref<-ref
       ran$spl_type<-spl_type
-      spl_ran<-sort(c(spl_ran,ran))
+      rans[[f]]<-ran
       
       
     }
+    spl_ran<-sort(do.call(c,c(list(spl_ran),rans)))
     
   }
   
@@ -2615,11 +2619,12 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   for(i in names(ORFs_gen)){
     x<-ORFs_gen[[i]]
     comp<-c()
-    for(jjj in names(annotated_exons_tx)){
-      mapp<-reduce(mapToTranscripts(x,transcripts = annotated_exons_tx[jjj]))
-      if(sum(width(mapp))==sum(width(x)) & length(mapp)==1){
-        comp<-c(comp,paste(seqnames(mapp),start(mapp),end(mapp),sep="_"))
-      }
+    # one mapToTranscripts for all transcripts, then split: a call per transcript costs ~50 ms
+    mapp<-mapToTranscripts(x,transcripts = annotated_exons_tx)
+    mapp<-reduce(split(mapp,seqnames(mapp)))
+    mapp<-unlist(mapp[sum(width(mapp))==sum(width(x)) & elementNROWS(mapp)==1])
+    if(length(mapp)>0){
+      comp<-paste(seqnames(mapp),start(mapp),end(mapp),sep="_")
     }
     names(comp)<-NULL
     ORFs_tx[[i]]$compatible_with<-NULL
