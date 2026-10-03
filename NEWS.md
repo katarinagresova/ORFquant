@@ -132,6 +132,16 @@ deprecation warnings.
 - `prepare_annotation_files()` now stops with an error saying that the GTF
   file has no CDS lines when it has none, for example StringTie's output.
   Before, it failed with `wrong sign in 'by' argument`.
+- `prepare_annotation_files()` no longer fails with `<n> elements in value to
+  replace <m> elements` when the GTF has genes with exons on both strands or
+  on more than one chromosome, for example UCSC's RefSeq GTF
+  (`hg38.ncbiRefSeq.gtf`), whose genes in the pseudoautosomal regions have
+  the same id on chrX and chrY. The annotation's `genes` leaves these genes
+  out, as before, and their UTR, intron and non-coding exon regions get no
+  gene id. With such genes, `run_ORFquant()` with `gene_name` or `gene_id`,
+  `plot_ORFquant_results()` and `plot_orfquant_locus()` no longer fail with
+  `subscript contains invalid names`. Other GTFs give the same annotation
+  and results.
 - `run_ORFquant()` no longer fails with `missing value where TRUE/FALSE
   needed` (with more than one core, `task 1 failed - "missing value where
   TRUE/FALSE needed"`) when the transcript of an ORF has no biotype in the

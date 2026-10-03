@@ -71,7 +71,7 @@ the most upstream/downstream start/stop codons and the start/stop codons residin
 \code{exons_txs}: GRangesList including exons grouped by transcript.\cr
 \code{exons_bins}: the list of exonic bins with associated transcripts and genes.\cr
 \code{junctions}: the list of annotated splice junctions, with associated transcripts and genes.\cr
-\code{genes}: annotated genes coordinates.\cr
+\code{genes}: annotated genes coordinates, without genes with exons on both strands or on more than one chromosome.\cr
 \code{threeutrs}: collapsed set of 3'UTR regions, with correspinding gene_ids. This set does not overlap CDS region.\cr
 \code{fiveutrs}: collapsed set of 5'UTR regions, with correspinding gene_ids. This set does not overlap CDS region.\cr
 \code{ncIsof}: collapsed set of exonic regions of protein_coding genes, with correspinding gene_ids. This set does not overlap CDS region.\cr
