@@ -198,8 +198,11 @@ get_orfs<-function(tx_name,sequence,get_all_starts=T,Stop_Stop=F,scores=c(1,.5),
       gra_orf<-reduce(GRanges(seqnames = paste(tx_name,"frame",u,sep = "_"),strand = "*",ranges = IRanges(start = st_st[,1],end = st_st[,2])))
     }
     if(length(gra_orf)>0){
-      gra_orf$type="ORF"
-      gra_orf$score<-scores[1]
+      # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+      cols<-mcols(gra_orf)
+      cols$type="ORF"
+      cols$score<-scores[1]
+      mcols(gra_orf)<-cols
     }
     
     gra_par<-GRanges()
@@ -374,8 +377,11 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       infr<-sum(psit[seq(1,length(psit),by=3)])/sum(psit)
       if(!is.na(cutoff)){
         if(infr>=cutoff & !is.na(infr)){
-          x$ave_pct_fr_st[cnt]<-round(infr_freq,digits = 4)
-          x$pct_fr_st[cnt]<-round(infr,digits = 4)
+          # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+          cols<-mcols(x)
+          cols$ave_pct_fr_st[cnt]<-round(infr_freq,digits = 4)
+          cols$pct_fr_st[cnt]<-round(infr,digits = 4)
+          mcols(x)<-cols
           okorfa<-cnt
           break
         }
@@ -383,8 +389,10 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       
       if(!is.na(cutoff_ave)){
         if(infr_freq>=cutoff_ave & !is.na(infr_freq)){
-          x$ave_pct_fr_st[cnt]<-round(infr_freq*100,digits = 4)
-          x$pct_fr_st[cnt]<-round(infr*100,digits = 4)
+          cols<-mcols(x)
+          cols$ave_pct_fr_st[cnt]<-round(infr_freq*100,digits = 4)
+          cols$pct_fr_st[cnt]<-round(infr*100,digits = 4)
+          mcols(x)<-cols
           okorfa<-cnt
           break
         }
@@ -398,7 +406,7 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
   })
   ORFs<-unlist(ORFs)
   names(ORFs)<-NULL
-  ORFs$longest_ORF<-longest_ORF[match(end(ORFs),names(longest_ORF))]
+  mcols(ORFs)$longest_ORF<-longest_ORF[match(end(ORFs),names(longest_ORF))]
   return(ORFs)
   
 }
@@ -464,13 +472,16 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
       }
     }
   }
-  ORFs$pval<-pval
-  ORFs$pval_uniq<-pval_uniq
-  ORFs$P_sites_raw<-P_sites_raw
-  ORFs$P_sites_raw_uniq<-P_sites_raw_uniq
-  ORFs$P_sites_raw_uniq_mm<-P_sites_raw_uniq_mm
-  ORFs$pct_fr<-pct_fr
-  ORFs$ORF_id_tr<-ORF_id_tr
+  # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+  cols<-mcols(ORFs)
+  cols$pval<-pval
+  cols$pval_uniq<-pval_uniq
+  cols$P_sites_raw<-P_sites_raw
+  cols$P_sites_raw_uniq<-P_sites_raw_uniq
+  cols$P_sites_raw_uniq_mm<-P_sites_raw_uniq_mm
+  cols$pct_fr<-pct_fr
+  cols$ORF_id_tr<-ORF_id_tr
+  mcols(ORFs)<-cols
   return(ORFs)
 }
 
@@ -533,7 +544,8 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   # the selected transcripts' introns, looked up below: a lookup by name in the genome-wide list costs ~20 ms
   intr_sels<-intr_txs[names(intr_txs)%in%txs_sels]
   mapp<-mapToTranscripts(P_sites,annot_sels)
-  mapp$reads<-P_sites$score[mapp$xHits]
+  # mcols(x)$col<- rather than x$col<-: a GRanges $<- also runs updateObject() (~20 ms)
+  mcols(mapp)$reads<-P_sites$score[mapp$xHits]
   lens_sels<-sum(width(annot_sels))
   seqm<-seqlengths(mapp)
   seqlengths(mapp)<-lens_sels[match(names(seqm),names(lens_sels))]
@@ -541,7 +553,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   
   mapp<-mapToTranscripts(P_sites_uniq,annot_sels)
   if(length(P_sites_uniq)>0){
-    mapp$reads<-P_sites_uniq$score[mapp$xHits]
+    mcols(mapp)$reads<-P_sites_uniq$score[mapp$xHits]
     seqm<-seqlengths(mapp)
     seqlengths(mapp)<-lens_sels[match(names(seqm),names(lens_sels))]
     cov_uniq_txs<-coverage(mapp,weight = mapp$reads)
@@ -554,7 +566,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   if(length(P_sites_uniq_mm)==0){cov_uniq_mm_txs<-coverage(mapp)}
   
   if(length(P_sites_uniq_mm)>0){
-    mapp$reads<-P_sites_uniq_mm$score[mapp$xHits]
+    mcols(mapp)$reads<-P_sites_uniq_mm$score[mapp$xHits]
     seqm<-seqlengths(mapp)
     seqlengths(mapp)<-lens_sels[match(names(seqm),names(lens_sels))]
     cov_uniq_mm_txs<-coverage(mapp,weight = mapp$reads)
@@ -595,25 +607,29 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     }
     if(length(orfs)==0){next}
     #orfs$gene_id<-mapIds(keys = tx,x = annot,column = "GENEID",keytype = "TXNAME")
-    orfs$Protein<-AAStringSet(rep("NA",length(orfs)))
+    # proteins are collected in an AAStringSet and set once: a GRanges $<- per ORF costs ~20 ms
+    Protein<-AAStringSet(rep("NA",length(orfs)))
     for(h in 1:length(orfs)){
-      orfs$Protein[h]<-AAStringSet(as.character(translate_solve(seq_tx[orfs@ranges[h]],genetic.code = genetic_code)))
+      Protein[h]<-AAStringSet(as.character(translate_solve(seq_tx[orfs@ranges[h]],genetic.code = genetic_code)))
     }
+    orfs$Protein<-Protein
     #orfs$Protein<-AAStringSet(orfs$Protein)
     orfs_gen<-from_tx_togen(ORFs = orfs,exons = ex_txs,introns = intr_tx)
     #here I should annotate
     
     tr_gen_tx<-tr_gen[as.vector(match(seqnames(orfs)[1],tr_gen[,"transcript_id"])),]
     
-    orfs$region<-genomic_region
-    orfs$gene_id<-unique(as.character(tr_gen_tx[,"gene_id"]))
-    orfs$gene_biotype<-unique(as.character(tr_gen_tx[,"gene_biotype"]))
-    orfs$gene_name<-unique(as.character(tr_gen_tx[,"gene_name"]))
-    orfs$transcript_id<-unique(as.character(tr_gen_tx[,"transcript_id"]))
-    orfs$transcript_biotype<-unique(as.character(tr_gen_tx[,"transcript_biotype"]))
+    cols<-mcols(orfs)
+    cols$region<-genomic_region
+    cols$gene_id<-unique(as.character(tr_gen_tx[,"gene_id"]))
+    cols$gene_biotype<-unique(as.character(tr_gen_tx[,"gene_biotype"]))
+    cols$gene_name<-unique(as.character(tr_gen_tx[,"gene_name"]))
+    cols$transcript_id<-unique(as.character(tr_gen_tx[,"transcript_id"]))
+    cols$transcript_biotype<-unique(as.character(tr_gen_tx[,"transcript_biotype"]))
     
     #must add the other compatible txs, to avoid calculating same stuff
-    orfs$compatible_with<-NA
+    cols$compatible_with<-NA
+    mcols(orfs)<-cols
     for(w in 1:length(orfs)){
       orf<-orfs[w]
       nam<-orf$ORF_id_tr
@@ -632,14 +648,16 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     x[-c(len-1,len)]
   }))
   a<-lapply(selected_txs$txs,function(x){x[x%in%tx_orfs]})
-  selected_txs$txs_orfs<-CharacterList(a)
+  cols<-mcols(selected_txs)
+  cols$txs_orfs<-CharacterList(a)
   
-  check<-sapply(selected_txs$txs_orfs,FUN = length)
+  check<-sapply(cols$txs_orfs,FUN = length)
   use<-rep("shared",length(check))
   use[check==1]<-"unique"
   use[check==0]<-"absent"
   use[check>1]<-"shared"
-  selected_txs$use_ORFs<-use
+  cols$use_ORFs<-use
+  mcols(selected_txs)<-cols
   
   orfs_unq_gr<-list()
   
@@ -666,8 +684,6 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     
     ident_mat<-matrix(FALSE,nrow=length(orfs_gr),ncol=length(orfs_gr))
     for(i in names(orfs_gr)){
-      orf<-orfs_gr[[i]]
-      orf$compatible_with<-NA
       gen<-orfs_gen_gr[[i]]
       
       ident<-c()
@@ -762,10 +778,13 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
   sel_nsns<-nsns%over%region
   gen_nsns<-nsns[sel_nsns]
   genbin<-gen_nsns
-  genbin$exonic_part<-NULL
-  genbin$type<-"E"
-  genbin$reads<-0
-  genbin$unique_reads<-0
+  # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+  cols<-mcols(genbin)
+  cols$exonic_part<-NULL
+  cols$type<-"E"
+  cols$reads<-0
+  cols$unique_reads<-0
+  mcols(genbin)<-cols
   
   d<-genbin$reads
   
@@ -776,7 +795,7 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
     for(i in 1:dim(hts)[1]){
       d[hts[i,1]]<-hts[i,2]
     }
-    genbin$reads<-d
+    mcols(genbin)$reads<-d
     
   }
   d<-genbin$unique_reads
@@ -788,15 +807,17 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
     for(i in 1:dim(hts)[1]){
       d[hts[i,1]]<-hts[i,2]
     }
-    genbin$unique_reads<-d
+    mcols(genbin)$unique_reads<-d
     
   }
   mcols(genbin)<-mcols(genbin)[,c("tx_name","gene_id","type","reads","unique_reads")]
   mcols(gene_feat)<-mcols(gene_feat)[,names(mcols(genbin))]
   
   gene_feat<-sort(c(gene_feat,genbin))
-  gene_feat$txs<-gene_feat$tx_name
-  gene_feat$tx_name<-NULL
+  cols<-mcols(gene_feat)
+  cols$txs<-cols$tx_name
+  cols$tx_name<-NULL
+  mcols(gene_feat)<-cols
   
   
   rang<-gene_feat
@@ -823,11 +844,13 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
   
   gen_bins_junct<-gene_feat
   if(length(txs_gene)<2){
-    gen_bins_junct$genes<-b
-    gen_bins_junct$txs<-a
-    gen_bins_junct$genes_selected<-b
-    gen_bins_junct$txs_selected<-a
-    gen_bins_junct$use<-"unique"
+    cols<-mcols(gen_bins_junct)
+    cols$genes<-b
+    cols$txs<-a
+    cols$genes_selected<-b
+    cols$txs_selected<-a
+    cols$use<-"unique"
+    mcols(gen_bins_junct)<-cols
     final_ranges<-sort(gen_bins_junct)
     return(final_ranges)
   }
@@ -977,23 +1000,25 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
     change<-abs(length(txs_good)-length(txs_sofar))
   }
   
-  gen_bins_junct$genes<-b
-  gen_bins_junct$txs<-a
+  cols<-mcols(gen_bins_junct)
+  cols$genes<-b
+  cols$txs<-a
   a<-lapply(a,function(x){x[x%in%txs_sofar]})
   
   genes_sofar<-unique(subset(annotation$trann,annotation$trann$transcript_id%in%txs_sofar)$gene_id)
   
   b<-lapply(b,function(x){x[x%in%genes_sofar]})
-  gen_bins_junct$genes_selected<-CharacterList(b)
-  gen_bins_junct$txs_selected<-CharacterList(a)
+  cols$genes_selected<-CharacterList(b)
+  cols$txs_selected<-CharacterList(a)
   
-  check<-sapply(gen_bins_junct$txs,FUN = length)
+  check<-sapply(cols$txs,FUN = length)
   use<-rep("shared",length(check))
   use[check==1]<-"unique"
   use[check==0]<-"absent"
   use[check>1]<-"shared"
   
-  gen_bins_junct$use<-use
+  cols$use<-use
+  mcols(gen_bins_junct)<-cols
   final_ranges<-sort(gen_bins_junct)
   return(final_ranges)
 }
@@ -1359,17 +1384,22 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   }
   
   
-  exbin$reads<-d
-  exbin$unique_reads<-d2
+  # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+  cols<-mcols(exbin)
+  cols$reads<-d
+  cols$unique_reads<-d2
+  mcols(exbin)<-cols
   
   exbin<-GRanges(exbin)
   
-  exbin$gene_id<-NULL
-  exbin$exonic_part<-NULL
-  exbin$X<-NULL
+  cols<-mcols(exbin)
+  cols$gene_id<-NULL
+  cols$exonic_part<-NULL
+  cols$X<-NULL
+  mcols(exbin)<-cols
   mcols(exbin)<-exbin[,c("reads","unique_reads","tx_name")]
   gene_feat<-exbin
-  gene_feat$type<-rep("E",length(exbin))
+  mcols(gene_feat)$type<-rep("E",length(exbin))
   
   if(length(select_feats_jun)>0){
     junc<-select_feats_jun
@@ -1377,9 +1407,11 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     reads_j<-junc$reads
     reads_j_uniq<-junc$unique_reads
     mcols(junc)<-NULL
-    junc$X<-junc
-    junc$reads<-reads_j
-    junc$unique_reads<-reads_j_uniq
+    cols<-mcols(junc)
+    cols$X<-junc
+    cols$reads<-reads_j
+    cols$unique_reads<-reads_j_uniq
+    mcols(junc)<-cols
     
     orfs_jj<-orfs_print2[match(df$stend,names(orfs_print2))]
     #junc$tx_name<-as(orfs_jj,"CharacterList")
@@ -1388,20 +1420,22 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     mcols(exbin)<-exbin[,c("reads","unique_reads")]
     
     gene_feat<-c(exbin,junc)
+    cols<-mcols(gene_feat)
     if(is(orfs_jj,"CompressedList")){
-      gene_feat$tx_name<-CharacterList(c(tx_ex,orfs_jj))
+      cols$tx_name<-CharacterList(c(tx_ex,orfs_jj))
     }
     
     if(!is(orfs_jj,"CompressedList")){
       if(is.list(orfs_jj)){
-        gene_feat$tx_name<-CharacterList(c(tx_ex,CharacterList(orfs_jj)))
+        cols$tx_name<-CharacterList(c(tx_ex,CharacterList(orfs_jj)))
       }
       if(!is.list(orfs_jj)){
-        gene_feat$tx_name<-CharacterList(c(tx_ex,CharacterList(as.list(orfs_jj))))
+        cols$tx_name<-CharacterList(c(tx_ex,CharacterList(as.list(orfs_jj))))
       }
     }
     
-    gene_feat$type<-c(rep("E",length(exbin)),rep("J",length(junc)))
+    cols$type<-c(rep("E",length(exbin)),rep("J",length(junc)))
+    mcols(gene_feat)<-cols
   }
   
   #first round
@@ -1563,25 +1597,27 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     change<-abs(length(txs_good)-length(txs_sofar))
   }
   
-  gene_feat$ORF_id_tr<-gene_feat$tx_name
-  gene_feat$tx_name<-NULL
-  a<-gene_feat$ORF_id_tr
+  cols<-mcols(gene_feat)
+  cols$ORF_id_tr<-cols$tx_name
+  cols$tx_name<-NULL
+  a<-cols$ORF_id_tr
   a<-lapply(a,function(x){x[x%in%txs_good]})
-  gene_feat$ORF_id_tr_selected<-CharacterList(a)
+  cols$ORF_id_tr_selected<-CharacterList(a)
   
-  check<-sapply(gene_feat$ORF_id_tr,FUN = length)
+  check<-sapply(cols$ORF_id_tr,FUN = length)
   use<-rep("shared",length(check))
   use[check==1]<-"unique"
   use[check==0]<-"absent"
   use[check>1]<-"shared"
-  gene_feat$use_ORF<-use
+  cols$use_ORF<-use
   
-  check<-sapply(gene_feat$ORF_id_tr_selected,FUN = length)
+  check<-sapply(cols$ORF_id_tr_selected,FUN = length)
   use<-rep("shared",length(check))
   use[check==1]<-"unique"
   use[check==0]<-"absent"
   use[check>1]<-"shared"
-  gene_feat$use_ORF_selected<-use
+  cols$use_ORF_selected<-use
+  mcols(gene_feat)<-cols
   
   final_ranges<-sort(gene_feat)
   sel_feats<-list()
@@ -1622,8 +1658,10 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   
   orf_del<-c("")
   counter<-1
-  gene_feat$ORF_id_tr_selected_quant<- gene_feat$ORF_id_tr_selected
-  gene_feat$use_ORF_selected_quant<-gene_feat$use_ORF_selected
+  cols<-mcols(gene_feat)
+  cols$ORF_id_tr_selected_quant<- cols$ORF_id_tr_selected
+  cols$use_ORF_selected_quant<-cols$use_ORF_selected
+  mcols(gene_feat)<-cols
   
   while(length(orf_del)>0){
     
@@ -1633,21 +1671,25 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     feats<-unlist(GRangesList(unlist(feats)))
     names(feats)<-nms
     
-    feats$ORF_id_tr_selected<-CharacterList(lapply(feats$ORF_id_tr_selected,function(x){
+    cols_f<-mcols(feats)
+    cols_f$ORF_id_tr_selected<-CharacterList(lapply(cols_f$ORF_id_tr_selected,function(x){
       unique(x[!x%in%orf_del])
     }))
     
-    gene_feat$ORF_id_tr_selected_quant<-CharacterList(lapply(gene_feat$ORF_id_tr_selected_quant,function(x){
+    cols<-mcols(gene_feat)
+    cols$ORF_id_tr_selected_quant<-CharacterList(lapply(cols$ORF_id_tr_selected_quant,function(x){
       unique(x[!x%in%orf_del])
     }))
-    lens<-sapply(feats$ORF_id_tr_selected,length)
-    lens2<-sapply(gene_feat$ORF_id_tr_selected_quant,length)
-    gene_feat$use_ORF_selected_quant<-"shared"
-    gene_feat$use_ORF_selected_quant[lens2==1]<-"unique"
-    gene_feat$use_ORF_selected_quant[lens2==0]<-"absent"
+    lens<-sapply(cols_f$ORF_id_tr_selected,length)
+    lens2<-sapply(cols$ORF_id_tr_selected_quant,length)
+    cols$use_ORF_selected_quant<-"shared"
+    cols$use_ORF_selected_quant[lens2==1]<-"unique"
+    cols$use_ORF_selected_quant[lens2==0]<-"absent"
+    mcols(gene_feat)<-cols
     
-    feats$use_ORF_selected<-"shared"
-    feats$use_ORF_selected[lens==1]<-"unique"
+    cols_f$use_ORF_selected<-"shared"
+    cols_f$use_ORF_selected[lens==1]<-"unique"
+    mcols(feats)<-cols_f
     feats<-split(feats,names(feats))
     
     orfs_tx<-orfs_tx[!names(orfs_tx)%in%orf_del]
@@ -1678,13 +1720,15 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       if(sum(unq)>0){
         unq_rat<-mean(cov_feat[unq])/mean(cov_feat)
         if(unq_rat>1){unq_rat<-1}
-        orfs_tx[[i]]$unique_features_reads<-NumericList(riz[unq])
-        orfs_tx[[i]]$adj_unique_features_reads<-NumericList(riz[unq])
+        cols<-mcols(orfs_tx[[i]])
+        cols$unique_features_reads<-NumericList(riz[unq])
+        cols$adj_unique_features_reads<-NumericList(riz[unq])
+        mcols(orfs_tx[[i]])<-cols
         
         
       }
       if(sum(unq)==0){
-        orfs_tx[[i]]$unique_features_reads<-NumericList(NA)
+        mcols(orfs_tx[[i]])$unique_features_reads<-NumericList(NA)
         unq_rat<-NA
       }
       unqs[i]<-unq_rat
@@ -1829,11 +1873,11 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
               unq_rat<-mean(adj_cov_feat[adj_use=="unique"])/mean(adj_cov_feat)
               if(mean(adj_cov_feat)==0){unq_rat<-0}
               if(unq_rat>1){unq_rat<-1}
-              orfs_tx[[i]]$adj_unique_features_reads<-NumericList(riz[unq])
+              mcols(orfs_tx[[i]])$adj_unique_features_reads<-NumericList(riz[unq])
               
             }
             if(sum(unq)==0){
-              orfs_tx[[i]]$adj_unique_features_reads<-NumericList(NA)
+              mcols(orfs_tx[[i]])$adj_unique_features_reads<-NumericList(NA)
               unq_rat<-NA
             }
             unqs_adj[i]<-unq_rat
@@ -2103,10 +2147,12 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       
       ps_norm<-ps*unq_rat
       
-      orfs_tx[[i]]$P_sites<-ps_norm
+      cols<-mcols(orfs_tx[[i]])
+      cols$P_sites<-ps_norm
       scalss<-c(unqs[i],unqs_adj[i],unqs_optim[i])
       names(scalss)<-c("unq_feats","adj_feats","optim_feats")
-      orfs_tx[[i]]$scaling_factors<-NumericList(round(scalss,digits = 4))
+      cols$scaling_factors<-NumericList(round(scalss,digits = 4))
+      mcols(orfs_tx[[i]])<-cols
       
     }
     
@@ -2116,11 +2162,13 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     orfs_genes<-GRangesList(lapply(orfs_genes,FUN=function(x){
       xnot<-x[is.na(x$P_sites)]
       x<-x[!is.na(x$P_sites)]
-      x$ORF_pct_P_sites<-x$P_sites*100/sum(x$P_sites)
-      x$ORF_pct_P_sites_pN<-(x$P_sites/width(x))*100/sum(x$P_sites/width(x))
+      cols<-mcols(x)
+      cols$ORF_pct_P_sites<-cols$P_sites*100/sum(cols$P_sites)
+      cols$ORF_pct_P_sites_pN<-(cols$P_sites/width(x))*100/sum(cols$P_sites/width(x))
       #added this when genes, mostly overlapping ones, get no reads
       
-      if(sum(x$P_sites)==0){x$ORF_pct_P_sites<-0;x$ORF_pct_P_sites_pN<-0}
+      if(sum(cols$P_sites)==0){cols$ORF_pct_P_sites<-0;cols$ORF_pct_P_sites_pN<-0}
+      mcols(x)<-cols
       
       c(x[order(x$ORF_pct_P_sites,decreasing=T)],xnot)
       
@@ -2168,19 +2216,23 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     
     orf_del<-unique(c(orf_del_cums,orf_del_iso,orf_del_ps))
     
-    gene_feat$ORF_id_tr_selected_quant<-CharacterList(lapply(gene_feat$ORF_id_tr_selected_quant,function(x){
+    cols<-mcols(gene_feat)
+    cols$ORF_id_tr_selected_quant<-CharacterList(lapply(cols$ORF_id_tr_selected_quant,function(x){
       unique(x[!x%in%orf_del])
     }))
-    lens2<-sapply(gene_feat$ORF_id_tr_selected_quant,length)
-    gene_feat$use_ORF_selected_quant<-"shared"
-    gene_feat$use_ORF_selected_quant[lens2==1]<-"unique"
-    gene_feat$use_ORF_selected_quant[lens2==0]<-"absent"
+    lens2<-sapply(cols$ORF_id_tr_selected_quant,length)
+    cols$use_ORF_selected_quant<-"shared"
+    cols$use_ORF_selected_quant[lens2==1]<-"unique"
+    cols$use_ORF_selected_quant[lens2==0]<-"absent"
+    mcols(gene_feat)<-cols
     
     fs<-unlist(orfs_genes)
     #put isovalues
     for(g in names(orfs_tx)){
-      orfs_tx[[g]]$ORF_pct_P_sites<-round(fs$ORF_pct_P_sites[fs$ORF_id_tr==g],digits = 4)
-      orfs_tx[[g]]$ORF_pct_P_sites_pN<-round(fs$ORF_pct_P_sites_pN[fs$ORF_id_tr==g],digits = 4)
+      cols<-mcols(orfs_tx[[g]])
+      cols$ORF_pct_P_sites<-round(fs$ORF_pct_P_sites[fs$ORF_id_tr==g],digits = 4)
+      cols$ORF_pct_P_sites_pN<-round(fs$ORF_pct_P_sites_pN[fs$ORF_id_tr==g],digits = 4)
+      mcols(orfs_tx[[g]])<-cols
     }
     counter<-counter+1
   }
@@ -2225,11 +2277,14 @@ annotate_splicing<-function(orf_gen,ref_cds){
     for(gri in 1:length(refgrl)){
       grliss[[gri]]<-refgrl[gri]
     }
-    spl_ran$ref<-grliss
-    spl_ran$spl_type<-"missing_CDS"
-    spl_ran$cds_id<-NULL
-    spl_ran$cds_name<-NULL
-    spl_ran$exon_rank<-NULL
+    # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+    cols<-mcols(spl_ran)
+    cols$ref<-grliss
+    cols$spl_type<-"missing_CDS"
+    cols$cds_id<-NULL
+    cols$cds_name<-NULL
+    cols$exon_rank<-NULL
+    mcols(spl_ran)<-cols
     
   }
   
@@ -2592,8 +2647,10 @@ annotate_splicing<-function(orf_gen,ref_cds){
     }
     if(!any(vapply(refs,is.null,NA)) & !any(vapply(spl_types,is.null,NA))){
       ran<-orf_gen
-      ran$ref<-GRangesList(refs)
-      ran$spl_type<-unlist(spl_types)
+      cols<-mcols(ran)
+      cols$ref<-GRangesList(refs)
+      cols$spl_type<-unlist(spl_types)
+      mcols(ran)<-cols
       spl_ran<-sort(c(spl_ran,ran))
     }else{
       #an exon without ref and spl_type gets no such columns: exons combined one by one, as before
@@ -2614,16 +2671,18 @@ annotate_splicing<-function(orf_gen,ref_cds){
   rlesp<-Rle(newspl)
   
   #change new and missing
+  cols<-mcols(spl_ran)
   if(runValue(rlesp)[1]=="new_miss"){
-    if(as.character(strand(spl_ran)[1])=="+"){spl_ran$spl_type[1:runLength(rlesp)[1]]<-paste(spl_ran$spl_type[1:runLength(rlesp)[1]],"_5prime",sep = "")}
-    if(as.character(strand(spl_ran)[1])=="-"){spl_ran$spl_type[1:runLength(rlesp)[1]]<-paste(spl_ran$spl_type[1:runLength(rlesp)[1]],"_3prime",sep = "")}
+    if(as.character(strand(spl_ran)[1])=="+"){cols$spl_type[1:runLength(rlesp)[1]]<-paste(cols$spl_type[1:runLength(rlesp)[1]],"_5prime",sep = "")}
+    if(as.character(strand(spl_ran)[1])=="-"){cols$spl_type[1:runLength(rlesp)[1]]<-paste(cols$spl_type[1:runLength(rlesp)[1]],"_3prime",sep = "")}
   }
   lenna<-length(runValue(rlesp))
   if(runValue(rlesp)[lenna]=="new_miss"){
-    if(as.character(strand(spl_ran)[1])=="+"){spl_ran$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)]<-paste(spl_ran$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_3prime",sep = "")}
-    if(as.character(strand(spl_ran)[1])=="-"){paste(spl_ran$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_5prime",sep = "")}
+    if(as.character(strand(spl_ran)[1])=="+"){cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)]<-paste(cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_3prime",sep = "")}
+    if(as.character(strand(spl_ran)[1])=="-"){paste(cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_5prime",sep = "")}
   }
-  spl_ran$spl_type<-gsub(spl_ran$spl_type,pattern = "_5prime_3prime",replacement = "_notoverl")
+  cols$spl_type<-gsub(cols$spl_type,pattern = "_5prime_3prime",replacement = "_notoverl")
+  mcols(spl_ran)<-cols
   spl_ran
 }
 
@@ -2748,15 +2807,17 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       comp<-paste(seqnames(mapp),start(mapp),end(mapp),sep="_")
     }
     names(comp)<-NULL
-    ORFs_tx[[i]]$compatible_with<-NULL
-    ORFs_tx[[i]]$compatible_with<-CharacterList(unlist(comp))
+    # columns are set on mcols() and put back once per ORF: a GRanges $<- also runs updateObject() (~20 ms)
+    cols<-mcols(ORFs_tx[[i]])
+    cols$compatible_with<-NULL
+    cols$compatible_with<-CharacterList(unlist(comp))
     
     
-    ORFs_tx[[i]]$compatible_biotype<-ORFs_tx[[i]]$transcript_biotype
-    ORFs_tx[[i]]$compatible_tx<-ORFs_tx[[i]]$transcript_id
-    ORFs_tx[[i]]$compatible_ORF_id_tr<-ORFs_tx[[i]]$ORF_id_tr
-    compats<-elementNROWS(ORFs_tx[[i]]$compatible_with)>1
-    comp_txs<-ORFs_tx[[i]]$compatible_with[compats]
+    cols$compatible_biotype<-cols$transcript_biotype
+    cols$compatible_tx<-cols$transcript_id
+    cols$compatible_ORF_id_tr<-cols$ORF_id_tr
+    compats<-elementNROWS(cols$compatible_with)>1
+    comp_txs<-cols$compatible_with[compats]
     if(length(comp_txs)>0){
       compid<-sapply(comp_txs,function(x){
         txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
@@ -2765,19 +2826,19 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         pcd<-btps=="protein_coding"
         if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
       })
-      ORFs_tx[[i]]$compatible_ORF_id_tr[compats]<-t(compid)[,1]
-      ORFs_tx[[i]]$compatible_tx[compats]<-t(compid)[,2]
-      ORFs_tx[[i]]$compatible_biotype[compats]<-t(compid)[,3]
+      cols$compatible_ORF_id_tr[compats]<-t(compid)[,1]
+      cols$compatible_tx[compats]<-t(compid)[,2]
+      cols$compatible_biotype[compats]<-t(compid)[,3]
       
     }
-    ORFs_tx[[i]]$compatible_with_longest<-ORFs_tx[[i]]$compatible_with
-    ORFs_tx[[i]]$compatible_biotype_longest<-ORFs_tx[[i]]$compatible_biotype
-    ORFs_tx[[i]]$compatible_tx_longest<-ORFs_tx[[i]]$compatible_tx
-    ORFs_tx[[i]]$compatible_ORF_id_tr_longest<-ORFs_tx[[i]]$compatible_ORF_id_tr
-    lng<-GRanges(ORFs_tx[[i]]$longest_ORF)
-    lng$ORF_id_tr<-paste(seqnames(lng),start(lng),end(lng),sep="_")
+    cols$compatible_with_longest<-cols$compatible_with
+    cols$compatible_biotype_longest<-cols$compatible_biotype
+    cols$compatible_tx_longest<-cols$compatible_tx
+    cols$compatible_ORF_id_tr_longest<-cols$compatible_ORF_id_tr
+    lng<-GRanges(cols$longest_ORF)
+    mcols(lng)$ORF_id_tr<-paste(seqnames(lng),start(lng),end(lng),sep="_")
     if(start(ORFs_tx[[i]])!=start(lng)){
-      x<-from_tx_togen(ORFs = lng,exons = Annotation$exons_txs[ORFs_tx[[i]]$transcript_id],introns = Annotation$introns_txs[[ORFs_tx[[i]]$transcript_id]])[[1]]
+      x<-from_tx_togen(ORFs = lng,exons = Annotation$exons_txs[cols$transcript_id],introns = Annotation$introns_txs[[cols$transcript_id]])[[1]]
       mapp<-mapToTranscripts(x,transcripts = annotated_exons_tx)
       redmapp<-reduce(split(mapp,seqnames(mapp)))
       
@@ -2786,13 +2847,13 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       
       comp<-sapply(redmapp,function(x){paste(seqnames(x),start(x),end(x),sep="_")})
       names(comp)<-NULL
-      ORFs_tx[[i]]$compatible_with_longest<-CharacterList(unlist(comp))
-      ORFs_tx[[i]]$compatible_biotype_longest<-ORFs_tx[[i]]$transcript_biotype
-      ORFs_tx[[i]]$compatible_tx_longest<-ORFs_tx[[i]]$transcript_id
-      ORFs_tx[[i]]$compatible_ORF_id_tr_longest<-paste(as.character(seqnames(lng)[1]),start(lng),end(lng),sep = "_")
+      cols$compatible_with_longest<-CharacterList(unlist(comp))
+      cols$compatible_biotype_longest<-cols$transcript_biotype
+      cols$compatible_tx_longest<-cols$transcript_id
+      cols$compatible_ORF_id_tr_longest<-paste(as.character(seqnames(lng)[1]),start(lng),end(lng),sep = "_")
       
-      compats<-elementNROWS(ORFs_tx[[i]]$compatible_with)>1
-      comp_txs<-ORFs_tx[[i]]$compatible_with_longest[compats]
+      compats<-elementNROWS(cols$compatible_with)>1
+      comp_txs<-cols$compatible_with_longest[compats]
       if(length(comp_txs)>0){
         compid<-sapply(comp_txs,function(x){
           txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
@@ -2801,30 +2862,33 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
           pcd<-btps=="protein_coding"
           if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
         })
-        ORFs_tx[[i]]$compatible_ORF_id_tr_longest[compats]<-t(compid)[,1]
-        ORFs_tx[[i]]$compatible_tx_longest[compats]<-t(compid)[,2]
-        ORFs_tx[[i]]$compatible_biotype_longest[compats]<-t(compid)[,3]
+        cols$compatible_ORF_id_tr_longest[compats]<-t(compid)[,1]
+        cols$compatible_tx_longest[compats]<-t(compid)[,2]
+        cols$compatible_biotype_longest[compats]<-t(compid)[,3]
         
       }        
       
     }
+    mcols(ORFs_tx[[i]])<-cols
     
   }
   
   for(i in names(ORFs_gen)){
     
-    compss<-ORFs_tx[[i]]$compatible_with[[1]]
+    cols<-mcols(ORFs_tx[[i]])
+    compss<-cols$compatible_with[[1]]
     compss_txs<-sapply(strsplit(compss,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
-    ok_id<-compss[compss_txs==ORFs_tx[[i]]$compatible_tx_longest]
-    comp_ln<-ORFs_tx[[i]]$compatible_biotype_longest
-    comp_prev<-ORFs_tx[[i]]$compatible_biotype
+    ok_id<-compss[compss_txs==cols$compatible_tx_longest]
+    comp_ln<-cols$compatible_biotype_longest
+    comp_prev<-cols$compatible_biotype
     if(comp_ln%in%"protein_coding" | (!comp_prev%in%"protein_coding" & !comp_ln%in%"protein_coding") ){
-      ORFs_tx[[i]]$compatible_ORF_id_tr<-ok_id
-      ORFs_tx[[i]]$compatible_tx<-ORFs_tx[[i]]$compatible_tx_longest
-      ORFs_tx[[i]]$compatible_biotype<-ORFs_tx[[i]]$compatible_biotype_longest
+      cols$compatible_ORF_id_tr<-ok_id
+      cols$compatible_tx<-cols$compatible_tx_longest
+      cols$compatible_biotype<-cols$compatible_biotype_longest
     }
-    ORFs_tx[[i]]$compatible_tx_longest<-NULL
-    ORFs_tx[[i]]$compatible_biotype_longest<-NULL
+    cols$compatible_tx_longest<-NULL
+    cols$compatible_biotype_longest<-NULL
+    mcols(ORFs_tx[[i]])<-cols
     
   }
   
@@ -2890,16 +2954,18 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   })
   
   for(i in 1:length(ORFs_tx)){
+    cols<-mcols(ORFs_tx[[i]])
     nmd<-FALSE
     if(Distance_EJCs[i]>0){
       nmd<-TRUE
     }
-    ORFs_tx[[i]]$NMD_candidate<-nmd
-    ORFs_tx[[i]]$Distance_to_lastExEx<-Distance_EJCs[i]
+    cols$NMD_candidate<-nmd
+    cols$Distance_to_lastExEx<-Distance_EJCs[i]
     
     nmd<-Distance_EJCs_compat[i]>0
-    ORFs_tx[[i]]$NMD_candidate_compatible_txs<-nmd
-    ORFs_tx[[i]]$Distance_to_lastExEx_compatible_txs<-Distance_EJCs_compat[i]
+    cols$NMD_candidate_compatible_txs<-nmd
+    cols$Distance_to_lastExEx_compatible_txs<-Distance_EJCs_compat[i]
+    mcols(ORFs_tx[[i]])<-cols
   }
   
   
@@ -2912,6 +2978,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   
   for(i in 1:length(ORFs_tx)){
     orf_tx<-ORFs_tx[[i]]
+    cols<-mcols(ORFs_tx[[i]])
     ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-GRanges()
     ORFs_splice_feats_tomaxORF[[orf_tx$ORF_id_tr]]<-GRanges()
     
@@ -2921,10 +2988,10 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     annotated_ORF_compatible<-Annotation$cds_txs_coords[as.character(seqnames(Annotation$cds_txs_coords))==orf_tx$compatible_tx]
     
     if(length(annotated_ORF)==0){
-      ORFs_tx[[i]]$ORF_category_Tx<-"novel"
+      cols$ORF_category_Tx<-"novel"
     }
     if(length(annotated_ORF_compatible)==0){
-      ORFs_tx[[i]]$ORF_category_Tx_compatible<-"novel"
+      cols$ORF_category_Tx_compatible<-"novel"
     }
     
     if(length(annotated_ORF)>0){
@@ -2935,21 +3002,21 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       sto<-end(orf_tx)
       if(sto==ann_sto){
         
-        if(sta==ann_sta){ORFs_tx[[i]]$ORF_category_Tx<-"ORF_annotated"}
-        if(sta<ann_sta){ORFs_tx[[i]]$ORF_category_Tx<-"N_extension"}
-        if(sta>ann_sta){ORFs_tx[[i]]$ORF_category_Tx<-"N_truncation"}
+        if(sta==ann_sta){cols$ORF_category_Tx<-"ORF_annotated"}
+        if(sta<ann_sta){cols$ORF_category_Tx<-"N_extension"}
+        if(sta>ann_sta){cols$ORF_category_Tx<-"N_truncation"}
         
       }
       if(sto!=ann_sto){
         
-        if(sta<ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"overl_uORF"}
-        if(sta<ann_sta & sto<ann_sta){ORFs_tx[[i]]$ORF_category_Tx<-"uORF"}
-        if(sta<ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"NC_extension"}
-        if(sta>ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"overl_dORF"}
-        if(sta>ann_sto & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"dORF"}
-        if(sta>ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"nested_ORF"}
-        if(sta==ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"C_truncation"}
-        if(sta==ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx<-"C_extension"}
+        if(sta<ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"overl_uORF"}
+        if(sta<ann_sta & sto<ann_sta){cols$ORF_category_Tx<-"uORF"}
+        if(sta<ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"NC_extension"}
+        if(sta>ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"overl_dORF"}
+        if(sta>ann_sto & sto>ann_sto){cols$ORF_category_Tx<-"dORF"}
+        if(sta>ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"nested_ORF"}
+        if(sta==ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"C_truncation"}
+        if(sta==ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"C_extension"}
         
       }
     }
@@ -2964,21 +3031,21 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       sto<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)]}))
       if(sto==ann_sto){
         
-        if(sta==ann_sta){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"ORF_annotated"}
-        if(sta<ann_sta){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"N_extension"}
-        if(sta>ann_sta){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"N_truncation"}
+        if(sta==ann_sta){cols$ORF_category_Tx_compatible<-"ORF_annotated"}
+        if(sta<ann_sta){cols$ORF_category_Tx_compatible<-"N_extension"}
+        if(sta>ann_sta){cols$ORF_category_Tx_compatible<-"N_truncation"}
         
       }
       if(sto!=ann_sto){
         
-        if(sta<ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"overl_uORF"}
-        if(sta<ann_sta & sto<ann_sta){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"uORF"}
-        if(sta<ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"NC_extension"}
-        if(sta>ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"overl_dORF"}
-        if(sta>ann_sto & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"dORF"}
-        if(sta>ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"nested_ORF"}
-        if(sta==ann_sta & sto<ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"C_truncation"}
-        if(sta==ann_sta & sto>ann_sto){ORFs_tx[[i]]$ORF_category_Tx_compatible<-"C_extension"}
+        if(sta<ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"overl_uORF"}
+        if(sta<ann_sta & sto<ann_sta){cols$ORF_category_Tx_compatible<-"uORF"}
+        if(sta<ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"NC_extension"}
+        if(sta>ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"overl_dORF"}
+        if(sta>ann_sto & sto>ann_sto){cols$ORF_category_Tx_compatible<-"dORF"}
+        if(sta>ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"nested_ORF"}
+        if(sta==ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"C_truncation"}
+        if(sta==ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"C_extension"}
         
       }
     }
@@ -3008,7 +3075,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     
     
     if(sum(overl)==0){
-      ORFs_tx[[i]]$ORF_category_Gen<-"novel"
+      cols$ORF_category_Gen<-"novel"
       if(length(annotated_cds2)>0){
         nearest_cds<-annotated_cds[[names(unlist(annotated_cds))[nearest(orf_gen,unlist(annotated_cds))[1]]]]
         overl_whole<-orf_gen@ranges%over%IRanges(start=min(start(nearest_cds)),end=max(end(nearest_cds)))
@@ -3017,28 +3084,28 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
           
           if(sum(overl_whole)==0){
             if(min(start(orf_gen))<min(start(nearest_cds))){
-              ORFs_tx[[i]]$ORF_category_Gen<-"novel_Upstream"
+              cols$ORF_category_Gen<-"novel_Upstream"
             }
             if(min(start(orf_gen))>max(end(nearest_cds))){
-              ORFs_tx[[i]]$ORF_category_Gen<-"novel_Downstream"
+              cols$ORF_category_Gen<-"novel_Downstream"
             }
           }
           if(sum(overl_whole)>0){
-            ORFs_tx[[i]]$ORF_category_Gen<-"novel_Internal"
+            cols$ORF_category_Gen<-"novel_Internal"
           }
           
         }
         if(as.vector(strand(orf_gen[1]))=="-"){
           if(sum(overl_whole)==0){
             if(max(end(orf_gen))>max(end(nearest_cds))){
-              ORFs_tx[[i]]$ORF_category_Gen<-"novel_Upstream"
+              cols$ORF_category_Gen<-"novel_Upstream"
             }
             if(min(start(orf_gen))<min(start(nearest_cds))){
-              ORFs_tx[[i]]$ORF_category_Gen<-"novel_Downstream"
+              cols$ORF_category_Gen<-"novel_Downstream"
             }
           }
           if(sum(overl_whole)>0){
-            ORFs_tx[[i]]$ORF_category_Gen<-"novel_Internal"
+            cols$ORF_category_Gen<-"novel_Internal"
           }                                        
         }
       }
@@ -3050,12 +3117,12 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       
       #annotated NC wrt maxcds
       
-      ORFs_tx[[i]]$ORF_category_Gen<-"overlaps_CDS"
-      max_cdsok<-annotated_cds_tx[[max_cds[ORFs_tx[[i]]$gene_id]]]
+      cols$ORF_category_Gen<-"overlaps_CDS"
+      max_cdsok<-annotated_cds_tx[[max_cds[cols$gene_id]]]
       if(length(max_cdsok)==0){
         max_cdsok<-annotated_cds_tx[[which.max(sum(width(annotated_cds_tx)))]]
       }
-      ORFs_tx[[i]]$ref_id<-max_cds[ORFs_tx[[i]]$gene_id]
+      cols$ref_id<-max_cds[cols$gene_id]
       max_cds_seq<-unlist(getSeq(x=genome_sequence,max_cdsok))
       segm<-10
       if(length(max_cds_seq)<33 | nchar(orf_tx$Protein)<10){
@@ -3067,14 +3134,14 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
-      ORFs_tx[[i]]$NC_protein_isoform<-"N_C"
+      cols$NC_protein_isoform<-"N_C"
       if(N_pr==N_ann){
         if(C_pr==C_ann){
-          ORFs_tx[[i]]$NC_protein_isoform<-"same"
-        } else {ORFs_tx[[i]]$NC_protein_isoform<-"C"}
+          cols$NC_protein_isoform<-"same"
+        } else {cols$NC_protein_isoform<-"C"}
       }
       if(C_pr==C_ann & N_pr!=N_ann){
-        ORFs_tx[[i]]$NC_protein_isoform<-"N"                                        
+        cols$NC_protein_isoform<-"N"                                        
       }
       
       #ann genomic
@@ -3087,19 +3154,19 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         sta_or<-min(start(orf_gen))
         sto_or<-max(end(orf_gen))+3
         if(sto_or==gen_sto){
-          if(sta_or==gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"exact_start_stop"}
-          if(sta_or<gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start"}
-          if(sta_or>gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start"}
+          if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}
+          if(sta_or<gen_sta){cols$ORF_category_Gen<-"Alt5_start"}
+          if(sta_or>gen_sta){cols$ORF_category_Gen<-"Alt3_start"}
           
         }
         
         if(sto_or!=gen_sto){
-          if(sta_or<gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start_Alt5_stop"}
-          if(sta_or<gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start_Alt3_stop"}
-          if(sta_or>gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start_Alt3_stop"}
-          if(sta_or>gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start_Alt5_stop"}
-          if(sta_or==gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_stop"}
-          if(sta_or==gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_stop"}
+          if(sta_or<gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt5_start_Alt5_stop"}
+          if(sta_or<gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt5_start_Alt3_stop"}
+          if(sta_or>gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt3_start_Alt3_stop"}
+          if(sta_or>gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt3_start_Alt5_stop"}
+          if(sta_or==gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt5_stop"}
+          if(sta_or==gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt3_stop"}
           
         }
       }
@@ -3112,20 +3179,20 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         sto_or<-min(start(orf_gen))-3
         
         if(sto_or==gen_sto){
-          if(sta_or==gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"exact_start_stop"}
-          if(sta_or<gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start"}
-          if(sta_or>gen_sta){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start"}
+          if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}
+          if(sta_or<gen_sta){cols$ORF_category_Gen<-"Alt3_start"}
+          if(sta_or>gen_sta){cols$ORF_category_Gen<-"Alt5_start"}
           
         }
         
         if(sto_or!=gen_sto){
-          if(sta_or>gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start_Alt5_stop"}
+          if(sta_or>gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt5_start_Alt5_stop"}
           
-          if(sta_or>gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_start_Alt3_stop"}
-          if(sta_or<gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start_Alt3_stop"}
-          if(sta_or<gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_start_Alt5_stop"}
-          if(sta_or==gen_sta & sto_or>gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt5_stop"}
-          if(sta_or==gen_sta & sto_or<gen_sto){ORFs_tx[[i]]$ORF_category_Gen<-"Alt3_stop"}
+          if(sta_or>gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt5_start_Alt3_stop"}
+          if(sta_or<gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt3_start_Alt3_stop"}
+          if(sta_or<gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt3_start_Alt5_stop"}
+          if(sta_or==gen_sta & sto_or>gen_sto){cols$ORF_category_Gen<-"Alt5_stop"}
+          if(sta_or==gen_sta & sto_or<gen_sto){cols$ORF_category_Gen<-"Alt3_stop"}
           
         }
         
@@ -3136,9 +3203,10 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     
     ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = max_cdsok)
     #to maxORF
-    max_pct<-ORFs_gen[[maxORF_orf[ORFs_tx[[i]]$gene_id]]]
-    ORFs_tx[[i]]$ref_id_maxORF<-maxORF_orf[ORFs_tx[[i]]$gene_id]
+    max_pct<-ORFs_gen[[maxORF_orf[cols$gene_id]]]
+    cols$ref_id_maxORF<-maxORF_orf[cols$gene_id]
     ORFs_splice_feats_tomaxORF[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = max_pct)
+    mcols(ORFs_tx[[i]])<-cols
     
     
     
