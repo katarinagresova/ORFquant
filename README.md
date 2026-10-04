@@ -106,7 +106,7 @@ sbatch $(Rscript -e 'cat(system.file("scripts", "run_orfquant.sbatch", package =
   --outdir results
 ```
 
-It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 4 h 3 min and 37 GB. With 64 CPUs (`sbatch -c 64 --mem=160G`, before the script's path) it took 1 h 27 min and 114 GB, so ask for more CPUs if your cluster has them. Its comments give more measurements and say how to change these resources.
+It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 4 h 3 min and 37 GB. With 64 CPUs (`sbatch -c 64 --mem=160G`, before the script's path) it took 1 h 11 min and 110 GB, so ask for more CPUs if your cluster has them. Its comments give more measurements and say how to change these resources.
 
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
@@ -132,6 +132,7 @@ The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data incl
 - `prepare_annotation_files()` can also forge and install a *BSgenome* package from a 2bit file (`twobit_file`, `forge_BSgenome = TRUE`, the default). This fails on Bioconductor 3.22 (see lcalviell/ORFquant#17, #19, #22 and #27), so use `genome_seq` and `forge_BSgenome = FALSE` as above.
 - `library(ORFquant)` attaches only *GenomicRanges* (and the packages it attaches). Scripts that use, for example, *Biostrings*, *rtracklayer* or *ggplot2* need their own `library()` calls.
 - `n_cores` above 1 uses forked processes (*doMC*), which need Linux or macOS.
+- If R uses a multi-threaded BLAS, such as OpenBLAS in conda's R, set `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1` in the shell before starting R or `Rscript`; `run_orfquant.sbatch` does this. Otherwise each R process, including each one forked for `n_cores`, starts as many BLAS threads as the machine or job has CPUs; they make ORFquant slower and compete for the CPUs. The number of BLAS threads also changes the last digits of the p-values of the longest ORFs (over 20,000 nt on our human sample), so with one thread these don't depend on the number of CPUs.
 
 
 For any question, please email:
