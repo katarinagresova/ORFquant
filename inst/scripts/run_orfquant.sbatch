@@ -36,6 +36,10 @@
 #SBATCH --output=%x-%j.log
 
 set -euo pipefail
+# One BLAS thread per R process: run_ORFquant() forks one process per CPU, and
+# a multi-threaded BLAS (such as conda's OpenBLAS) would start as many threads
+# as the job has CPUs in each of them. It reads these when R starts.
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
 script=$(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))')
 if [ -z "$script" ]; then
   echo "Error: ORFquant is not installed in the R of $(command -v Rscript)" >&2
