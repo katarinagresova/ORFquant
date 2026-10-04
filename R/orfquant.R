@@ -2247,7 +2247,8 @@ annotate_splicing<-function(orf_gen,ref_cds){
       spl_type<-NULL
       last_ex<-length(orf_gen)
       if(overref[f]==T){
-        ref_over<-ref_cds[subjectHits(ov_ref)[queryHits(ov_ref)==f]]
+        #sorted: in ref_cds order, as ref_cds[ref_cds%over%ran]; findOverlaps() may give an exon's hits by position
+        ref_over<-ref_cds[sort(subjectHits(ov_ref)[queryHits(ov_ref)==f])]
         #annotate for 5' and 3'; porcoddio
         
         if(length(ref_over)>1){
