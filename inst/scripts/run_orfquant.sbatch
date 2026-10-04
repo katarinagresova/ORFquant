@@ -12,10 +12,11 @@
 ## and add --partition or --account if your cluster needs them.
 ##
 ## Resources, measured on human samples with GENCODE 47 and 16 CPUs: a sample
-## with a 69 MB BAM took 1 h 52 min and at most 29 GB of memory (8 min and 5 GB
-## of it for the annotation); one with a 1.8 GB BAM, reusing the annotation,
-## 7 h 46 min and 45 GB. Each CPU works in a forked copy of R, so memory grows
-## with the CPUs: with 32, the first sample took 59 min and 53 GB (reusing the
+## with a 1.8 GB BAM, reusing the annotation, took 4 h 3 min and at most 37 GB
+## of memory. Each CPU works in a forked copy of R, so memory grows with the
+## CPUs. Before the speed-ups listed in NEWS.md, that sample took 7 h 46 min and
+## 45 GB, and one with a 69 MB BAM 1 h 52 min and 29 GB (8 min and 5 GB of it
+## for the annotation), or 59 min and 53 GB with 32 CPUs (reusing the
 ## annotation). The annotation also writes up to 0.25 GB of temporary files, in
 ## TMPDIR (by default /tmp): if the job's /tmp is smaller, ask for more
 ## temporary space (--tmp, or what your cluster uses) or set TMPDIR to a larger
