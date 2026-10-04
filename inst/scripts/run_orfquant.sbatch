@@ -8,13 +8,15 @@
 ##
 ## Submit it from a shell in which Rscript is the R with ORFquant (e.g. after
 ## conda activate orfquant): the job inherits the shell's environment. Change
-## the resources below on the sbatch command line (e.g. sbatch -c 32 --mem=96G)
+## the resources below on the sbatch command line (e.g. sbatch -c 64 --mem=160G)
 ## and add --partition or --account if your cluster needs them.
 ##
-## Resources, measured on human samples with GENCODE 47 and 16 CPUs: a sample
-## with a 1.8 GB BAM, reusing the annotation, took 4 h 3 min and at most 37 GB
-## of memory. Each CPU works in a forked copy of R, so memory grows with the
-## CPUs. Before the speed-ups listed in NEWS.md, that sample took 7 h 46 min and
+## Resources, measured on human samples with GENCODE 47: a sample with a 1.8 GB
+## BAM, reusing the annotation, took 4 h 3 min and at most 37 GB of memory with
+## 16 CPUs (the default below), and 1 h 27 min and 114 GB with 64 CPUs. So if
+## your cluster has them, ask for more CPUs, as in the example above. Each CPU
+## works in a forked copy of R, so memory grows with the CPUs. Before the
+## speed-ups listed in NEWS.md, with 16 CPUs, that sample took 7 h 46 min and
 ## 45 GB, and one with a 69 MB BAM 1 h 52 min and 29 GB (8 min and 5 GB of it
 ## for the annotation), or 59 min and 53 GB with 32 CPUs (reusing the
 ## annotation). The annotation also writes up to 0.25 GB of temporary files, in

@@ -106,7 +106,7 @@ sbatch $(Rscript -e 'cat(system.file("scripts", "run_orfquant.sbatch", package =
   --outdir results
 ```
 
-It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 4 h 3 min and 37 GB. Its comments give more measurements and say how to change these resources.
+It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 4 h 3 min and 37 GB. With 64 CPUs (`sbatch -c 64 --mem=160G`, before the script's path) it took 1 h 27 min and 114 GB, so ask for more CPUs if your cluster has them. Its comments give more measurements and say how to change these resources.
 
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results.
 
