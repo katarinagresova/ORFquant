@@ -131,7 +131,7 @@ The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data incl
 
 - `prepare_annotation_files()` can also forge and install a *BSgenome* package from a 2bit file (`twobit_file`, `forge_BSgenome = TRUE`, the default). This fails on Bioconductor 3.22 (see lcalviell/ORFquant#17, #19, #22 and #27), so use `genome_seq` and `forge_BSgenome = FALSE` as above.
 - `library(ORFquant)` attaches only *GenomicRanges* (and the packages it attaches). Scripts that use, for example, *Biostrings*, *rtracklayer* or *ggplot2* need their own `library()` calls.
-- `n_cores` above 1 uses forked processes (*doMC*), which need Linux or macOS.
+- `n_cores` above 1 uses forked processes (`parallel::makeForkCluster()`), which need Linux or macOS.
 
 
 For any question, please email:

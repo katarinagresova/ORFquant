@@ -12,6 +12,11 @@
 - devtools and GenomicFiles are no longer needed.
   `prepare_annotation_files(forge_BSgenome = TRUE)` installs the forged
   BSgenome package with `install.packages()`.
+- doMC and foreach are no longer needed: `run_ORFquant()` runs its worker
+  processes with the parallel package, which comes with R. So with more than
+  one core, `run_ORFquant()` no longer registers doMC as the backend of
+  foreach, and no longer attaches GenomicRanges when ORFquant itself isn't
+  attached.
 - `library(ORFquant)` now attaches only GenomicRanges and the packages it
   attaches (IRanges, S4Vectors, Seqinfo, BiocGenerics, generics and stats4).
   Before, it attached the 18 packages of its Depends field and theirs.
@@ -288,6 +293,18 @@ deprecation warnings.
     one step. On chr21, a run made about 13,000 such assignments and now
     makes about 900. The times above don't include this change; on chr21 it
     makes a run 10% faster with one core and 6% faster with 8 cores.
+- With more than one core, `run_ORFquant()` gives the genomic regions to its
+  worker processes one at a time, in order, each to the next worker that is
+  free. Before, each worker got an equal share of the regions at the start.
+  The time per region varies a lot, so at the end most workers were idle
+  while the last ones finished their shares. On the human sample above, with
+  64 cores and one BLAS thread per process, the regions take 53 min instead
+  of 56 min, and the whole run 68 min instead of 72 min. On chr21 with 8
+  cores, the regions take 75 s instead of 86 s. Results don't change. The
+  "% completed" lines now show the progress of the whole run, not of one
+  worker's share. When the regions start, each worker prints a line
+  "starting worker pid=...". If a region fails, the error message starts
+  with "one node produced an error" instead of "task N failed".
 
 ## Documentation
 
