@@ -243,10 +243,15 @@ deprecation warnings.
 
 ## Performance
 
-- `run_ORFquant()` is faster. With one core, a run on chr21 of a human
-  sample takes 431 s instead of 704 s (39% less), and with 8 cores 90 s
-  instead of 145 s. Results don't change: on our test data and on chr21,
-  all outputs are the same as before. Five changes make it faster:
+- `run_ORFquant()` is faster. On a human sample with a 1.8 GB BAM and
+  GENCODE 47, with 16 cores, a run takes 4 h 3 min instead of 7 h 46 min
+  (48% less) and at most 37 GB of memory instead of 45 GB. With one core, a
+  run on chr21 of a human sample takes 431 s instead of 704 s (39% less),
+  and with 8 cores 90 s instead of 145 s; these chr21 times don't include
+  the fourth change below, or `annotate_splicing()` setting its exon columns
+  once per ORF. Results don't change: on our test data and on chr21, all
+  outputs are the same as before, and on the whole human sample the
+  exported files are. Five changes make it faster:
   - It translated transcripts and ORFs with
     `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per
     call building a table of the codons with ambiguous bases, such as N. It
