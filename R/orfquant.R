@@ -3422,7 +3422,15 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   })
   
   if(n_cores>1){
-    ORFs_found<-foreach(g=(1:length(genes_red)),.packages=c('GenomicRanges')) %dopar%{
+    #the regions go to the workers in batches, in order, each batch to the next free worker: region costs
+    #vary a lot, and equal shares fixed at the start left most workers idle at the end of the loop.
+    #each batch is a new fork (~2 CPU s), so up to 20 regions per batch, and ~4 or more batches per worker.
+    #a batch returns its results serialized: a new fork copies the memory that its garbage collection
+    #writes to, which includes every R object in the master, but not the inside of a raw vector
+    batch_size<-min(20,max(1,floor(length(genes_red)/(4*n_cores))))
+    batches<-split(seq_along(genes_red),ceiling(seq_along(genes_red)/batch_size))
+    ORFs_found<-foreach(b=batches,.packages=c('GenomicRanges'),.options.multicore=list(preschedule=FALSE)) %dopar%{
+      serialize(lapply(b,function(g){
       
       if(g%in%pcts_leng){
         cat(labs_top[pcts_leng==g])
@@ -3446,7 +3454,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
                orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling)
       
+      }),NULL)
     }
+    ORFs_found<-unlist(lapply(ORFs_found,unserialize),recursive=FALSE)
     
     
   }
