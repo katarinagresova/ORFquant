@@ -251,7 +251,7 @@ deprecation warnings.
   the fourth change below, or `annotate_splicing()` setting its exon columns
   once per ORF. Results don't change: on our test data and on chr21, all
   outputs are the same as before, and on the whole human sample the
-  exported files are. Five changes make it faster:
+  exported files are. Six changes make it faster:
   - It translated transcripts and ORFs with
     `translate(if.fuzzy.codon = "solve")`, which spends 50 to 80 ms per
     call building a table of the codons with ambiguous bases, such as N. It
@@ -281,6 +281,13 @@ deprecation warnings.
     It now gathers each column from all elements and binds it once, and
     merges the Seqinfo pairwise. On the results of a whole human genome,
     this step takes 108 s instead of 490 s.
+  - Setting a column of a GRanges object with `x$name <- value` takes about
+    20 ms even when it is done once, because it also checks and updates the
+    whole object. Many steps set several columns of the same object in a
+    row; they now take the object's columns, set them, and put them back in
+    one step. On chr21, a run made about 13,000 such assignments and now
+    makes about 900. The times above don't include this change; on chr21 it
+    makes a run 10% faster with one core and 6% faster with 8 cores.
 
 ## Documentation
 
