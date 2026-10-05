@@ -1406,6 +1406,8 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   
   
   exbin<-exonicParts(orfann,linked.to.single.gene.only = F)
+  # close the SQLite connection now; a finalizer run during S4 method lookup fails (lcalviell/ORFquant#3)
+  orfann$finalize()
   
   
   d<-rep(0,length(exbin))
@@ -4086,6 +4088,8 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     # IMPORTANT : modify if needed (e.g. different organelles or species) check ids of GENETIC_CODE_TABLE for more info
     
     ifs<-seqinfo(annotation)
+    # close the SQLite connection now; a finalizer run during S4 method lookup fails (lcalviell/ORFquant#3)
+    annotation$finalize()
     translations<-as.data.frame(ifs)
     translations$genetic_code<-"1"
     
