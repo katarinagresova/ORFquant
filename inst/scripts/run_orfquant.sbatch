@@ -12,8 +12,8 @@
 ## and add --partition or --account if your cluster needs them.
 ##
 ## Resources, measured on human samples with GENCODE 47: a sample with a 1.8 GB
-## BAM, reusing the annotation, took 4 h 3 min and at most 37 GB of memory with
-## 16 CPUs (the default below), and 1 h 11 min and 110 GB with 64 CPUs. So if
+## BAM, reusing the annotation, took 3 h 11 min and at most 35 GB of memory with
+## 16 CPUs (the default below), and 57 min and 115 GB with 64 CPUs. So if
 ## your cluster has them, ask for more CPUs, as in the example above. Each CPU
 ## works in a forked copy of R, so memory grows with the CPUs. Before the
 ## speed-ups listed in NEWS.md, with 16 CPUs, that sample took 7 h 46 min and
