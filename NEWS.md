@@ -256,6 +256,12 @@ deprecation warnings.
 - The `getSeq()` error for ranges that wrap twice around a circular
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.
+- `run_ORFquant()` and `prepare_annotation_files()` now close the TxDb
+  databases they make when they no longer need them. Their logs no longer
+  show `Error in x$.self$finalize() : attempt to apply non-function` (often
+  hundreds of lines in a whole-genome run) and `call dbDisconnect() when
+  finished working with a connection` (lcalviell/ORFquant#3). These messages
+  came from R closing the databases later, and did not change the results.
 
 ## Performance
 
