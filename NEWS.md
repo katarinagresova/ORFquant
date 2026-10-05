@@ -265,6 +265,11 @@ deprecation warnings.
 
 ## Performance
 
+- On a human sample with a 1.8 GB BAM and GENCODE 47, the changes below
+  together make a run take 3 h 11 min with 16 cores instead of 7 h 46 min
+  (59% less), and at most 35 GB of memory instead of 45 GB. With 64 cores, a
+  run takes 57 min and at most 115 GB. Each entry below gives what its change
+  saved when it was made.
 - `run_ORFquant()` is faster. On a human sample with a 1.8 GB BAM and
   GENCODE 47, with 16 cores, a run takes 4 h 3 min instead of 7 h 46 min
   (48% less) and at most 37 GB of memory instead of 45 GB. With one core, a
@@ -360,7 +365,8 @@ deprecation warnings.
   forked processes are shown as before. Results don't change. With this
   change and the one above, a run on the human sample with 16 cores takes
   3 h 11 min instead of 3 h 20 min, and at most 35 GB of memory instead of
-  34 GB.
+  34 GB. With 64 cores, a run takes 57 min instead of 68 min, and at most
+  115 GB of memory, as before.
 
 ## Documentation
 
