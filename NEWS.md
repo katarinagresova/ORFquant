@@ -327,6 +327,34 @@ deprecation warnings.
   worker's share. When the regions start, each worker prints a line
   "starting worker pid=...". If a region fails, the error message starts
   with "one node produced an error" instead of "task N failed".
+- `prepare_for_ORFquant()` has a new argument `n_cores` (default 1), and
+  `run_orfquant.R` gives it the value of `--cores`. With more than one core,
+  forked processes calculate the P-sites and junctions of the chunks of
+  `chunk_size` alignments while the next chunks are read. With any number of
+  cores, the P-sites of all chunks are now added up once, after the last
+  chunk. Before, the P-sites of each chunk were added to those of all the
+  earlier chunks, which took longer with each chunk. On the human sample
+  above (68 million alignments), with 16 cores, "Calculating P-sites
+  positions and junctions" takes 108 s instead of 8 min 26 s, and at most
+  19 GB of memory instead of about 5 GB. With one core, on a test BAM file
+  read in chunks of 1,000 alignments, it takes 78 s instead of 139 s.
+  Results don't change: the `for_ORFquant` file is the same as before, with
+  any `chunk_size` and number of cores. One exception, which doesn't change
+  the results of `run_ORFquant()`: in a BAM file with more than `chunk_size`
+  alignments, a P-site track without P-sites (for example `P_sites_uniq_mm`
+  for a BAM file without MD tags) no longer has a `score` column, the same
+  as in a BAM file with fewer alignments.
+- With more than one core, the export at the end of `run_ORFquant()` is
+  faster. Forked processes save `<prefix>_tmp_ORFquant_results` and build
+  the result tables, at most 3 tables at a time. Then a forked process saves
+  `<prefix>_final_ORFquant_results` while the TSV, FASTA and GTF files are
+  written. On the human sample above, with 16 cores, "Exporting ORFquant
+  results" takes 143 s instead of 6 min 13 s, and uses about as much memory
+  as the genomic regions before it, instead of 10 GB. The warnings of the
+  forked processes are shown as before. Results don't change. With this
+  change and the one above, a run on the human sample with 16 cores takes
+  3 h 11 min instead of 3 h 20 min, and at most 35 GB of memory instead of
+  34 GB.
 
 ## Documentation
 
