@@ -62,7 +62,8 @@ prepare_annotation_files(annotation_directory = "annotation",
 prepare_for_ORFquant(annotation_file = "annotation/genes.gtf_Rannot",
                      bam_file = "sample.bam",
                      path_to_rl_cutoff_file = "sample_cutoffs.tsv",
-                     dest_name = "sample")
+                     dest_name = "sample",
+                     n_cores = 4)
 
 # 3. Find and quantify ORFs: writes sample_final_ORFquant_results,
 #    sample_Detected_ORFs.gtf, sample_Detected_ORFs.tsv and

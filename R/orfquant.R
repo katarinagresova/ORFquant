@@ -138,6 +138,55 @@ bind_GRanges<-function(x){
   ans
 }
 
+# Forked processes for steps that only read their data. mc_job(expr,n_cores) evaluates expr in a
+# forked process (parallel::mcparallel) when n_cores>1, here otherwise; mc_value(job) waits for
+# it and gives the value of expr, or NULL with wait=FALSE if it isn't done yet. mc_lapply(fs,n_cores)
+# is lapply(fs,function(f){f()}), with each f() in a forked process, at most n_cores at a time
+# (parallel::mclapply). The warnings of a forked process are given again here (they would be
+# lost), and its error stops here.
+mc_job<-function(expr,n_cores){
+  if(n_cores>1){
+    return(parallel::mcparallel(mc_capture(function(){expr})))
+  }
+  list(value=expr)
+}
+mc_value<-function(job,wait=TRUE){
+  if(!inherits(job,"parallelJob")){
+    return(job$value)
+  }
+  res<-parallel::mccollect(job,wait=wait)
+  if(is.null(res)){
+    return(NULL)
+  }
+  mc_release(res[[1]])
+}
+mc_lapply<-function(fs,n_cores){
+  if(n_cores>1){
+    return(lapply(parallel::mclapply(fs,mc_capture,mc.cores=n_cores,mc.preschedule=FALSE),mc_release))
+  }
+  lapply(fs,function(f){f()})
+}
+mc_capture<-function(f){
+  warns<-list()
+  value<-withCallingHandlers(f(),warning=function(w){
+    warns[[length(warns)+1]]<<-w
+    invokeRestart("muffleWarning")
+  })
+  list(value=value,warnings=warns)
+}
+mc_release<-function(res){
+  if(inherits(res,"try-error")){
+    stop(attr(res,"condition"))
+  }
+  if(is.null(res)){
+    stop("A forked process ended without a result (out of memory?)")
+  }
+  for(w in res$warnings){
+    warning(w)
+  }
+  res$value
+}
+
 
 #' Find ATG-starting ORFs in a sequence
 #'
@@ -3493,24 +3542,31 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   
   cat(paste("Exporting ORFquant results ... ",date(),"\n",sep = ""))
   
+  #with more than one core, a forked process saves the tmp file while the tables are built
+  tmp_save<-NULL
   if(write_temp_files){
-    save(ORFs_found,file=paste(prefix,"tmp_ORFquant_results",sep="_"))
+    tmp_save<-mc_job({save(ORFs_found,file=paste(prefix,"tmp_ORFquant_results",sep="_"));TRUE},n_cores)
   }
   
   lens<-elementNROWS(ORFs_found)
   
   ORFs_found<-ORFs_found[lens>0]
-  if(length(ORFs_found)==0){stop(paste("No ORFs found! Please check sub-codon resolution of Ribo-seq reads and ensure the annotation is correct --- ",date(),"\n"))}
+  if(length(ORFs_found)==0){mc_value(tmp_save);stop(paste("No ORFs found! Please check sub-codon resolution of Ribo-seq reads and ensure the annotation is correct --- ",date(),"\n"))}
   
-  ORFs_txs_feats<-unlist(GRangesList_fast(lapply(ORFs_found,function(x){unlist(x$genomic_features)})))
-  ORFs_txs_feats<-ORFs_txs_feats[!duplicated(mcols(ORFs_txs_feats)) | !duplicated(ORFs_txs_feats)]
-  
-  selected_txs<-sort(unique(unlist(ORFs_txs_feats$txs_selected)))
+  ORFs_found_feats<-ORFs_found
   
   lens<-elementNROWS(ORFs_found)
   
   ORFs_found<-ORFs_found[lens>1]
-  if(length(ORFs_found)==0){stop(paste("No ORFs found! Please check sub-codon of Ribo-seq reads or that the annotation is correct --- ",date(),"\n"))}
+  if(length(ORFs_found)==0){mc_value(tmp_save);stop(paste("No ORFs found! Please check sub-codon of Ribo-seq reads or that the annotation is correct --- ",date(),"\n"))}
+  
+  #the tables, each from ORFs_found alone: with more than one core, each one is built in a forked process,
+  #at most 3 at a time. Each one can copy GBs of the memory of this process, and more don't make it
+  #faster: ORFs_tx alone takes about as long as the other tables on 2 cores
+  tables<-mc_lapply(list(ORFs_txs_feats=function(){
+  ORFs_txs_feats<-unlist(GRangesList_fast(lapply(ORFs_found_feats,function(x){unlist(x$genomic_features)})))
+  ORFs_txs_feats<-ORFs_txs_feats[!duplicated(mcols(ORFs_txs_feats)) | !duplicated(ORFs_txs_feats)]
+  },ORFs_tx=function(){
 
   #ORFs_tx<-unlist(GRangesList(unlist(sapply(ORFs_found,function(x){unlist(x$ORFs_tx_position)}))))
   
@@ -3529,6 +3585,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   }
 
   ORFs_tx<-unlist(ORFs_tx)
+  },ORFs_feat=function(){
 
   ORFs_feat<-unlist(sapply(ORFs_found,function(x){unlist(x$selected_ORFs_features)}))
   ORFs_feat<-GRangesList_fast(sapply(ORFs_feat,function(x){
@@ -3536,6 +3593,29 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     x@elementMetadata@listData$X@elementMetadata@listData$tx_name<-NULL
     return(x)
   }))
+  },ORFs_gen=function(){
+  ORFs_gen<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_genomic_position)})))
+  },ORFs_spl_feat_longest=function(){
+  ORFs_spl_feat_longest<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_longest)})))
+  },ORFs_spl_feat_maxORF=function(){
+  ORFs_spl_feat_maxORF<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_maxORF)})))
+  },ORFs_readthroughs=function(){
+  ORFs_readthroughs<-unlist(GRangesList_fast(unlist(sapply(ORFs_found,function(x){unlist(x$readthrough)}))))
+  if(length(ORFs_readthroughs)>0){
+    ORFs_readthroughs<-ORFs_readthroughs[order(ORFs_readthroughs$P_sites_raw,decreasing = T)]
+  }
+  ORFs_readthroughs
+  }),min(n_cores,3))
+  ORFs_txs_feats<-tables$ORFs_txs_feats
+  ORFs_tx<-tables$ORFs_tx
+  ORFs_feat<-tables$ORFs_feat
+  ORFs_gen<-tables$ORFs_gen
+  ORFs_spl_feat_longest<-tables$ORFs_spl_feat_longest
+  ORFs_spl_feat_maxORF<-tables$ORFs_spl_feat_maxORF
+  ORFs_readthroughs<-tables$ORFs_readthroughs
+  rm(tables)
+  
+  selected_txs<-sort(unique(unlist(ORFs_txs_feats$txs_selected)))
   
   
   #toAdd - use the features unique to ORFs as confidence score
@@ -3548,14 +3628,6 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFs_tx$P_sites_pN<-NULL
   
   
-  ORFs_gen<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_genomic_position)})))
-  
-  ORFs_spl_feat_longest<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_longest)})))
-  ORFs_spl_feat_maxORF<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_maxORF)})))
-  ORFs_readthroughs<-unlist(GRangesList_fast(unlist(sapply(ORFs_found,function(x){unlist(x$readthrough)}))))
-  if(length(ORFs_readthroughs)>0){
-    ORFs_readthroughs<-ORFs_readthroughs[order(ORFs_readthroughs$P_sites_raw,decreasing = T)]
-  }
   ORFquant_results<-list(ORFs_tx,ORFs_gen,ORFs_feat,ORFs_spl_feat_longest,ORFs_spl_feat_maxORF,ORFs_readthroughs,ORFs_txs_feats,selected_txs)
   names(ORFquant_results)<-c("ORFs_tx","ORFs_gen","ORFs_feat","ORFs_spl_feat_longest","ORFs_spl_feat_maxORF","ORFs_readthroughs","ORFs_txs_feats","selected_txs")
   
@@ -3584,7 +3656,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFquant_results$annotation_file<-annotation_file
   ORFquant_results$psite_data_file <- for_ORFquant_file
   
-  save(ORFquant_results ,file = paste(prefix,"final_ORFquant_results",sep="_"))
+  #with more than one core, a forked process saves the results while the files below are written
+  final_save<-mc_job({save(ORFquant_results ,file = paste(prefix,"final_ORFquant_results",sep="_"));TRUE},n_cores)
   
   if(write_TSV_file){
     write.table(ORFs_tx_as_table(ORFquant_results$ORFs_tx),file=paste(prefix,"Detected_ORFs.tsv",sep="_"),sep="\t",quote=F,row.names=F)
@@ -3644,6 +3717,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     names(all)<-NULL
     suppressWarnings(export.gff2(object=all,con=paste(prefix,"Detected_ORFs.gtf",sep="_")))
   }
+  mc_value(final_save)
+  mc_value(tmp_save)
   
   if(interactive){
     for_ORFquant<<-for_ORFquant_data
@@ -4320,17 +4395,22 @@ get_ps_fromsplicemin<-function(x,cutoff){
 #' @param path_to_P_sites_uniq_mm_plus_bw (Optional) path to a bigwig file containing uniquely mapping (with mismatches) P_sites positions on the plus strand
 #' @param path_to_P_sites_uniq_mm_minus_bw (Optional) path to a bigwig file containing uniquely mapping (with mismatches) P_sites positions on the minus strand
 #' @param dest_name prefix to use for the output files. Defaults to same as \code{bam_file} (appends "for_ORFquant" to its filename)
+#' @param n_cores number of cores to use, each for one chunk of \code{chunk_size} alignments at a time. Defaults to 1
 #' @seealso \code{\link{run_ORFquant}}
 #' @export
 
 prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=NA,chunk_size=5000000,path_to_P_sites_plus_bw=NA,
                                path_to_P_sites_minus_bw=NA,path_to_P_sites_uniq_plus_bw=NA,path_to_P_sites_uniq_minus_bw=NA,
                                path_to_P_sites_uniq_mm_plus_bw=NA,path_to_P_sites_uniq_mm_minus_bw=NA,
-                               dest_name=NA){
+                               dest_name=NA,n_cores=1){
   
   load_annotation(annotation_file)
   
   if(is.na(dest_name)){dest_name=bam_file}
+  
+  if(!is.numeric(n_cores) || length(n_cores)!=1 || is.na(n_cores) || n_cores<1){
+    stop(paste("n_cores must be a number, 1 or more! ", date(),sep=""))
+  }
   
   if(is.na(path_to_rl_cutoff_file) & is.na(path_to_P_sites_plus_bw) & is.na(path_to_P_sites_minus_bw)){
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
@@ -4422,140 +4502,6 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     seqlevels(input_P_sites_uniq_mm,pruning.mode="coarse")<-seqllll
     seqlengths(input_P_sites_uniq_mm)<-seqleee
     
-  }
-  
-  reduc<-function(x,y){
-    all_ps<-x[["P_sites_all"]]
-    uniq_ps<-x[["P_sites_uniq"]]
-    uniq_mm_ps<-x[["P_sites_uniq_mm"]]
-    
-    if(!is.na(path_to_rl_cutoff_file)){
-      all_ps<-GRangesList()
-      rls<-unique(c(names(x[["P_sites_all"]]),names(y[["P_sites_all"]])))
-      
-      for(rl in rls){
-        reads_x<-GRanges()
-        reads_y<-GRanges()
-        
-        seqlevels(reads_x)<-seqllll
-        seqlevels(reads_y)<-seqllll
-        
-        seqlengths(reads_x)<-seqleee
-        seqlengths(reads_y)<-seqleee
-        
-        if(sum(rl%in%names(x[["P_sites_all"]]))>0){reads_x<-x[["P_sites_all"]][[rl]]}
-        if(sum(rl%in%names(y[["P_sites_all"]]))>0){reads_y<-y[["P_sites_all"]][[rl]]}
-        
-        plx<-reads_x[strand(reads_x)=="+"]
-        mnx<-reads_x[strand(reads_x)=="-"]
-        ply<-reads_y[strand(reads_y)=="+"]
-        mny<-reads_y[strand(reads_y)=="-"]
-        if(length(plx)>0){covv_pl<-coverage(plx,weight = plx$score)}else{covv_pl<-coverage(plx)}
-        if(length(ply)>0){covv_pl<-covv_pl+coverage(ply,weight = ply$score)}
-        
-        covv_pl<-GRanges(covv_pl)
-        covv_pl<-covv_pl[covv_pl$score>0]
-        
-        if(length(mnx)>0){covv_min<-coverage(mnx,weight = mnx$score)}else{covv_min<-coverage(mnx)}
-        if(length(mny)>0){covv_min<-covv_min+coverage(mny,weight = mny$score)}
-        
-        covv_min<-GRanges(covv_min)
-        covv_min<-covv_min[covv_min$score>0]
-        
-        strand(covv_pl)<-"+"
-        strand(covv_min)<-"-"
-        
-        all_ps[[rl]]<-sort(c(covv_pl,covv_min))
-        
-      }
-      
-      uniq_ps<-GRangesList()
-      rls<-unique(c(names(x[["P_sites_uniq"]]),names(y[["P_sites_uniq"]])))
-      
-      for(rl in rls){
-        reads_x<-GRanges()
-        reads_y<-GRanges()
-        
-        seqlevels(reads_x)<-seqllll
-        seqlevels(reads_y)<-seqllll
-        
-        seqlengths(reads_x)<-seqleee
-        seqlengths(reads_y)<-seqleee
-        if(sum(rl%in%names(x[["P_sites_uniq"]]))>0){reads_x<-x[["P_sites_uniq"]][[rl]]}
-        if(sum(rl%in%names(y[["P_sites_uniq"]]))>0){reads_y<-y[["P_sites_uniq"]][[rl]]}
-        
-        plx<-reads_x[strand(reads_x)=="+"]
-        mnx<-reads_x[strand(reads_x)=="-"]
-        ply<-reads_y[strand(reads_y)=="+"]
-        mny<-reads_y[strand(reads_y)=="-"]
-        if(length(plx)>0){covv_pl<-coverage(plx,weight = plx$score)}else{covv_pl<-coverage(plx)}
-        if(length(ply)>0){covv_pl<-covv_pl+coverage(ply,weight = ply$score)}
-        
-        covv_pl<-GRanges(covv_pl)
-        covv_pl<-covv_pl[covv_pl$score>0]
-        
-        if(length(mnx)>0){covv_min<-coverage(mnx,weight = mnx$score)}else{covv_min<-coverage(mnx)}
-        if(length(mny)>0){covv_min<-covv_min+coverage(mny,weight = mny$score)}
-        
-        covv_min<-GRanges(covv_min)
-        covv_min<-covv_min[covv_min$score>0]
-        
-        strand(covv_pl)<-"+"
-        strand(covv_min)<-"-"
-        
-        uniq_ps[[rl]]<-sort(c(covv_pl,covv_min))
-        
-        
-      }
-      
-      uniq_mm_ps<-GRangesList()
-      rls<-unique(c(names(x[["P_sites_uniq_mm"]]),names(y[["P_sites_uniq_mm"]])))
-      
-      for(rl in rls){
-        reads_x<-GRanges()
-        reads_y<-GRanges()
-        
-        seqlevels(reads_x)<-seqllll
-        seqlevels(reads_y)<-seqllll
-        
-        seqlengths(reads_x)<-seqleee
-        seqlengths(reads_y)<-seqleee
-        if(sum(rl%in%names(x[["P_sites_uniq_mm"]]))>0){reads_x<-x[["P_sites_uniq_mm"]][[rl]]}
-        if(sum(rl%in%names(y[["P_sites_uniq_mm"]]))>0){reads_y<-y[["P_sites_uniq_mm"]][[rl]]}
-        
-        plx<-reads_x[strand(reads_x)=="+"]
-        mnx<-reads_x[strand(reads_x)=="-"]
-        ply<-reads_y[strand(reads_y)=="+"]
-        mny<-reads_y[strand(reads_y)=="-"]
-        if(length(plx)>0){covv_pl<-coverage(plx,weight = plx$score)}else{covv_pl<-coverage(plx)}
-        if(length(ply)>0){covv_pl<-covv_pl+coverage(ply,weight = ply$score)}
-        
-        covv_pl<-GRanges(covv_pl)
-        covv_pl<-covv_pl[covv_pl$score>0]
-        
-        if(length(mnx)>0){covv_min<-coverage(mnx,weight = mnx$score)}else{covv_min<-coverage(mnx)}
-        if(length(mny)>0){covv_min<-covv_min+coverage(mny,weight = mny$score)}
-        
-        covv_min<-GRanges(covv_min)
-        covv_min<-covv_min[covv_min$score>0]
-        
-        strand(covv_pl)<-"+"
-        strand(covv_min)<-"-"
-        
-        uniq_mm_ps[[rl]]<-sort(c(covv_pl,covv_min))
-        
-      }
-    }
-    
-    rang_jun<-x$junctions
-    rang_jun$reads<-rang_jun$reads+y$junctions$reads
-    rang_jun$unique_reads<-rang_jun$unique_reads+y$junctions$unique_reads
-    
-    list_res<-list(all_ps,uniq_ps,uniq_mm_ps,rang_jun)
-    names(list_res)<-c("P_sites_all","P_sites_uniq","P_sites_uniq_mm","junctions")
-    
-    
-    return(list_res)
   }
   
   #what to do with each chunk (read as alignment file)
@@ -4930,21 +4876,49 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
   
   cat(paste("Calculating P-sites positions and junctions ...", date(),"\n"))
   
-  #read the BAM in chunks of chunk_size alignments, same as GenomicFiles::reduceByYield
+  #read the BAM in chunks of chunk_size alignments, same as GenomicFiles::reduceByYield. With
+  #n_cores>1, forked processes run mapp() on the chunks, at most n_cores at a time, while the next
+  #ones are read. The junction reads are added up chunk by chunk, and the P-sites of all chunks once,
+  #below: adding each chunk to the P-sites of the earlier ones took longer with each chunk. The sums
+  #don't depend on the chunks.
 
   open(opts)
   on.exit(if(Rsamtools::isOpen(opts)){close(opts)})
   for_ORFquant<-list()
-  chunk<-yiel(opts)
-  if(length(chunk)>0){
-    for_ORFquant<-mapp(chunk)
-    repeat{
+  chunks_ps<-list()
+  jobs<-list()
+  eof<-FALSE
+  while(!eof || length(jobs)>0){
+    if(!eof && length(jobs)<n_cores){
       chunk<-yiel(opts)
-      if(length(chunk)==0){break}
-      for_ORFquant<-reduc(for_ORFquant,mapp(chunk))
+      eof<-length(chunk)==0
+      if(!eof){jobs[[length(jobs)+1]]<-mc_job(mapp(chunk),n_cores)}
+      rm(chunk)
+    }
+    #the results of the oldest jobs that are done, so that their processes end; wait for the oldest
+    #when n_cores are running or all chunks are read
+    while(length(jobs)>0){
+      res<-mc_value(jobs[[1]],wait=eof || length(jobs)>=n_cores)
+      if(is.null(res)){break}
+      jobs<-jobs[-1]
+      if(length(for_ORFquant)==0){
+        for_ORFquant<-res
+      }else{
+        for_ORFquant$junctions$reads<-for_ORFquant$junctions$reads+res$junctions$reads
+        for_ORFquant$junctions$unique_reads<-for_ORFquant$junctions$unique_reads+res$junctions$unique_reads
+      }
+      chunks_ps[[length(chunks_ps)+1]]<-res[c("P_sites_all","P_sites_uniq","P_sites_uniq_mm")]
     }
   }
   close(opts)
+  if(length(chunks_ps)>1){
+    for(n in names(chunks_ps[[1]])){
+      ps<-lapply(chunks_ps,function(x){unlist(x[[n]])})
+      ps<-ps[lengths(ps)>0]
+      if(length(ps)>0){for_ORFquant[[n]]<-do.call(c,unname(ps))}
+    }
+  }
+  rm(chunks_ps)
   
   if(length(for_ORFquant$P_sites_all)>0){
     merged_all_ps<-unlist(for_ORFquant$P_sites_all)

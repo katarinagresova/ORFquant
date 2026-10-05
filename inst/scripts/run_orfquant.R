@@ -23,7 +23,8 @@ files to DIR.
   --outdir DIR       output directory, created if it doesn't exist
   --sample NAME      prefix of the output files (default: the BAM file's name
                      without .bam)
-  --cores N          number of cores for run_ORFquant() (default: 1)
+  --cores N          number of cores for prepare_for_ORFquant() and
+                     run_ORFquant() (default: 1)
   --gene-names LIST  analyse only the genomic regions with these genes, a
                      comma-separated list of gene names
   --gene-ids LIST    the same with gene ids; with --gene-names, only the
@@ -124,7 +125,8 @@ if (from_gtf) {
 run_step(bquote(ORFquant::prepare_for_ORFquant(annotation_file = .(annotation_file),
                                                bam_file = .(opts[["bam"]]),
                                                path_to_rl_cutoff_file = .(opts[["offsets"]]),
-                                               dest_name = .(prefix))))
+                                               dest_name = .(prefix),
+                                               n_cores = .(as.integer(opts[["cores"]])))))
 for_ORFquant_file <- paste(prefix, "for_ORFquant", sep = "_")
 
 run_step(bquote(ORFquant::run_ORFquant(for_ORFquant_file = .(for_ORFquant_file),
