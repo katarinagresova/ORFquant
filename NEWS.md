@@ -67,6 +67,45 @@ deprecation warnings.
   `run_orfquant.R`'s options, with `--cores` set to the job's CPUs. It asks
   for 16 CPUs, 64 GB of memory and 24 hours, and its comments give the time
   and memory measured on human samples.
+- `prepare_annotation_files()`, `prepare_for_ORFquant()` and `run_ORFquant()`
+  now check their input before the long steps, and stop with a message that
+  says what is wrong. Before, some wrong input gave an error from deep inside
+  a package, some after hours, and some no error at all. The runs on correct
+  input are not affected. The checks are:
+  - Files that don't exist (the genome sequence too, and all the inputs of
+    `prepare_for_ORFquant()`) are listed together, before anything is written.
+  - The directory of the output files (`dest_name`, `prefix`) must exist and
+    be writable. Before, `prepare_for_ORFquant()` and `run_ORFquant()` failed
+    only when they saved their results, after the BAM file was read or the
+    ORFs were quantified.
+  - `n_cores` must be a number, 1 or more, in `run_ORFquant()` too. Before,
+    a missing or zero `n_cores` failed late, with `argument "n_cores" is
+    missing` or `object 'ORFs_found' not found`.
+  - The GTF file must have exon lines with `transcript_id` and `gene_id`
+    (before, a GTF without `gene_id` or `transcript_id` failed in
+    GenomicFeatures, and one without exon lines gave an annotation with 68 of
+    the 140 transcripts of the example, rebuilt from its CDS and UTR lines).
+    The error for chromosomes of the GTF that the genome sequence doesn't
+    have now says so, and gives the chromosome names of the genome.
+  - The cutoff table must have rows, numbers in `read_length` and `cutoff`,
+    and at least one `compartment` that is `nucl` or a chromosome of the
+    annotation. A compartment that is neither never gave P-sites, so one
+    among others now gives a warning. Before, a table with no usable row gave a
+    `for_ORFquant` file without P-sites, and no error.
+  - The BAM file must have a chromosome that is in the annotation, and
+    `prepare_for_ORFquant()` stops when it found no P-sites. Before, a BAM
+    file with the chromosome names `1`, `2` for an annotation with `chr1`,
+    `chr2` gave an empty `for_ORFquant` file without an error.
+  - The P-sites in `for_ORFquant_file` must be on the same chromosomes, with
+    the same lengths, as the annotation of `run_ORFquant()`, which did not
+    check this. It catches a `for_ORFquant_file` made for another genome
+    assembly or annotation.
+- The progress messages of the three steps and of the plots, such as
+  "Calculating P-sites positions and junctions ... ", now come from
+  `message()`, not from `cat()`. So they go to the standard error, not to the
+  standard output, and `suppressMessages()` or `--quiet`-style redirects can
+  hide them. Their text is the same. The scripts `run_orfquant.R` and
+  `run_orfquant.sbatch` show them as before.
 
 ## Changes in results
 

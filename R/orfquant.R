@@ -3411,7 +3411,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                        stn.orf_find.start_sel_cutoff_ave = .5,stn.orf_find.cutoff_fr_ave=.5,
                        stn.orf_quant.cutoff_cums = NA,stn.orf_quant.cutoff_pct = 2,stn.orf_quant.cutoff_P_sites=NA,unique_reads_only=F,canonical_start_only=T,stn.orf_quant.scaling="total_Psites",write_TSV_file=T){    
   
-  if(!stn.orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("stn.orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage"),date())}
+  if(!stn.orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("stn.orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage! ",date(),sep=""))}
+  
+  check_n_cores(n_cores)
   
   for (f in c(for_ORFquant_file,annotation_file)){
     if(file.access(f, 0)==-1) {
@@ -3420,10 +3422,24 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     }
   }
   
-  cat(paste("Loading annotation and Ribo-seq signal ... ",date(),"\n",sep = ""))
+  check_output_dir(prefix)
+  
+  message("Loading annotation and Ribo-seq signal ... ",date())
   
   load_annotation(annotation_file)
   for_ORFquant_data<-get(load(for_ORFquant_file))
+  
+  #the P-sites must come from the same genome as the annotation (e.g. not from a for_ORFquant_file made with another annotation)
+  lengths_psites<-seqlengths(for_ORFquant_data$P_sites_all)
+  if(length(lengths_psites)>0){
+    lengths_annot<-seqlengths(GTF_annotation$seqinfo)
+    common_chroms<-intersect(names(lengths_psites),names(lengths_annot))
+    if(length(common_chroms)==0 || any(lengths_psites[common_chroms]!=lengths_annot[common_chroms],na.rm = TRUE)){
+      stop("The P-sites of ",for_ORFquant_file," are not on the genome of the annotation ",annotation_file,": ",
+           "their chromosomes (e.g. ",paste(head(names(lengths_psites),3),collapse=", "),") or chromosome lengths are different. ",
+           "Run prepare_for_ORFquant with this annotation.")
+    }
+  }
   
   genes_red<-reduce(unlist(GTF_annotation$txs_gene))
   
@@ -3446,7 +3462,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     stop(paste("Incorrect gene_id | gene_name | genomic_region! ",date(),sep = ""))
   }
   
-  cat(paste("Loading annotation and Ribo-seq signal --- Done! ",date(),"\n",sep = ""))
+  message("Loading annotation and Ribo-seq signal --- Done! ",date())
   
   ovs_genesred<-summarizeOverlaps(genes_red,reads = for_ORFquant_data$P_sites_all)
   
@@ -3456,10 +3472,10 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     stop(paste("Not enough P_sites signal over genomic regions! ",date(),sep = ""))
   }
   
-  cat(paste("Summoning ORFquant with ", sum(for_ORFquant_data$P_sites_all%over%genes_red)," P_sites positions over ", length(genes_red), " genomic regions using ",n_cores," processor(s) ... ",date(),"\n",sep = ""))
+  message("Summoning ORFquant with ", sum(for_ORFquant_data$P_sites_all%over%genes_red)," P_sites positions over ", length(genes_red), " genomic regions using ",n_cores," processor(s) ... ",date())
   lengg<-length(genes_red)
   pcts_leng<-as.integer(seq(1,lengg,length.out = 11))
-  labs_top<-paste(c(0,seq(10,100,by = 10)),"% completed\n",sep = "")
+  labs_top<-paste(c(0,seq(10,100,by = 10)),"% completed",sep = "")
   
   #each region's P-sites and junctions, found once: ORFquant() takes them from the genome-wide
   #objects with a %over% per region, 10-30 ms each, so it gets only its region's part (as is, in order)
@@ -3477,7 +3493,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     .ORFquant_loop$run_region<-function(g){
       
       if(g%in%pcts_leng){
-        cat(labs_top[pcts_leng==g])
+        message(labs_top[pcts_leng==g])
       }
       
       gen_region<-genes_red[g]
@@ -3515,7 +3531,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     for(g in 1:length(genes_red)){
       
       if(g%in%pcts_leng){
-        cat(labs_top[pcts_leng==g])
+        message(labs_top[pcts_leng==g])
       }
       
       gen_region<-genes_red[g]
@@ -3540,9 +3556,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     }
     
   }
-  cat(paste("Summoning ORFquant --- Done! ",date(),"\n",sep = ""))
+  message("Summoning ORFquant --- Done! ",date())
   
-  cat(paste("Exporting ORFquant results ... ",date(),"\n",sep = ""))
+  message("Exporting ORFquant results ... ",date())
   
   #with more than one core, a forked process saves the tmp file while the tables are built
   tmp_save<-NULL
@@ -3726,7 +3742,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     for_ORFquant<<-for_ORFquant_data
     ORFquant_results<<-ORFquant_results
   }
-  cat(paste("Exporting ORFquant results --- Done! ",date(),"\n",sep = ""))
+  message("Exporting ORFquant results --- Done! ",date())
   invisible(ORFquant_results)
 }
 
@@ -3734,6 +3750,49 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
 #run_region's data, and the workers find run_region in their copy of .ORFquant_loop
 .ORFquant_loop<-new.env()
 ORFquant_loop_task<-function(g) .ORFquant_loop$run_region(g)
+
+#checks of the input, done before the long steps start, so that a wrong input stops the run with a clear message
+
+check_files_exist<-function(files){
+  files<-files[!is.na(files)]
+  missing_files<-files[file.access(files,0)==-1]
+  if(length(missing_files)>0){
+    stop("The following files don't exist:\n",paste(missing_files,collapse="\n"),"\n",call. = FALSE)
+  }
+}
+
+check_n_cores<-function(n_cores){
+  if(missing(n_cores) || !is.numeric(n_cores) || length(n_cores)!=1 || is.na(n_cores) || n_cores<1){
+    stop("n_cores must be a number, 1 or more!",call. = FALSE)
+  }
+}
+
+#the output files are written at the end of a run: their directory must exist and be writable
+check_output_dir<-function(prefix){
+  out_dir<-dirname(prefix)
+  if(!dir.exists(out_dir) || file.access(out_dir,2)==-1){
+    stop("Cannot write the output files, ",out_dir," is not a directory that exists and can be written to (",prefix,")",call. = FALSE)
+  }
+}
+
+#the first exon line of the GTF file, which must have transcript_id and gene_id, tells the file apart from an empty
+#one, or one without exon lines; this stops reading at that line
+check_gtf<-function(gtf_file){
+  con<-file(gtf_file,"r")
+  on.exit(close(con))
+  repeat{
+    lines<-readLines(con,n=10000)
+    if(length(lines)==0){break}
+    exon_line<-grep("^[^\t]*\t[^\t]*\texon\t",lines,value = TRUE)
+    if(length(exon_line)>0){
+      if(!grepl("(^|[;\t ])transcript_id[ =]",exon_line[1]) || !grepl("(^|[;\t ])gene_id[ =]",exon_line[1])){
+        stop("An exon line of the GTF file ",gtf_file," has no transcript_id or gene_id: ORFquant needs both on every line",call. = FALSE)
+      }
+      return(invisible(TRUE))
+    }
+  }
+  stop("The GTF file ",gtf_file," is empty or has no exon lines: ORFquant needs the exons and the coding sequences (CDS) of the transcripts",call. = FALSE)
+}
 
 
 #' Load genomic features and genome sequence
@@ -3833,21 +3892,21 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
   #adjust variable names (some chars not permitted)
   annotation_name<-gsub(annotation_name,pattern = "_",replacement = "")
   annotation_name<-gsub(annotation_name,pattern = "-",replacement = "")
+
+  filestotest <- c(gtf_file)
+  if(forge_BSgenome){
+    if(is.null(twobit_file)){stop("Please give genome_seq (a FASTA file), or twobit_file to forge a BSgenome package")}
+    filestotest <- c(filestotest,twobit_file)
+  }
+  if(is.character(genome_seq)) filestotest <- c(filestotest,genome_seq)
+  check_files_exist(filestotest)
+  if(create_TxDb) check_gtf(gtf_file)
+
   if(!dir.exists(annotation_directory)){dir.create(path = annotation_directory,recursive = TRUE)}
   annotation_directory<-normalizePath(annotation_directory)
   gtf_file<-normalizePath(gtf_file)
-  
-  filestotest <- c(gtf_file)
-  if(forge_BSgenome) filestotest <- c(filestotest,twobit_file)
-  for (f in filestotest){
-    if(file.access(f, 0)==-1) {
-      stop("
-                 The following files don't exist:\n",
-           f, "\n")
-    }
-  }
-  
-  
+
+
   if(forge_BSgenome){
     
     scientific_name_spl<-strsplit(scientific_name,"[.]")[[1]]
@@ -3866,7 +3925,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     #Forge a BSGenome package
     
-    cat(paste("Creating the BSgenome package ... ",date(),"\n",sep = ""))
+    message("Creating the BSgenome package ... ",date())
     seed_text<-paste("Package: BSgenome.",scientific_name,".",annotation_name,"\n",
                      "Title: Full genome sequences for ",scientific_name,", ",annotation_name,"\n",
                      "Description: Full genome sequences for ",scientific_name,", ",annotation_name,"\n",
@@ -3907,14 +3966,14 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     unlink(paste(annotation_directory,pkgnm,sep="/"),recursive=T)
     
     forgeBSgenomeDataPkg(x=seed_dest,destdir=annotation_directory,seqs_srcdir=dirname(twobit_file))
-    cat(paste("Creating the BSgenome package --- Done! ",date(),"\n",sep = ""))
+    message("Creating the BSgenome package --- Done! ",date())
     
-    cat(paste("Installing the BSgenome package ... ",date(),"\n",sep = ""))
+    message("Installing the BSgenome package ... ",date())
     
     #install.packages() only warns when the installation fails: stop instead, as devtools::install() did
     tryCatch(utils::install.packages(paste(annotation_directory,pkgnm,sep="/"),repos = NULL,type = "source"),
              warning=function(w){stop("Installing the BSgenome package failed: ",conditionMessage(w))})
-    cat(paste("Installing the BSgenome package --- Done! ",date(),"\n",sep = ""))
+    message("Installing the BSgenome package --- Done! ",date())
     
     
   }else{
@@ -3937,16 +3996,20 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
   annot_file <- paste(annotation_directory,"/",basename(gtf_file),"_Rannot",sep="") 
   
   if(create_TxDb){
-    cat(paste("Creating the TxDb object ... ",date(),"\n",sep = ""))
+    message("Creating the TxDb object ... ",date())
     
-    annotation<-txdbmaker::makeTxDbFromGFF(file=gtf_file,format="gtf",chrominfo = seqinfotwob)
+    annotation<-tryCatch(txdbmaker::makeTxDbFromGFF(file=gtf_file,format="gtf",chrominfo = seqinfotwob),
+                         error=function(e){
+                           stop("Reading the GTF file ",gtf_file," failed: ",conditionMessage(e),"\nThe GTF file needs exon and CDS lines with transcript_id and gene_id, ",
+                                "and its chromosome names must be those of the genome sequence (e.g. ",paste(head(seqlevels(seqinfotwob),3),collapse=", "),")",call. = FALSE)
+                         })
     if(length(GenomicFeatures::cds(annotation))==0){
       stop("The GTF file has no CDS lines: ORFquant needs the annotated coding sequences (CDS) of the transcripts")
     }
     
     saveDb(annotation, file=paste(annotation_directory,"/",basename(gtf_file),"_TxDb",sep=""))
-    cat(paste("Creating the TxDb object --- Done! ",date(),"\n",sep = ""))
-    cat(paste("Extracting genomic regions ... ",date(),"\n",sep = ""))
+    message("Creating the TxDb object --- Done! ",date())
+    message("Extracting genomic regions ... ",date())
     
     genes<-genes(annotation)
     exons_ge<-exonsBy(annotation,by="gene")
@@ -4023,7 +4086,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     #(e.g. NCBI's gene lines, with transcript_id ""). gene_type and transcript_type are GENCODE's names,
     #gene NCBI's and ref_gene_name StringTie's
     
-    cat(paste("Extracting ids and biotypes ... ",date(),"\n",sep = ""))
+    message("Extracting ids and biotypes ... ",date())
     
     gtf_ids<-data.frame(unique(mcols(import.gff2(gtf_file,colnames=c("gene_id","gene_biotype","gene_type","gene_name","gene_symbol","gene","ref_gene_name","transcript_id","transcript_biotype","transcript_type")))),stringsAsFactors=F)
     gtf_ids$transcript_id[gtf_ids$transcript_id%in%""]<-NA
@@ -4149,7 +4212,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     #define most common, most upstream/downstream
     
-    cat(paste("Defining most common start/stop codons ... ",date(),"\n",sep = ""))
+    message("Defining most common start/stop codons ... ",date())
     
     start_stop_cc<-sort(c(sta_cc,sto_cc))
     start_stop_cc$transcript_id<-names(start_stop_cc)
@@ -4234,19 +4297,19 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     txs_notok<-txs_all[!txs_all%in%txs_exss]
     if(length(txs_notok)>0){
       set.seed(666)
-      cat(paste("Warning: ",length(txs_notok)," txs with incorrect/unspecified exon boundaries - e.g. trans-splicing events, examples: "
-                ,paste(txs_notok[sample(1:length(txs_notok),size = min(3,length(txs_notok)),replace = F)],collapse=", ")," - ",date(),"\n",sep = ""))
+      message(paste("Warning: ",length(txs_notok)," txs with incorrect/unspecified exon boundaries - e.g. trans-splicing events, examples: "
+                ,paste(txs_notok[sample(1:length(txs_notok),size = min(3,length(txs_notok)),replace = F)],collapse=", ")," - ",date(),sep = ""))
     }
     
     
     #Save as a RData object
     save(GTF_annotation,file=annot_file)
-    cat(paste("Rannot object created!   ",date(),"\n",sep = ""))
+    message("Rannot object created!   ",date())
     
     
     #create tables and bed files (with colnames, so with header)
     if(export_bed_tables_TxDb==T){
-      cat(paste("Exporting annotation tables ... ",date(),"\n",sep = ""))
+      message("Exporting annotation tables ... ",date())
       for(bed_file in c("fiveutrs","threeutrs","ncIsof","ncRNAs","introns","cds_txs_coords")){
         bf<-GTF_annotation[[bed_file]]
         bf_t<-bf
@@ -4272,7 +4335,7 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
       gen_cod<-as.data.frame(GTF_annotation$genetic_codes)
       gen_cod$chromosome<-rownames(gen_cod)
       write.table(gen_cod,file = paste(annotation_directory,"/genetic_codes",sep=""),sep="\t",quote = FALSE,row.names = FALSE)
-      cat(paste("Exporting annotation tables --- Done! ",date(),"\n",sep = ""))
+      message("Exporting annotation tables --- Done! ",date())
       
     }
     
@@ -4408,13 +4471,9 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
                                path_to_P_sites_uniq_mm_plus_bw=NA,path_to_P_sites_uniq_mm_minus_bw=NA,
                                dest_name=NA,n_cores=1){
   
-  load_annotation(annotation_file)
-  
   if(is.na(dest_name)){dest_name=bam_file}
   
-  if(!is.numeric(n_cores) || length(n_cores)!=1 || is.na(n_cores) || n_cores<1){
-    stop(paste("n_cores must be a number, 1 or more! ", date(),sep=""))
-  }
+  check_n_cores(n_cores)
   
   if(is.na(path_to_rl_cutoff_file) & is.na(path_to_P_sites_plus_bw) & is.na(path_to_P_sites_minus_bw)){
     stop(paste("Please input either the paths to the P_sites bw files, or the path a suitable rl_cutoff table! ", date(),sep=""))
@@ -4436,6 +4495,13 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     stop(paste("Please input both path_to_P_sites_uniq_mm_plus_bw and path_to_P_sites_uniq_mm_minus_bw, or neither! ", date(),sep=""))
   }
   
+  check_files_exist(c(annotation_file,bam_file,path_to_rl_cutoff_file,path_to_P_sites_plus_bw,path_to_P_sites_minus_bw,
+                      path_to_P_sites_uniq_plus_bw,path_to_P_sites_uniq_minus_bw,
+                      path_to_P_sites_uniq_mm_plus_bw,path_to_P_sites_uniq_mm_minus_bw))
+  check_output_dir(dest_name)
+  
+  load_annotation(annotation_file)
+  
   if(!is.na(path_to_rl_cutoff_file)){
     rl_cutoff<-read.table(path_to_rl_cutoff_file,header = T,sep = "\t",stringsAsFactors = F)
     
@@ -4443,17 +4509,36 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
       paste("Error: please format the rl_cutoff file correctly, using a tab-separated table with 'read_length', 'cutoff' and 'compartment' as column names! ",date(),sep="")
     )}
     
+    if(nrow(rl_cutoff)==0){stop("The rl_cutoff file has no rows: it needs the P-site cutoff of each read length")}
+    if(anyNA(suppressWarnings(as.numeric(rl_cutoff$read_length))) || anyNA(suppressWarnings(as.numeric(rl_cutoff$cutoff)))){
+      stop("The columns 'read_length' and 'cutoff' of the rl_cutoff file must be numbers")
+    }
+    #a compartment is "nucl" (all chromosomes that aren't circular) or the name of a (circular) chromosome
+    comps_ok<-unique(rl_cutoff$compartment)%in%c("nucl",seqlevels(GTF_annotation$seqinfo))
+    if(!any(comps_ok)){
+      stop("No compartment of the rl_cutoff file is 'nucl' or the name of a chromosome of the annotation, so no read would give a P-site; its compartments are: ",
+           paste(unique(rl_cutoff$compartment),collapse=", "))
+    }
+    if(!all(comps_ok)){
+      warning("These compartments of the rl_cutoff file are not 'nucl' or the name of a chromosome of the annotation, so their rows are not used: ",
+              paste(unique(rl_cutoff$compartment)[!comps_ok],collapse=", "))
+    }
+    
     rl_cutoffs_comp<-split(rl_cutoff,rl_cutoff$compartment)
     compnms<-names(rl_cutoffs_comp)
     
     for(compar in compnms){
-      cat(paste("Using ",paste(rl_cutoffs_comp[[compar]]$read_length,collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]]$cutoff,collapse=",")," as cutoffs, '", compar,"' compartment ... ","\n",sep=""))
+      message("Using ",paste(rl_cutoffs_comp[[compar]]$read_length,collapse=","), " nt long footprints with ",paste(rl_cutoffs_comp[[compar]]$cutoff,collapse=",")," as cutoffs, '", compar,"' compartment ... ")
     }
   }
   
   opts <- BamFile(file=bam_file, yieldSize=chunk_size) 
   circs_seq<-seqnames(GTF_annotation$seqinfo)[which(isCircular(GTF_annotation$seqinfo))]
   seqs <- seqinfo(opts)
+  if(!any(seqlevels(seqs)%in%seqlevels(GTF_annotation$seqinfo))){
+    stop("No chromosome of the BAM file is in the annotation. The BAM file has e.g. ",paste(head(seqlevels(seqs),3),collapse=", "),
+         " and the annotation has e.g. ",paste(head(seqlevels(GTF_annotation$seqinfo),3),collapse=", "))
+  }
   circs <- seqs@seqnames[which(seqs@seqnames%in%circs_seq)]
   
   param <- ScanBamParam(flag=scanBamFlag(isDuplicate=FALSE,isSecondaryAlignment=FALSE),what=c("mapq"),tag = "MD")
@@ -4878,7 +4963,7 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     return(list_res)
   }
   
-  cat(paste("Calculating P-sites positions and junctions ...", date(),"\n"))
+  message("Calculating P-sites positions and junctions ... ", date())
   
   #read the BAM in chunks of chunk_size alignments, same as GenomicFiles::reduceByYield. With
   #n_cores>1, forked processes run mapp() on the chunks, at most n_cores at a time, while the next
@@ -4994,7 +5079,11 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     for_ORFquant$P_sites_uniq_mm<-input_P_sites_uniq_mm
   }
   
-  cat(paste("Calculating P-sites positions and junctions --- Done!", date(),"\n"))
+  message("Calculating P-sites positions and junctions --- Done! ", date())
+  
+  if(length(for_ORFquant$P_sites_all)==0){
+    stop("No P-sites were found. Check that the read lengths of the rl_cutoff file are those of the reads of the BAM file (",bam_file,")")
+  }
   
   save(for_ORFquant,file = paste(dest_name,"for_ORFquant",sep = "_"))
   invisible(paste(dest_name,"for_ORFquant",sep = "_"))
@@ -5039,7 +5128,7 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
 plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotation_file,coverage_file_plus=NA,coverage_file_minus=NA,output_plots_path=NA,prefix=NA){
   
   
-  cat(paste("Plotting ORFquant results for ",ORFquant_output_file," ... ",date(),"\n",sep = ""))
+  message("Plotting ORFquant results for ",ORFquant_output_file," ... ",date())
   
   if(is.na(prefix)){prefix<-gsub(gsub(basename(ORFquant_output_file),pattern = "_final_ORFquant_results",replacement = ""),pattern = "final_ORFquant_results",replacement = "")}
   
@@ -5525,7 +5614,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   if(!is.na(coverage_file_plus) & !is.na(coverage_file_minus)){
     
-    cat(paste("Plotting alternative splice sites profiles ... ",date(),"\n",sep = ""))
+    message("Plotting alternative splice sites profiles ... ",date())
     
     aggregate_regions<-function(range,coverage_plus,coverage_minus,norm_x=NA,norm_y=NA,nozero=F){
       pl<-range[strand(range)=="+"]
@@ -6055,7 +6144,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     print(list_ORFquant_plots[[i]])
     dev.off()
   }
-  cat(paste("Plotting ORFquant results for ",ORFquant_output_file,"  --- Done! ",date(),"\n",sep = ""))
+  message("Plotting ORFquant results for ",ORFquant_output_file,"  --- Done! ",date())
   
 }
 
