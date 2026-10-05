@@ -21,8 +21,6 @@ dependencies:
   - bioconductor-bsgenome
   - bioconductor-cigarillo
   - r-cowplot
-  - r-domc
-  - r-foreach
   - bioconductor-genomicalignments
   - bioconductor-genomicfeatures
   - bioconductor-genomicranges
