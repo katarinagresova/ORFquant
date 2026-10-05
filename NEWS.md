@@ -299,8 +299,10 @@ deprecation warnings.
   The time per region varies a lot, so at the end most workers were idle
   while the last ones finished their shares. On the human sample above, with
   64 cores and one BLAS thread per process, the regions take 53 min instead
-  of 56 min, and the whole run 68 min instead of 72 min. On chr21 with 8
-  cores, the regions take 75 s instead of 86 s. Results don't change. The
+  of 56 min, and the whole run 68 min instead of 72 min. With 16 cores, the
+  run takes the same time as before (3 h 20 min) and at most 34 GB of
+  memory instead of 37 GB. On chr21 with 8 cores, the regions take 75 s
+  instead of 86 s. Results don't change. The
   "% completed" lines now show the progress of the whole run, not of one
   worker's share. When the regions start, each worker prints a line
   "starting worker pid=...". If a region fails, the error message starts
