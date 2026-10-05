@@ -52,8 +52,11 @@ Suggests:
     Gviz,
     knitr,
     lemon,
-    rmarkdown
+    rmarkdown,
+    testthat (>= 3.1.5),
+    withr
 VignetteBuilder: knitr
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0
+Config/testthat/edition: 3

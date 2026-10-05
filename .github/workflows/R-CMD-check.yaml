@@ -1,0 +1,49 @@
+# R CMD check, with the tests and the vignette, on the oldest and on the newest
+# Bioconductor release that ORFquant supports. ORFquant forks its worker
+# processes, so it runs on Linux and macOS only; this checks Linux.
+name: R-CMD-check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  R-CMD-check:
+    name: Bioconductor ${{ matrix.bioc }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container: bioconductor/bioconductor_docker:${{ matrix.bioc }}
+    strategy:
+      fail-fast: false
+      matrix:
+        bioc: [RELEASE_3_22, RELEASE_3_23]
+    env:
+      # One BLAS thread for each R process, as in inst/scripts/run_orfquant.sbatch
+      OPENBLAS_NUM_THREADS: 1
+      OMP_NUM_THREADS: 1
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the dependencies
+        shell: Rscript {0}
+        run: |
+          BiocManager::install(c("remotes", "rcmdcheck"), ask = FALSE, update = FALSE)
+          remotes::install_deps(dependencies = TRUE, upgrade = "never",
+                                repos = BiocManager::repositories())
+
+      - name: Check
+        shell: Rscript {0}
+        run: |
+          rcmdcheck::rcmdcheck(args = "--no-manual", build_args = "--no-manual",
+                               error_on = "warning", check_dir = "check")
+
+      - name: Upload the output of the check
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.bioc }}
+          path: check
