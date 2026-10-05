@@ -13,7 +13,7 @@
 ##
 ## Resources, measured on human samples with GENCODE 47: a sample with a 1.8 GB
 ## BAM, reusing the annotation, took 4 h 3 min and at most 37 GB of memory with
-## 16 CPUs (the default below), and 1 h 27 min and 114 GB with 64 CPUs. So if
+## 16 CPUs (the default below), and 1 h 11 min and 110 GB with 64 CPUs. So if
 ## your cluster has them, ask for more CPUs, as in the example above. Each CPU
 ## works in a forked copy of R, so memory grows with the CPUs. Before the
 ## speed-ups listed in NEWS.md, with 16 CPUs, that sample took 7 h 46 min and
@@ -36,6 +36,10 @@
 #SBATCH --output=%x-%j.log
 
 set -euo pipefail
+# One BLAS thread per R process: run_ORFquant() forks one process per CPU, and
+# a multi-threaded BLAS (such as conda's OpenBLAS) would start as many threads
+# as the job has CPUs in each of them. It reads these when R starts.
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
 script=$(Rscript -e 'cat(system.file("scripts", "run_orfquant.R", package = "ORFquant"))')
 if [ -z "$script" ]; then
   echo "Error: ORFquant is not installed in the R of $(command -v Rscript)" >&2

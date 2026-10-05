@@ -140,6 +140,17 @@ deprecation warnings.
   biotypes removed, 1 of 16 ORFs gets `overl_dORF` instead of GENCODE's
   `N_truncation`. GTFs in which every transcript has a biotype, such as
   GENCODE, Ensembl and NCBI RefSeq GTFs, are not affected.
+- `run_orfquant.sbatch` runs R with one BLAS thread per process
+  (`OPENBLAS_NUM_THREADS=1` and `OMP_NUM_THREADS=1`), and the README asks
+  users of a multi-threaded BLAS to do the same (see Performance). The
+  p-values of the longest ORFs depend on the number of BLAS threads: with
+  more than one, `multitaper::dpss()` gives slightly different tapers for
+  ORFs of about 20,000 nt or more. So with a multi-threaded BLAS, such as
+  OpenBLAS in conda's R, `pval` and `pval_uniq` of these ORFs depended on the
+  number of CPUs of the machine or job; with one thread they don't. On a
+  human sample with GENCODE 47, 9 of 33,146 ORFs (in TTN, OBSCN, NEB and
+  others) change, by at most 1e-11 of their value; nothing else changes.
+  With R's own BLAS, which uses one thread, nothing changes.
 
 ## Bug fixes
 
@@ -293,6 +304,15 @@ deprecation warnings.
     one step. On chr21, a run made about 13,000 such assignments and now
     makes about 900. The times above don't include this change; on chr21 it
     makes a run 10% faster with one core and 6% faster with 8 cores.
+- `run_orfquant.sbatch` is faster with many CPUs, because it runs R with one
+  BLAS thread per process (see Changes in results). With a multi-threaded
+  BLAS, such as OpenBLAS in conda's R, each process that `run_ORFquant()`
+  forks started as many BLAS threads as the job had CPUs, and these threads
+  took CPU time from the other processes. On the human sample above, with 64
+  CPUs, a run takes 1 h 11 min instead of 1 h 27 min, and half the CPU time
+  (53 h instead of 102 h). Scripts that call `run_ORFquant()` or
+  `run_orfquant.R` get the same by setting `OPENBLAS_NUM_THREADS=1` and
+  `OMP_NUM_THREADS=1` before they start R (see the README).
 - With more than one core, `run_ORFquant()` gives the genomic regions to its
   worker processes one at a time, in order, each to the next worker that is
   free. Before, each worker got an equal share of the regions at the start.
