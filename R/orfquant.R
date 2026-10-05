@@ -3362,10 +3362,6 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   
   if(!stn.orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("stn.orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage"),date())}
   
-  if(n_cores>1){
-    registerDoMC(n_cores)
-  }
-  
   for (f in c(for_ORFquant_file,annotation_file)){
     if(file.access(f, 0)==-1) {
       stop("The following files don't exist:\n",
@@ -3422,7 +3418,12 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   })
   
   if(n_cores>1){
-    ORFs_found<-foreach(g=(1:length(genes_red)),.packages=c('GenomicRanges')) %dopar%{
+    #the regions go to the workers one at a time, in order, each to the next free worker: region costs
+    #vary a lot, and equal shares fixed at the start left most workers idle at the end of the loop.
+    #the workers are forked once, after run_region is set, so they have it with its data, and a task sends
+    #only the region's number (a task sends its function's environment too, unless it is a namespace).
+    #outfile="": the workers print the progress lines
+    .ORFquant_loop$run_region<-function(g){
       
       if(g%in%pcts_leng){
         cat(labs_top[pcts_leng==g])
@@ -3447,6 +3448,14 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling)
       
     }
+    cl<-NULL
+    ORFs_found<-tryCatch({
+      cl<-parallel::makeForkCluster(n_cores,outfile="")
+      parallel::clusterApplyLB(cl,seq_along(genes_red),ORFquant_loop_task)
+    },finally={
+      if(!is.null(cl)) parallel::stopCluster(cl)
+      rm("run_region",envir=.ORFquant_loop)
+    })
     
     
   }
@@ -3643,6 +3652,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   cat(paste("Exporting ORFquant results --- Done! ",date(),"\n",sep = ""))
   invisible(ORFquant_results)
 }
+
+#the task of run_ORFquant's workers (n_cores>1): its environment is the namespace, so a task doesn't send
+#run_region's data, and the workers find run_region in their copy of .ORFquant_loop
+.ORFquant_loop<-new.env()
+ORFquant_loop_task<-function(g) .ORFquant_loop$run_region(g)
 
 
 #' Load genomic features and genome sequence

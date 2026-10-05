@@ -4,8 +4,6 @@
 #' @import rtracklayer
 #' @import BSgenome
 #' @rawNamespace import(BiocGenerics, except = c(combine, Position))
-#' @import foreach
-#' @import doMC
 #' @import multitaper
 #' @import reshape2
 #' @import ggplot2
