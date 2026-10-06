@@ -301,6 +301,8 @@ deprecation warnings.
   hundreds of lines in a whole-genome run) and `call dbDisconnect() when
   finished working with a connection` (lcalviell/ORFquant#3). These messages
   came from R closing the databases later, and did not change the results.
+- `prepare_annotation_files()` now gives the message "N genes were dropped
+  because they have exons located on both strands..." once, not twice.
 
 ## Performance
 

@@ -77,8 +77,6 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   ORFs_tx<-ORFquant_results$ORFs_tx
   ORFs_gen<-ORFquant_results$ORFs_gen
   selected_txs<-ORFquant_results$selected_txs
-  ORFs_txs_feats<-ORFquant_results$ORFs_txs_feats
-  ORFs_feat<-ORFquant_results$ORFs_feat
   
   for_ORFquant<-get(load(for_ORFquant_file))
   
@@ -246,8 +244,6 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   max_ORF<-aggregate(ORFs_tx$ORF_pct_P_sites,by=list(ORFs_tx$gene_id),max)
   colnames(max_ORF)<-c("gene_id","ORF_pct_P_sites")
   
-  multg<-names(which(tbid!="1"))
-  #mult_max_ORF<-max_ORF[max_ORF$gene_id%in%multg,]
   mult_max_ORF<-max_ORF
   
   maxiso<-cut(mult_max_ORF$ORF_pct_P_sites,breaks = seq(0,100,by = 10),include.lowest = T,right = T)
@@ -1140,7 +1136,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   )
   orfquantgr$feature[orfquantgr$feature=='CDS'] <- names(orfquantgr)[orfquantgr$feature=='CDS']
   #get correct col name
-  metacols = colnames(mcols(orfs_quantified_gen))
   quantcol = 'ORFs_pM'
   
   ufeats <- orfquantgr$feature%>%{.=.[.!='utr'];.}%>%unique
@@ -1149,8 +1144,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   
   orfcols <- orfscores%>%{./max(na.omit(.))}%>%
     c(0,.)
-  
-  orfquantgrscores = mcols(orfs_quantified_gen)[[quantcol]][match(names(orfquantgr),orfs_quantified_gen$ORF_id_tr)]
   
   orfcols <- orfcols%>% vapply(function(.)tryCatch({rgb(0,.,0)},error=function(e){'white'}),'foo')%>%setNames(c('0',ufeats))
   
@@ -1177,8 +1170,6 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
     {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
   fakejreads <- fakejreads[mapply(seq_along(fakejreads[]),fakejreads$reads,FUN=rep)%>%unlist]
-  ncols <- 2
-  nrows <- 1
   orfcols <- orfcols[order(-orfscores[names(orfcols)])]
   orfquantgr_sorted <- orfquantgr[order(orfscores[names(orfquantgr)])]
   fix_utrs <- function(orfquantgr_sorted){
