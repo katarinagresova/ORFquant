@@ -42,9 +42,9 @@ The example data cover 7 genes on human chr22 (*TXNRD2*, *RANBP1*, *PPIL2*,
 *TOP3B*, *DDT*, *TCN2* and *PISD*):
 
 - `chr22_example.gtf.gz`: their annotation, from GENCODE 47 [3];
-- `chr22_example.fa.gz`: the sequence of chr22 (GRCh38), with every base more
-  than 1 kb from these genes replaced by N. It is compressed with `bgzip` and
-  indexed (`.fai` and `.gzi` files);
+- `chr22_example.fa.gz`: the sequence of chr22 (GRCh38 [6]), with every base
+  more than 1 kb from these genes replaced by N. It is compressed with `bgzip`
+  and indexed (`.fai` and `.gzi` files);
 - `chr22_example.bam`: the Ribo-seq reads aligned to these genes, from a sample
   of human aortic endothelial cells (SRA run SRR15513199, GEO sample
   GSM5527724) [4], aligned with STAR;
@@ -52,7 +52,8 @@ The example data cover 7 genes on human chr22 (*TXNRD2*, *RANBP1*, *PPIL2*,
   sample.
 
 `inst/scripts/make_example_data.R` in the package source describes how they
-were made.
+were made. `README.md`, in the same directory as the data, gives their
+sources and terms of use. If you use them, cite [3], [4] and [6].
 
 ```{r example_data}
 extdata <- system.file("extdata", package = "ORFquant")
@@ -314,6 +315,9 @@ it as a job: `sbatch run_orfquant.sbatch` followed by the same options, without
 5. Calviello L, Sydow D, Harnett D, Ohler U (2019). Ribo-seQC: comprehensive
    analysis of cytoplasmic and organellar ribosome profiling data. *bioRxiv*
    601468.
+6. Schneider VA et al. (2017). Evaluation of GRCh38 and de novo haploid genome
+   assemblies demonstrates the enduring quality of the reference assembly.
+   *Genome Research* 27, 849–864.
 
 
 ## Session info
