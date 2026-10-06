@@ -130,7 +130,7 @@ The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data incl
 
 ### Notes
 
-- `prepare_annotation_files()` can also forge and install a *BSgenome* package from a 2bit file (`twobit_file`, `forge_BSgenome = TRUE`, the default). This fails on Bioconductor 3.22 (see lcalviell/ORFquant#17, #19, #22 and #27), so use `genome_seq` and `forge_BSgenome = FALSE` as above.
+- `prepare_annotation_files()` needs the genome as a FASTA file (`genome_seq`). It no longer forges a *BSgenome* package from a 2bit file, which failed with current Bioconductor (see lcalviell/ORFquant#17, #19, #22 and #27); `twoBitToFa` of the UCSC tools makes a FASTA file from a 2bit file.
 - `library(ORFquant)` attaches only *GenomicRanges* (and the packages it attaches). Scripts that use, for example, *Biostrings*, *rtracklayer* or *ggplot2* need their own `library()` calls.
 - `n_cores` above 1 uses forked processes (`parallel::makeForkCluster()`), which need Linux or macOS.
 - If R uses a multi-threaded BLAS, such as OpenBLAS in conda's R, set `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1` in the shell before starting R or `Rscript`; `run_orfquant.sbatch` does this. Otherwise each R process, including each one forked for `n_cores`, starts as many BLAS threads as the machine or job has CPUs; they make ORFquant slower and compete for the CPUs. The number of BLAS threads also changes the last digits of the p-values of the longest ORFs (over 20,000 nt on our human sample), so with one thread these don't depend on the number of CPUs.

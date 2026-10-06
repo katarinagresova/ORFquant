@@ -33,6 +33,14 @@ test_that("prepare_annotation_files() asks for a genome sequence", {
                "genome_seq")
 })
 
+test_that("prepare_annotation_files() no longer forges a BSgenome package, and writes nothing", {
+  out <- file.path(work, "annotation_none")
+  expect_error(prepare_annotation_files(annotation_directory = out, gtf_file = write_gtf(gtf_example, "ok.gtf"),
+                                        twobit_file = file.path(work, "genome.2bit"), forge_BSgenome = TRUE),
+               "genome_seq.*no longer forges a BSgenome package.*twoBitToFa")
+  expect_false(dir.exists(out))
+})
+
 test_that("prepare_annotation_files() refuses a GTF file without exons, or without ids", {
   expect_match(annotation_error(write_gtf(character(), "empty.gtf")), "empty or has no exon lines")
   expect_match(annotation_error(write_gtf(gtf_example[!grepl("\texon\t", gtf_example)], "noexon.gtf")),
