@@ -26,7 +26,7 @@ Values reported correspond to the closest frequency to 1/3 (same parameters as i
 Padding to a minimum length of 1024 is performed to increase spectral resolution.
 }
 \seealso{
-\code{\link{detect_translated_orfs}}, \code{\link{spec.mtm}}, \code{\link{dpss}}
+\code{\link{detect_translated_orfs}}, \code{\link[multitaper]{spec.mtm}}, \code{\link[multitaper]{dpss}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

@@ -86,7 +86,7 @@ the most upstream/downstream start/stop codons and the start/stop codons residin
 \code{stop_in_gtf}: stop codon, as defined in the annotation.\cr
 }
 \seealso{
-\code{\link{load_annotation}}, \code{\link{forgeBSgenomeDataPkg}}, \code{\link{makeTxDbFromGFF}}, \code{\link{run_ORFquant}}.
+\code{\link{load_annotation}}, \code{\link[BSgenome]{forgeBSgenomeDataPkg}}, \code{\link[txdbmaker]{makeTxDbFromGFF}}, \code{\link{run_ORFquant}}.
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

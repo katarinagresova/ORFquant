@@ -331,7 +331,7 @@ get_orfs<-function(tx_name,sequence,get_all_starts=T,Stop_Stop=F,scores=c(1,.5),
 #' @param time_bw time_bw parameter
 #' @param slepians_values set of calculated slepian functions to use in the multitaper analysis
 #' @return two numeric values representing the F-value for the multitaper test and its corresponding spectral coefficient at the closest frequency to 1/3
-#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{spec.mtm}}, \code{\link{dpss}}
+#' @seealso \code{\link{detect_translated_orfs}}, \code{\link[multitaper]{spec.mtm}}, \code{\link[multitaper]{dpss}}
 #' @export
 
 take_Fvals_spect<-function(x,n_tapers,time_bw,slepians_values){
@@ -782,7 +782,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
 #' @param exons exonic regions of the analyzed transcripts, as a GRangesList object
 #' @param introns intronic regions of the analyzed transcripts, as a GRangesList object
 #' @return exonic coordinates for each ORF.
-#' @seealso \code{\link{mapFromTranscripts}}
+#' @seealso \code{\link[GenomicFeatures]{mapFromTranscripts}}
 #' @export
 
 from_tx_togen<-function(ORFs,exons,introns){
@@ -3875,7 +3875,7 @@ load_annotation<-function(path){
 #' \code{stop_in_gtf}: stop codon, as defined in the annotation.\cr
 #' @return a TxDb file and a *Rannot files are created in the specified \code{annotation_directory}. 
 #' In addition, a BSgenome object is forged, installed, and linked to the *Rannot object
-#' @seealso \code{\link{load_annotation}}, \code{\link{forgeBSgenomeDataPkg}}, \code{\link{makeTxDbFromGFF}}, \code{\link{run_ORFquant}}.
+#' @seealso \code{\link{load_annotation}}, \code{\link[BSgenome]{forgeBSgenomeDataPkg}}, \code{\link[txdbmaker]{makeTxDbFromGFF}}, \code{\link{run_ORFquant}}.
 #' @export
 
 prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_file,scientific_name="Homo.sapiens",annotation_name="genc25",export_bed_tables_TxDb=TRUE,forge_BSgenome=TRUE,genome_seq=NULL,circ_chroms=DEFAULT_CIRC_SEQS,create_TxDb=TRUE){
