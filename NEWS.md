@@ -434,3 +434,8 @@ deprecation warnings.
   made, and `inst/extdata/README.md` gives their sources, terms of use and the
   papers to cite. Before, the vignette was not installed with the package, and
   it downloaded its data from links that no longer work.
+- The repository no longer holds `ORFquant-manual.pdf`. It was the manual of
+  version 1.02.0 from June 2020, without the changes to the help pages since
+  then. Read the help pages with `help(package = "ORFquant")`, or make a PDF
+  of them with `R CMD Rd2pdf` (this needs LaTeX). The old PDF is still in the
+  repository's history, for example at commit `5fc1d86`.
