@@ -35,7 +35,12 @@ jobs:
           remotes::install_deps(dependencies = TRUE, upgrade = "never",
                                 repos = BiocManager::repositories())
 
-      # The Bioconductor images have no LaTeX, which the PDF manual needs
+      # The Bioconductor images have no LaTeX, which the PDF manual needs.
+      # setup-tinytex installs texinfo with apt-get, and the images have no
+      # apt package lists.
+      - name: Update the apt package lists
+        run: apt-get update
+
       - uses: r-lib/actions/setup-tinytex@v2
 
       - name: Check
