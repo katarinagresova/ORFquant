@@ -1,6 +1,6 @@
-# R CMD check, with the tests and the vignette, on the oldest and on the newest
-# Bioconductor release that ORFquant supports. ORFquant forks its worker
-# processes, so it runs on Linux and macOS only; this checks Linux.
+# R CMD check, with the tests, the vignette and the PDF manual, on the oldest
+# and on the newest Bioconductor release that ORFquant supports. ORFquant forks
+# its worker processes, so it runs on Linux and macOS only; this checks Linux.
 name: R-CMD-check
 
 on:
@@ -35,10 +35,13 @@ jobs:
           remotes::install_deps(dependencies = TRUE, upgrade = "never",
                                 repos = BiocManager::repositories())
 
+      # The Bioconductor images have no LaTeX, which the PDF manual needs
+      - uses: r-lib/actions/setup-tinytex@v2
+
       - name: Check
         shell: Rscript {0}
         run: |
-          rcmdcheck::rcmdcheck(args = "--no-manual", build_args = "--no-manual",
+          rcmdcheck::rcmdcheck(build_args = "--no-manual",
                                error_on = "warning", check_dir = "check")
 
       - name: Upload the output of the check
