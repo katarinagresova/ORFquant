@@ -110,13 +110,6 @@ get_ps_fromsplicemin<-function(x,cutoff){
   }
   ps<-sort(c(psones,psmores))
   return(ps)
-  
-  
-  if(rangok!=1){
-    
-    ps<-shift(resize(GRanges(rang[rangok],seqnames=seqnames(x),strand=strand(x),seqlengths=seqlengths(x)),width=1,fix="start"),shift=-(cutoff-sum(rang[1:(rangok-1)]@width)))
-  }
-  return(ps)
 }
 
 #' Prepare the "for_ORFquant" file
@@ -319,9 +312,6 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     
     pos<-x[strand(x)=="+"]
     neg<-x[strand(x)=="-"]
-    
-    uniq_pos<-x_uniq[strand(x_uniq)=="+"]
-    uniq_neg<-x_uniq[strand(x_uniq)=="-"]
     
     
     

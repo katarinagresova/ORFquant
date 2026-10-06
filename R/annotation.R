@@ -278,7 +278,6 @@ prepare_annotation_files<-function(annotation_directory,twobit_file=NULL,gtf_fil
     
     cds_tx<-cdsBy(annotation,"tx",use.names=T)
     txs_gene<-transcriptsBy(annotation,by="gene")
-    genes_red<-reduce(sort(genes(annotation)))
     
     exons_tx<-exonsBy(annotation,"tx",use.names=T)
     

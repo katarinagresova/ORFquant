@@ -178,10 +178,6 @@ take_Fvals_spect<-function(x,n_tapers,time_bw,slepians_values){
   if(length(x)>=1024/2){padding<-"default"}
   resSpec1 <- spec.mtm(as.ts(x), k=n_tapers, nw=time_bw, nFFT = padding, centreWithSlepians = TRUE, Ftest = TRUE, maxAdaptiveIterations = 100,returnZeroFreq=F,plot=F,dpssIN=slepians_values)
   
-  resSpec2<-dropFreqs(resSpec1,0.29,0.39)
-  
-  freq_max_3nt<-resSpec1$freq[which(abs((resSpec1$freq-(1/3)))==min(abs((resSpec1$freq-(1/3)))))]
-  
   Fmax_3nt<-resSpec1$mtm$Ftest[which(abs((resSpec1$freq-(1/3)))==min(abs((resSpec1$freq-(1/3)))))]
   spect_3nt<-resSpec1$spec[which(abs((resSpec1$freq-(1/3)))==min(abs((resSpec1$freq-(1/3)))))]
   return(c(Fmax_3nt,spect_3nt))
@@ -330,12 +326,7 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
     psit_uniq<-as.vector(P_sites_uniq_rle[ORFs[i]@ranges])
     psit_uniq_mm<-as.vector(P_sites_uniq_mm_rle[ORFs[i]@ranges])
     P_sites_raw[i]<-sum(psit)
-    ps_unq<-round(sum(psit_uniq)/sum(psit)*100,digits = 2)
-    if(is.na(ps_unq)){ps_unq<-0}
     P_sites_raw_uniq[i]<-sum(psit_uniq)
-    
-    ps_unq<-round((sum(psit_uniq)-sum(psit_uniq_mm))/sum(psit)*100,digits = 2)
-    if(is.na(ps_unq)){ps_unq<-0}
     
     P_sites_raw_uniq_mm[i]<-sum(psit_uniq_mm)
     ORF_id_tr[i]<-paste(as.character(seqnames(ORFs[i])[1]),start(ORFs[i]),end(ORFs[i]),sep = "_")
@@ -419,8 +410,6 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   
   orfs_gr<-list()
   orfs_gen_gr<-GRangesList()
-  annot_tx_cds_gr<-GRangesList()
-  cdss<-annotation$cds_txs
   intr_txs<-annotation$introns_txs
   tr_gen<-annotation$trann
   txs_sels<-unique(unlist(selected_txs$txs_selected))
@@ -460,9 +449,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   for(tx in txs_sels){
     
     ex_txs<-annot_sels[tx]
-    ex_tx<-ex_txs[[1]]
     intr_tx<-intr_sels[[tx]]
-    nm_cds<-which(names(cdss)==tx)
     #map cds in tx space
     
     

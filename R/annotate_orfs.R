@@ -744,8 +744,6 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   
   
   
-  annotated_cds_tx2<-annotated_cds_tx
-  
   #here bulk of work
   ORFs_splice_feats<-list()
   ORFs_splice_feats_tomaxORF<-list()
@@ -838,8 +836,6 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       if(length(orf_gen)==1){moreg<-t(data.frame(moreg,stringsAsFactors=F))}
       annotated_cds2<-reduce(unlist(annotated_cds[[colnames(moreg)[which.max(colSums(moreg))]]]))
       
-      #if(length(annotated_cds_tx2)>1){annotated_cds_tx<-annotated_cds_tx2[annotated_cds_tx2%over%annotated_cds2]}
-      
     }
     
     #otherwise list with 1 gene
@@ -886,7 +882,6 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     }
     
     #if overlaps CDS
-    spl_ran<-GRanges()
     if(sum(overl)>0){
       
       #annotated NC wrt maxcds

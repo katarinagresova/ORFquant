@@ -44,7 +44,6 @@
 
 select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq_signal=F){
   
-  stra<-as.character(region@strand)
   gene_feat <- junction_counts[junction_counts %over% region]
   
   nsns<-annotation$exons_bins
@@ -93,7 +92,6 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
   mcols(gene_feat)<-cols
   
   
-  rang<-gene_feat
   a<-gene_feat$txs
   b<-gene_feat$gene_id
   c<-gene_feat$type
@@ -167,7 +165,6 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
       mat[,i]<-sapply(a,function(x){sum(x==txs_sofar[i])})
     }
     
-    mat_orig<-mat
     d_count<-paste(1:length(d),d,sep="_")
     good<-d_count[which(d>0)]
     bad<-d_count[which(d==0)]
@@ -613,12 +610,10 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     }
     
     orfs_print2<-listorf_print
-    orfs_printWRONG<-apply(tab_j,MARGIN=1,FUN=function(x){colnames(tab_j)[which(x>0)]})
     
     #names(orfs_print2)<-NULL
   }
   orfs <- results_ORFs[["ORFs_genomic_position"]]
-  stra<-as.character(select_feats[1]@strand)
   
   df_orfs_ex<-data.frame(orfs)
   names(df_orfs_ex)<-c("tx_id","tx_name","tx_chrom","exon_start","exon_end","width","tx_strand")
@@ -765,7 +760,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       mat[,i]<-sapply(a,function(x){sum(x==txs_sofar[i])})
     }
     
-    mat_orig<-mat
     d_count<-paste(1:length(d),d,sep="_")
     good<-d_count[which(d>0)]
     bad<-d_count[which(d==0)]
@@ -894,7 +888,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   cols$use_ORF_selected<-use
   mcols(gene_feat)<-cols
   
-  final_ranges<-sort(gene_feat)
   sel_feats<-list()
   for(i in txs_good){
     featexs<-gene_feat[gene_feat$type=="E"]
@@ -909,7 +902,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     ok<-ok[a>0]
     sel_feats[[i]]<-unique(ok)
   }
-  all_feats<-results_ORFs$selected_ORFs_features
   selected_ORFs<-lapply(results_ORFs,FUN=function(x){x[names(x)%in%txs_good]})
   selected_ORFs$selected_ORFs_features<-sel_feats
   
@@ -1270,7 +1262,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
         if(sum(expect)>0){
           expect<-expect/sum(expect)
         }
-        uniq_feats<-featsall$use_ORF_selected=="unique"
         trucov<-featsall$coverage
         if(sum(expect)>0){
           trucov<-trucov/sum(trucov)
@@ -1431,8 +1422,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       
     }
     
-    genes<-unlist(GRangesList(orfs_tx))$gene_id
-    genes_unq<-unique(genes)
     orfs_genes<-split(unlist(GRangesList(orfs_tx)),f=unlist(GRangesList(orfs_tx))$gene_id)
     orfs_genes<-GRangesList(lapply(orfs_genes,FUN=function(x){
       xnot<-x[is.na(x$P_sites)]
@@ -1453,9 +1442,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     orf_del_cums<-c()
     orf_del_iso<-c()
     orf_del_ps<-c()
-    
-    list_genes<-list()
-    list_genes_feats<-list()
     
     cums_list<-list()
     for(h in names(orfs_genes)){
