@@ -21,7 +21,7 @@ This function uses the \code{mapFromTranscripts} function to switch between tran
 and genomic coordinates
 }
 \seealso{
-\code{\link{mapFromTranscripts}}
+\code{\link[GenomicFeatures]{mapFromTranscripts}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}
