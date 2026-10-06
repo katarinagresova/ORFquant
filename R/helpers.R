@@ -209,11 +209,9 @@ from_tx_togen<-function(ORFs,exons,introns){
   strand(ORFs)<-rep("*",length(ORFs))
   orfs_gen<-mapFromTranscripts(x = ORFs,transcripts = exons,ignore.strand=F)
   strand(orfs_gen)<-strand(exons[[1]][1])
-  list_ma<-GRangesList()
-  for(i in 1:length(ORFs)){
-    or<-orfs_gen[i]
-    or<-setdiff(or,introns)
-    list_ma[[ORFs$ORF_id_tr[i]]]<-or
-  }
+  # setdiff() of each ORF and the introns, for all ORFs at once: per ORF, setdiff() and [[<- on
+  # the GRangesList cost several ms
+  list_ma<-GenomicRanges::psetdiff(orfs_gen[1:length(ORFs)],rep(GRangesList(introns),length(ORFs)))
+  names(list_ma)<-ORFs$ORF_id_tr
   return(list_ma)
 }
