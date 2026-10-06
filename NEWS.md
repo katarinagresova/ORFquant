@@ -408,6 +408,30 @@ deprecation warnings.
   3 h 11 min instead of 3 h 20 min, and at most 35 GB of memory instead of
   34 GB. With 64 cores, a run takes 57 min instead of 68 min, and at most
   115 GB of memory, as before.
+- The genomic regions take less time again. With one core (timed with R's
+  profiler on), a run on chr21 of a human sample takes 350 s instead of
+  415 s (16% less), and a run on 160 random regions of the other chromosomes
+  484 s instead of 563 s (14% less). With 64 cores, a run on the human sample
+  with the 1.8 GB BAM takes 47 min instead of 57 min (17% less), and at most
+  116 GB of memory instead of 115 GB. Results don't change: on our test data
+  and on the whole sample with the 1.8 GB BAM, all outputs and the results of
+  each region are the same as before, and on chr21 and the 160 regions, each
+  changed function gives the same result as before in every call. Five
+  changes make it faster:
+  - `select_start()` and `calc_orf_pval()` took the P-sites of each ORF from
+    the coverage of its transcript, with S4 operations for each ORF. They now
+    take the coverage once as a plain vector, and a part of it for each ORF.
+    `select_start()` chose the start codon of each stop codon with
+    `endoapply()` on the ORFs split by stop codon; it now works on the ORFs'
+    positions and takes the chosen ORFs once.
+  - `select_quantify_ORFs()` built an SQLite database of the region's ORFs
+    (a TxDb) to get their exonic parts with `exonicParts()`. It now gets the
+    same parts directly, with `disjoin()`.
+  - `from_tx_togen()` removed the introns from the ORFs one ORF at a time; it
+    now does it for all ORFs of a transcript at once, with `psetdiff()`.
+  - `annotate_splicing()` looked for the overlaps of an ORF's exons and the
+    CDS exons three times; it now does it once. It also builds its list
+    columns in one step.
 
 ## Documentation
 
