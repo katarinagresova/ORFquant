@@ -1,0 +1,2 @@
+# Keep R code LF on every platform, so that line endings never show up as diffs.
+*.R text eol=lf
