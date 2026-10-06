@@ -1126,7 +1126,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
   seqinf <- Seqinfo(names(anno$exons_txs),anno$exons_txs%>%width%>%sum)
   #Now get the negatives for each ORF
   
-  utrs <- orfquant_results$ORFs_tx%>%subset(gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
+  utrs <- subset(orfquant_results$ORFs_tx,gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
     coverage%>%
     as('GRanges')%>%subset(score==0)%>%mapFromTranscripts(anno$exons_txs)%>%
     {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
@@ -1157,7 +1157,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
     GenomeInfoDb::keepSeqlevels(disctxsint,'coarse')%>%
     {seqinfo(.)<-seqinf[disctxsint];.}%>%  coverage%>%
     as('GRanges')%>%
-    subset(.$score==0)%>%
+    subset(score==0)%>%
     {   
       txgr = .
       out = mapFromTranscripts(txgr,anno$exons_txs)
@@ -1169,7 +1169,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
   disc_orfquantgr <- disc_orfquantgr%>% c(.,anno$cds_txs[disctxsint]%>%unlist%>%{.$feature=rep('CDS',length(.));.$transcript=names(.);.})
   discORFnames<-paste0(disctxsint,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
   disc_orfquantgr$symbol = discORFnames[disc_orfquantgr$transcript]
-  fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
+  fakejreads <- subset(riboseqcoutput$junctions,any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
     {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
   fakejreads <- fakejreads[mapply(seq_along(fakejreads[]),fakejreads$reads,FUN=rep)%>%unlist]
   orfcols <- orfcols[order(-orfscores[names(orfcols)])]
@@ -1181,7 +1181,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
     orftrpairs<-orfquantgr_sorted%>%subset(feature!='utr')%>%mcols%>%as.data.frame%>%{dplyr::distinct(.)}
     orfutrs <- orfquantgr_sorted%>%subset(feature=='utr')
     orfutrs<-lapply(1:nrow(orftrpairs),function(i){
-      orfutrs <- orfutrs%>%subset(transcript==orftrpairs$transcript[i])
+      orfutrs <- subset(orfutrs,transcript==orftrpairs$transcript[i])
       orfutrs$symbol = orftrpairs$feature[i]
       names(orfutrs) = orfutrs$symbol 
       orfutrs

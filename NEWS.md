@@ -293,7 +293,11 @@ deprecation warnings.
   - warns when a call gives `bam_files` or `col`, because they were never
     used: the P-sites and junction reads come from the P-site file of the
     results, and these tracks are always forestgreen. `bam_files` is again
-    optional.
+    optional;
+  - no longer fails with `object 'selgene' not found` on Bioconductor 3.23.
+    S4Vectors 0.50 evaluates the condition of `subset()` in another
+    environment when the call is in a `%>%` pipe, so the condition did not
+    find the variables of the function.
 
   In our test data, 17 of 63 genes failed; all 63 plot now.
 - `create_ORFquant_html_report()` now renders the report from a copy of the
