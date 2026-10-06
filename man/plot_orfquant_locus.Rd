@@ -7,9 +7,9 @@
 plot_orfquant_locus(
   locus,
   orfquant_results,
-  bam_files,
+  bam_files = NULL,
   plotfile = "locusplot.pdf",
-  col = "green"
+  col = NULL
 )
 }
 \arguments{
@@ -17,11 +17,11 @@ plot_orfquant_locus(
 
 \item{orfquant_results}{A list containing processed output from ORFquant}
 
-\item{bam_files}{bam files, (or pre-processed bam data from RiboseQC) to be plotted}
+\item{bam_files}{Not used: the P-sites and junction reads come from the psite data file of orfquant_results. A value gives a warning.}
 
 \item{plotfile}{the file into which the plot will be saved as a pdf}
 
-\item{col}{not used (the P-site and junction tracks are drawn in forestgreen)}
+\item{col}{Not used: the P-site and junction tracks are drawn in forestgreen. A value gives a warning.}
 }
 \value{
 returns the value of plotfile if successfull.

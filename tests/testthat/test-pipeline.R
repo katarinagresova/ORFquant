@@ -123,6 +123,18 @@ test_that("the output dictionary documents every column and category of the resu
   }
 })
 
+test_that("plot_orfquant_locus() plots a gene of the example without warnings", {
+  skip_if(is.null(runs$one_core))
+  for (pkg in c("Gviz", "lemon", "dplyr", "GenomeInfoDb")) skip_if_not_installed(pkg)
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  plotfile <- file.path(work, "locus.pdf")
+  # before, ggplot2 warned that qplot() is deprecated, and the pdf device that
+  # the font width of the tabs in the title of the P-site track is unknown
+  expect_no_warning(utils::capture.output(suppressMessages(
+    plot_orfquant_locus(locus = res$ORFs_tx$gene_id[1], orfquant_results = res, plotfile = plotfile))))
+  expect_true(file.exists(plotfile))
+})
+
 # Input that cannot work stops the run before the BAM file is read, or before
 # the regions are quantified; these use the annotation and P-sites made above
 
