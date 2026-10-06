@@ -323,17 +323,25 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
   P_sites_raw_uniq_mm<-rep(NA,length(ORFs))
   pct_fr<-rep(NA,length(ORFs))
   ORF_id_tr<-ORFs$ORF_id_tr
+  # the P_sites of each ORF are a slice of plain vectors, and its coordinates are taken
+  # once: ORFs[i] and its accessors cost S4 calls per ORF
+  psit_all<-as.vector(P_sites_rle)
+  psit_uniq_all<-as.vector(P_sites_uniq_rle)
+  psit_uniq_mm_all<-as.vector(P_sites_uniq_mm_rle)
+  st<-start(ORFs)
+  en<-end(ORFs)
+  sn<-as.character(seqnames(ORFs))
   
   
   for(i in 1:length(ORFs)){
-    psit<-as.vector(P_sites_rle[ORFs[i]@ranges])
-    psit_uniq<-as.vector(P_sites_uniq_rle[ORFs[i]@ranges])
-    psit_uniq_mm<-as.vector(P_sites_uniq_mm_rle[ORFs[i]@ranges])
+    psit<-psit_all[st[i]:en[i]]
+    psit_uniq<-psit_uniq_all[st[i]:en[i]]
+    psit_uniq_mm<-psit_uniq_mm_all[st[i]:en[i]]
     P_sites_raw[i]<-sum(psit)
     P_sites_raw_uniq[i]<-sum(psit_uniq)
     
     P_sites_raw_uniq_mm[i]<-sum(psit_uniq_mm)
-    ORF_id_tr[i]<-paste(as.character(seqnames(ORFs[i])[1]),start(ORFs[i]),end(ORFs[i]),sep = "_")
+    ORF_id_tr[i]<-paste(sn[i],st[i],en[i],sep = "_")
     if(sum(psit)>0){
       infr<-round(sum(psit[seq(1,length(psit),by=3)])/sum(psit),digits = 4)
       pct_fr[i]<-infr
