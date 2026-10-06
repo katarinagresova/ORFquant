@@ -40,17 +40,18 @@
 
 annotate_splicing<-function(orf_gen,ref_cds){
   
-  overref<-orf_gen%over%ref_cds
-  refover<-ref_cds%over%orf_gen
+  # the overlaps are found once, on orf_gen before it is sorted below: two %over% and a
+  # findOverlaps() on the sorted exons cost several ms each
+  ov<-findOverlaps(orf_gen,ref_cds)
+  overref<-seq_along(orf_gen)%in%queryHits(ov)
+  refover<-seq_along(ref_cds)%in%subjectHits(ov)
   spl_ran<-GRanges()
   
   if(sum(!refover)>0){
     spl_ran<-c(spl_ran,ref_cds[!refover])
-    grliss<-GRangesList()
     refgrl<-ref_cds[!refover]
-    for(gri in 1:length(refgrl)){
-      grliss[[gri]]<-refgrl[gri]
-    }
+    # one exon per element, made at once: [[<- copies the GRangesList for each exon
+    grliss<-relist(refgrl,IRanges::PartitioningByEnd(seq_along(refgrl)))
     # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
     cols<-mcols(spl_ran)
     cols$ref<-grliss
@@ -62,10 +63,13 @@ annotate_splicing<-function(orf_gen,ref_cds){
     
   }
   
+  o<-order(orf_gen)
   orf_gen<-sort(orf_gen)
   if(length(orf_gen)>0){
-    # overlaps found and exons combined once, not per exon: each GRanges op costs several ms
-    ov_ref<-findOverlaps(orf_gen,ref_cds)
+    # overlaps found and exons combined once, not per exon: each GRanges op costs several ms.
+    # The hits of ov, with the queries numbered as in the sorted orf_gen (sort() orders as order())
+    hq<-match(queryHits(ov),o)
+    hs<-subjectHits(ov)
     refs<-list()
     spl_types<-list()
     for(f in 1:length(orf_gen)){
@@ -77,7 +81,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
       last_ex<-length(orf_gen)
       if(overref[f]==T){
         #sorted: in ref_cds order, as ref_cds[ref_cds%over%ran]; findOverlaps() may give an exon's hits by position
-        ref_over<-ref_cds[sort(subjectHits(ov_ref)[queryHits(ov_ref)==f])]
+        ref_over<-ref_cds[sort(hs[hq==f])]
         #annotate for 5' and 3'; porcoddio
         
         if(length(ref_over)>1){
@@ -422,7 +426,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
     if(!any(vapply(refs,is.null,NA)) & !any(vapply(spl_types,is.null,NA))){
       ran<-orf_gen
       cols<-mcols(ran)
-      cols$ref<-GRangesList(refs)
+      cols$ref<-GRangesList_fast(refs)
       cols$spl_type<-unlist(spl_types)
       mcols(ran)<-cols
       spl_ran<-sort(c(spl_ran,ran))
