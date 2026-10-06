@@ -615,18 +615,14 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   }
   orfs <- results_ORFs[["ORFs_genomic_position"]]
   
-  df_orfs_ex<-data.frame(orfs)
-  names(df_orfs_ex)<-c("tx_id","tx_name","tx_chrom","exon_start","exon_end","width","tx_strand")
-  df_orfs_ex$exon_rank<-c(unlist(sapply(as.numeric(table(df_orfs_ex$tx_id)),FUN=function(x){1:x})))
-  df_orfs<-data.frame(tx_id=sort(unique(df_orfs_ex$tx_id)),tx_name=as.character(names(orfs)),tx_chrom=as.character(unique(seqnames(orfs[[1]]))),tx_start=min(start(orfs)),tx_end=max(end(orfs)),tx_strand=as.character(unique(strand(orfs[[1]]))),stringsAsFactors=F)
-  df_genes<-data.frame(tx_name=as.character(names(orfs)),gene_id="OFF")
-  orfann<-suppressWarnings(txdbmaker::makeTxDb(transcripts=df_orfs,splicings=df_orfs_ex,genes=df_genes))
-  #disjointExons(orfann)
-  
-  
-  exbin<-exonicParts(orfann,linked.to.single.gene.only = F)
-  # close the SQLite connection now; a finalizer run during S4 method lookup fails (lcalviell/ORFquant#3)
-  orfann$finalize()
+  # the exonic parts of the ORFs and their tx_name, as exonicParts() gives them for a TxDb with one
+  # transcript per ORF (exons in the order of orfs, on the chromosome and strand of the first ORF),
+  # without building the TxDb (an SQLite database)
+  ex<-unlist(orfs,use.names=FALSE)
+  ex<-GRanges(as.character(unique(seqnames(orfs[[1]]))),ex@ranges,as.character(unique(strand(orfs[[1]]))))
+  exbin<-disjoin(ex,with.revmap=TRUE)
+  tx_name<-unique(IRanges::extractList(rep(as.character(names(orfs)),elementNROWS(orfs)),mcols(exbin)$revmap))
+  mcols(exbin)<-DataFrame(tx_name=tx_name[!is.na(tx_name)])
   
   
   d<-rep(0,length(exbin))
