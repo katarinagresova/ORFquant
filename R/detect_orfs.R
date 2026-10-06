@@ -206,15 +206,18 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
   longest_ORF<-split(ORFs,end(ORFs))
   maxo<-which.max(width(longest_ORF))
   longest_ORF<-unlist(longest_ORF[splitAsList(unname(maxo), names(maxo))])
-  P_sites_rle<-RleList(P_sites_rle)
-  names(P_sites_rle)<-seqnames(ORFs[1])
-  covss<-P_sites_rle[ORFs]
-  ok<-sapply(covss,function(x){sum(as.vector(x)>0)>2})
+  # the P_sites of each ORF are a slice of one plain vector: P_sites_rle[ORFs], an RleList
+  # with one element per ORF, costs S4 calls per ORF
+  psit_all<-as.vector(P_sites_rle)
+  st<-start(ORFs)
+  en<-end(ORFs)
+  ok<-sapply(seq_along(ORFs),function(i){sum(psit_all[st[i]:en[i]]>0)>2})
   if(length(ok)==0){return(GRanges())}
   ORFs<-ORFs[ok]
-  covss<-covss[ok]
-  rrr<-lapply(covss,function(x){
-    fr<-suppressWarnings(matrix(as.vector(x),nrow = 3))
+  st<-st[ok]
+  en<-en[ok]
+  rrr<-lapply(seq_along(ORFs),function(i){
+    fr<-suppressWarnings(matrix(psit_all[st[i]:en[i]],nrow = 3))
     fr<-fr[,colSums(fr)>0,drop=F]
     if(dim(fr)[2]==0){return(GRanges())}
     fra<-apply(fr,2,function(y){y/sum(y)})
@@ -227,25 +230,28 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
   mcols(ORFs)<-DataFrame(ave_pct_fr=rrr[,1],pct_fr=rrr[,2],ave_pct_fr_st=rep(NA,nrow(rrr)),pct_fr_st=rep(NA,nrow(rrr)))
   
   if(!is.na(cutoff)){
-    covss<-covss[ORFs$pct_fr>=cutoff]
     ORFs<-ORFs[ORFs$pct_fr>=cutoff]
   }
   if(!is.na(cutoff_ave)){
-    covss<-covss[ORFs$ave_pct_fr>=cutoff_ave]
     ORFs<-ORFs[ORFs$ave_pct_fr>=cutoff_ave]
   }
   if(length(ORFs)==0){return(GRanges())}
-  orfs_spl<-split(ORFs,end(ORFs))
-  names(covss)<-end(ORFs)
-  ORFs<-endoapply(orfs_spl,function(x){
-    if(length(x)==1){return(x)}
-    covo<-covss[names(covss)%in%as.character(end(x)[1])]
+  # the ORFs with the same stop are indices into ORFs (sorted by end and start), and the
+  # ORF kept for each stop is taken once at the end: endoapply() on split(ORFs) costs S4
+  # calls per stop
+  st<-start(ORFs)
+  en<-end(ORFs)
+  ave_pct_fr_st<-ORFs$ave_pct_fr_st
+  pct_fr_st<-ORFs$pct_fr_st
+  keep<-integer(0)
+  for(x in split(seq_along(ORFs),en)){
+    if(length(x)==1){keep<-c(keep,x);next}
     okorfa<-c()
     for(cnt in 1:length(x)){
-      psit<-as.vector(covo[[cnt]])
+      psit<-psit_all[st[x[cnt]]:en[x[cnt]]]
       
       if(cnt<length(x)){
-        psit<-psit[1:(start(x)[cnt+1]-start(x)[cnt])]
+        psit<-psit[1:(st[x[cnt+1]]-st[x[cnt]])]
       }
       if(cnt==length(x)){okorfa<-cnt}
       
@@ -257,11 +263,8 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       infr<-sum(psit[seq(1,length(psit),by=3)])/sum(psit)
       if(!is.na(cutoff)){
         if(infr>=cutoff & !is.na(infr)){
-          # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
-          cols<-mcols(x)
-          cols$ave_pct_fr_st[cnt]<-round(infr_freq,digits = 4)
-          cols$pct_fr_st[cnt]<-round(infr,digits = 4)
-          mcols(x)<-cols
+          ave_pct_fr_st[x[cnt]]<-round(infr_freq,digits = 4)
+          pct_fr_st[x[cnt]]<-round(infr,digits = 4)
           okorfa<-cnt
           break
         }
@@ -269,10 +272,8 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       
       if(!is.na(cutoff_ave)){
         if(infr_freq>=cutoff_ave & !is.na(infr_freq)){
-          cols<-mcols(x)
-          cols$ave_pct_fr_st[cnt]<-round(infr_freq*100,digits = 4)
-          cols$pct_fr_st[cnt]<-round(infr*100,digits = 4)
-          mcols(x)<-cols
+          ave_pct_fr_st[x[cnt]]<-round(infr_freq*100,digits = 4)
+          pct_fr_st[x[cnt]]<-round(infr*100,digits = 4)
           okorfa<-cnt
           break
         }
@@ -281,11 +282,14 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
       
       
     }
-    x<-x[okorfa]
-    return(x)
-  })
-  ORFs<-unlist(ORFs)
-  names(ORFs)<-NULL
+    keep<-c(keep,x[okorfa])
+  }
+  # columns are set on mcols() and put back once: a GRanges $<- also runs updateObject() (~20 ms)
+  cols<-mcols(ORFs)
+  cols$ave_pct_fr_st<-ave_pct_fr_st
+  cols$pct_fr_st<-pct_fr_st
+  mcols(ORFs)<-cols
+  ORFs<-ORFs[keep]
   mcols(ORFs)$longest_ORF<-longest_ORF[match(end(ORFs),names(longest_ORF))]
   return(ORFs)
   
