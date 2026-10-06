@@ -10,8 +10,14 @@
   `cigarRangesAlongQuerySpace()` and `cigarRangesAlongReferenceSpace()` are
   deprecated: it uses cigarillo's functions instead.
 - devtools and GenomicFiles are no longer needed.
-  `prepare_annotation_files(forge_BSgenome = TRUE)` installs the forged
-  BSgenome package with `install.packages()`.
+- `prepare_annotation_files()` no longer forges and installs a BSgenome
+  package from a 2bit file: this failed with current BSgenomeForge versions
+  (lcalviell/ORFquant#17, #19, #22 and #27). Give the genome as a FASTA file
+  (`genome_seq`); `twoBitToFa` of the UCSC tools makes one from a 2bit file.
+  `forge_BSgenome` now defaults to `FALSE`, and without `genome_seq` the
+  function stops at once with this advice. `twobit_file`, `scientific_name`
+  and `annotation_name` are no longer used. Annotations that earlier versions
+  made with a forged BSgenome package still load.
 - doMC and foreach are no longer needed: `run_ORFquant()` runs its worker
   processes with the parallel package, which comes with R. So with more than
   one core, `run_ORFquant()` no longer registers doMC as the backend of
