@@ -206,6 +206,12 @@ deprecation warnings.
   every region with ORFs (or every one in a block of 1000 such regions) has
   the same number of ORFs, 2 or more, for example in a run on one gene with
   2 ORFs. The `ORF_id_tr` column was not affected.
+- `run_ORFquant()` no longer fails with `1 elements in value to replace 0
+  elements` when the cutoffs of the quantification remove all ORFs of a
+  genomic region, for example `stn.orf_quant.cutoff_P_sites = 10` on a region
+  where all ORFs have fewer than 10 P-sites. The region now has no ORFs, as a
+  region where no ORF is detected. When no region has ORFs, the run stops
+  with `No ORFs found!`. Runs that did not fail give the same results.
 - `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
   the annotation has exactly one protein-coding transcript.
 - `prepare_annotation_files()` now reads the GTF's ids, biotypes and gene
