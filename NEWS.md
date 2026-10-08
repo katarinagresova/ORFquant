@@ -270,6 +270,11 @@ deprecation warnings.
   track then held only the plus strand when only the plus bigWig was given,
   and nothing when only the minus bigWig was given; with a cutoff table, it
   replaced the P-sites computed from the BAM. Other calls are not affected.
+- `prepare_for_ORFquant()` now sorts the P-sites from bigWig files in the
+  order of the chromosomes of the annotation, as it sorts the P-sites from a
+  BAM file. Before, they were not in this order when the bigWig files list
+  the chromosomes in another order, or when a chromosome has P-sites on one
+  strand only. The results of `run_ORFquant()` do not change.
 - `plot_ORFquant_results()` no longer fails with `'breaks' are not unique`
   when the largest number of selected transcripts per gene is 3, 6 or 9
   (lcalviell/ORFquant#18). All other plots are unchanged.

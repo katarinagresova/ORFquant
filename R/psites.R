@@ -228,9 +228,10 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
       input_P_sites_mn<-import(path_to_P_sites_minus_bw)
       strand(input_P_sites_mn)<-"-"
     }
-    suppressWarnings(input_P_sites<-sort(c(input_P_sites_pl,input_P_sites_mn)))
+    suppressWarnings(input_P_sites<-c(input_P_sites_pl,input_P_sites_mn))
     seqlevels(input_P_sites,pruning.mode="coarse")<-seqllll
     seqlengths(input_P_sites)<-seqleee
+    input_P_sites<-sort(input_P_sites)
     
   }
   
@@ -242,9 +243,10 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
       input_P_sites_uniq_mn<-import(path_to_P_sites_uniq_minus_bw)
       strand(input_P_sites_uniq_mn)<-"-"
     }
-    suppressWarnings(input_P_sites_uniq<-sort(c(input_P_sites_uniq_pl,input_P_sites_uniq_mn)))
+    suppressWarnings(input_P_sites_uniq<-c(input_P_sites_uniq_pl,input_P_sites_uniq_mn))
     seqlevels(input_P_sites_uniq,pruning.mode="coarse")<-seqllll
     seqlengths(input_P_sites_uniq)<-seqleee
+    input_P_sites_uniq<-sort(input_P_sites_uniq)
     
   }
   
@@ -256,9 +258,10 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
       input_P_sites_uniq_mm_mn<-import(path_to_P_sites_uniq_mm_minus_bw)
       strand(input_P_sites_uniq_mm_mn)<-"-"
     }
-    suppressWarnings(input_P_sites_uniq_mm<-sort(c(input_P_sites_uniq_mm_pl,input_P_sites_uniq_mm_mn)))
+    suppressWarnings(input_P_sites_uniq_mm<-c(input_P_sites_uniq_mm_pl,input_P_sites_uniq_mm_mn))
     seqlevels(input_P_sites_uniq_mm,pruning.mode="coarse")<-seqllll
     seqlengths(input_P_sites_uniq_mm)<-seqleee
+    input_P_sites_uniq_mm<-sort(input_P_sites_uniq_mm)
     
   }
   

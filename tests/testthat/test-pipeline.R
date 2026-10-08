@@ -212,3 +212,30 @@ test_that("run_ORFquant() refuses an output directory that does not exist", {
                               prefix = file.path(work, "no_dir", "sample"), interactive = FALSE))$message
   expect_match(msg, "Cannot write the output files")
 })
+
+test_that("prepare_for_ORFquant() sorts the P-sites of bigWig files by the chromosomes of the annotation", {
+  skip_if(is.null(runs$one_core))
+  # The annotation has chr22 and then chr1; the bigWig files have chr1 first
+  annotation <- changed_annotation(function(si) {
+    Seqinfo::seqlevels(si) <- c(Seqinfo::seqlevels(si), "chr1")
+    Seqinfo::seqlengths(si)[["chr1"]] <- Seqinfo::seqlengths(si)[["chr22"]]
+    si
+  })
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  in_bw <- GenomicRanges::GRanges(rep(c("chr1", "chr22"), each = length(ps)), rep(IRanges::ranges(ps), 2),
+                                  rep(BiocGenerics::strand(ps), 2), score = rep(ps$score, 2),
+                                  seqinfo = get(load(annotation))$seqinfo[c("chr1", "chr22")])
+  bw <- file.path(work, c("plus.bw", "minus.bw"))
+  rtracklayer::export(in_bw[BiocGenerics::strand(in_bw) == "+"], bw[1], format = "bigWig")
+  rtracklayer::export(in_bw[BiocGenerics::strand(in_bw) == "-"], bw[2], format = "bigWig")
+  dest <- file.path(work, "bigwig")
+  quiet(prepare_for_ORFquant(annotation_file = annotation, bam_file = example_file("chr22_example.bam"),
+                             path_to_P_sites_plus_bw = bw[1], path_to_P_sites_minus_bw = bw[2], dest_name = dest))
+  got <- get(load(paste0(dest, "_for_ORFquant")))$P_sites_all
+  expect_false(BiocGenerics::is.unsorted(got))
+  expected <- in_bw
+  Seqinfo::seqlevels(expected) <- c("chr22", "chr1")
+  expected <- BiocGenerics::sort(expected)
+  expected$score <- as.numeric(expected$score)   # the scores of bigWig files are double
+  expect_identical(as.data.frame(got), as.data.frame(expected))
+})
