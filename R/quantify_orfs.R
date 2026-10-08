@@ -568,6 +568,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
 #' Can be average_coverage or total_Psites. Defaults to total_Psites for consistency.
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @return modified \code{results_ORFs} object with the selected ORFs including quantification estimates.
+#' An empty list when the cutoffs remove all ORFs.
 #' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_txs}}, \code{\link{ORFquant_output}}
 #' @export
 
@@ -929,6 +930,8 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   while(length(orf_del)>0){
     
     feats<-feats[!names(feats)%in%orf_del]
+    #the cutoffs removed all ORFs: the region has no ORFs, as when detect_translated_orfs finds none
+    if(length(feats)==0){return(list())}
     nms<-sapply(feats,length)
     nms<-rep(names(nms),nms)
     feats<-unlist(GRangesList(unlist(feats)))

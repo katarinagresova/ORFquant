@@ -39,6 +39,7 @@ Can be average_coverage or total_Psites. Defaults to total_Psites for consistenc
 }
 \value{
 modified \code{results_ORFs} object with the selected ORFs including quantification estimates.
+An empty list when the cutoffs remove all ORFs.
 }
 \description{
 This function selects a subset of detected ORFs and quantifies their translation

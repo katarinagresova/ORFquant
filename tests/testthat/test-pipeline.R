@@ -251,3 +251,22 @@ test_that("prepare_for_ORFquant() sorts the P-sites of bigWig files by the chrom
   expected$score <- as.numeric(expected$score)   # the scores of bigWig files are double
   expect_identical(as.data.frame(got), as.data.frame(expected))
 })
+
+test_that("run_ORFquant() gives no ORFs for a gene when stn.orf_quant.cutoff_P_sites removes all its ORFs", {
+  skip_if(is.null(runs$one_core))
+  # Before, the run stopped with "1 elements in value to replace 0 elements"
+  # in the first region where the cutoff removed all ORFs
+  dir.create(file.path(work, "cutoff"))
+  prefix <- file.path(work, "cutoff", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     stn.orf_quant.cutoff_P_sites = 30, interactive = FALSE))
+  orfs <- read_tsv(result_files(prefix)$tsv)
+  expect_true(all(orfs$P_sites >= 30))
+  # The genes with an ORF of 30 P-sites or more without the cutoff keep ORFs;
+  # in the example, some genes have no such ORF
+  all_orfs <- read_tsv(result_files(runs$one_core)$tsv)
+  max_P_sites <- tapply(all_orfs$P_sites, all_orfs$gene_id, max)
+  expect_true(any(max_P_sites < 30))
+  expect_setequal(unique(orfs$gene_id), names(max_P_sites)[max_P_sites >= 30])
+})
