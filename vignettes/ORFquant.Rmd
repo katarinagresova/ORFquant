@@ -259,7 +259,6 @@ of one gene to a PDF file; it needs the *Gviz*, *lemon*, *dplyr* and
 ```{r locus_plot, eval = FALSE}
 plot_orfquant_locus(locus = orfs$gene_id[orfs$gene_name == "TCN2"][1],
                     orfquant_results = ORFquant_results,
-                    bam_files = NULL,
                     plotfile = file.path(out_dir, "TCN2.pdf"))
 ```
 

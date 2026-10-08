@@ -74,3 +74,15 @@ test_that("prepare_for_ORFquant() names the files that do not exist", {
   expect_match(msg, "don't exist")
   for (f in c("no_Rannot", "no.bam", "no.tsv")) expect_match(msg, f, fixed = TRUE)
 })
+
+test_that("plot_orfquant_locus() warns when bam_files or col is given, because they are not used", {
+  warned <- character()
+  expect_error(withCallingHandlers(plot_orfquant_locus("TCN2", list(), "x.bam", col = "red"),
+                                   warning = function(w) {
+                                     warned <<- c(warned, conditionMessage(w))
+                                     invokeRestart("muffleWarning")
+                                   }),
+               "old version|Please install")
+  expect_equal(sub(":.*", "", warned), c("bam_files is not used", "col is not used"))
+  expect_no_warning(expect_error(plot_orfquant_locus("TCN2", list()), "old version|Please install"))
+})

@@ -1084,13 +1084,15 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 #' 
 #' @param locus String; a gene name, must be present in names(orfquant_results$ORFs_gen)
 #' @param orfquant_results A list containing processed output from ORFquant
-#' @param bam_files bam files, (or pre-processed bam data from RiboseQC) to be plotted
+#' @param bam_files Not used: the P-sites and junction reads come from the psite data file of orfquant_results. A value gives a warning.
 #' @param plotfile the file into which the plot will be saved as a pdf
-#' @param col not used (the P-site and junction tracks are drawn in forestgreen)
+#' @param col Not used: the P-site and junction tracks are drawn in forestgreen. A value gives a warning.
 #' @return returns the value of plotfile if successfull.
 #' @export
 #' 
-plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusplot.pdf', col ='green' ){
+plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='locusplot.pdf', col=NULL ){
+  if(!missing(bam_files)){warning("bam_files is not used: the P-sites and junction reads come from orfquant_results$psite_data_file. Please remove it from the call.",call. = FALSE)}
+  if(!missing(col)){warning("col is not used: the P-site and junction tracks are drawn in forestgreen. Please remove it from the call.",call. = FALSE)}
   if (!all(vapply(c("Gviz",'lemon','dplyr','GenomeInfoDb'), requireNamespace, logical(1), quietly = TRUE))) {
     stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
          call. = FALSE)
@@ -1124,7 +1126,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   seqinf <- Seqinfo(names(anno$exons_txs),anno$exons_txs%>%width%>%sum)
   #Now get the negatives for each ORF
   
-  utrs <- orfquant_results$ORFs_tx%>%subset(gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
+  utrs <- subset(orfquant_results$ORFs_tx,gene_id==selgene)%>%GenomeInfoDb::keepSeqlevels(seltxs)%>%{seqinfo(.)<-seqinf[seltxs];.}%>%
     coverage%>%
     as('GRanges')%>%subset(score==0)%>%mapFromTranscripts(anno$exons_txs)%>%
     {.$transcript <- names(anno$exons_txs)[.$transcriptsHits];.}%>%
@@ -1155,7 +1157,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
     GenomeInfoDb::keepSeqlevels(disctxsint,'coarse')%>%
     {seqinfo(.)<-seqinf[disctxsint];.}%>%  coverage%>%
     as('GRanges')%>%
-    subset(.$score==0)%>%
+    subset(score==0)%>%
     {   
       txgr = .
       out = mapFromTranscripts(txgr,anno$exons_txs)
@@ -1167,7 +1169,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   disc_orfquantgr <- disc_orfquantgr%>% c(.,anno$cds_txs[disctxsint]%>%unlist%>%{.$feature=rep('CDS',length(.));.$transcript=names(.);.})
   discORFnames<-paste0(disctxsint,'_',start(anno$cds_txs_coords[disctxsint]),'_',end(anno$cds_txs_coords[disctxsint]))%>%setNames(disctxsint)
   disc_orfquantgr$symbol = discORFnames[disc_orfquantgr$transcript]
-  fakejreads <- riboseqcoutput$junctions%>%subset(any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
+  fakejreads <- subset(riboseqcoutput$junctions,any(gene_id==selgene))%>%resize(width(.)+2,'center')%>%
     {.$cigar <- sprintf('1M%dN1M',width(.)-2);.}
   fakejreads <- fakejreads[mapply(seq_along(fakejreads[]),fakejreads$reads,FUN=rep)%>%unlist]
   orfcols <- orfcols[order(-orfscores[names(orfcols)])]
@@ -1179,7 +1181,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
     orftrpairs<-orfquantgr_sorted%>%subset(feature!='utr')%>%mcols%>%as.data.frame%>%{dplyr::distinct(.)}
     orfutrs <- orfquantgr_sorted%>%subset(feature=='utr')
     orfutrs<-lapply(1:nrow(orftrpairs),function(i){
-      orfutrs <- orfutrs%>%subset(transcript==orftrpairs$transcript[i])
+      orfutrs <- subset(orfutrs,transcript==orftrpairs$transcript[i])
       orfutrs$symbol = orftrpairs$feature[i]
       names(orfutrs) = orfutrs$symbol 
       orfutrs
@@ -1228,7 +1230,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
                                            transcriptAnnotation='transcript'),
                      Gviz::GeneRegionTrack(exon='forestgreen',name='selected\ntranscripts',anno$exons_txs[seltxs]%>%unlist%>%{.$transcript=names(.);.$feature=rep('exon',length(.));.},fill='#F7CAC9',
                                            transcriptAnnotation='transcript'),
-                     Gviz::DataTrack(legend=TRUE,name='\t\t P-Sites',col.histogram='forestgreen',riboseqcoutput$P_sites_all%>%subsetByOverlaps(selgenerange),type='hist'),
+                     Gviz::DataTrack(legend=TRUE,name=' P-Sites',col.histogram='forestgreen',riboseqcoutput$P_sites_all%>%subsetByOverlaps(selgenerange),type='hist'),
                      Gviz::AlignmentsTrack(name='\nJunction Reads\n\n\n',col.sashimi='forestgreen',fakejreads[,'cigar'],type='sashimi',sashimiNumbers=TRUE),
                      # Gviz::GeneRegionTrack(discarded_orfs_gen),
                      Gviz::GeneRegionTrack(name='Discarded\nORFs',disc_orfquantgrfix,
@@ -1248,7 +1250,7 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files, plotfile='locusp
   popViewport(1)
   pushViewport(vp2)
   cols = I(c(orfcols[names(which.min(orfscores))],orfcols[names(which.max(orfscores))]))
-  grid.draw(lemon::g_legend(qplot(x=1:2,y=1:2,color=range(orfscores,na.rm=T))+
+  grid.draw(lemon::g_legend(ggplot(mapping=aes(x=1:2,y=1:2,color=range(orfscores,na.rm=T)))+geom_point()+
                               scale_color_gradient(name='Normalized ORF Expr\n(ORFs_pM)',
                                                    breaks = setNames(sort(na.omit(orfscores)),floor(na.omit(sort(orfscores)))%>% format(big.mark=",",scientific=FALSE) ),
                                                    low=cols[1],high=cols[2])+theme(text=element_text(size=14),legend.key.size=unit(.5,'inches'))

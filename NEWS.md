@@ -286,7 +286,18 @@ deprecation warnings.
     many labels named another discarded transcript (with the right
     coordinates);
   - colours the selected ORFs by `ORFs_pM`, from dark green (lowest) to
-    bright green (highest), as in the legend. Before, they were all white.
+    bright green (highest), as in the legend. Before, they were all white;
+  - no longer warns that `qplot()` is deprecated (ggplot2 3.4.0), or that the
+    font width of character 0x09 is unknown (the tabs in the name of the
+    P-site track). The plots are unchanged;
+  - warns when a call gives `bam_files` or `col`, because they were never
+    used: the P-sites and junction reads come from the P-site file of the
+    results, and these tracks are always forestgreen. `bam_files` is again
+    optional;
+  - no longer fails with `object 'selgene' not found` on Bioconductor 3.23.
+    S4Vectors 0.50 evaluates the condition of `subset()` in another
+    environment when the call is in a `%>%` pipe, so the condition did not
+    find the variables of the function.
 
   In our test data, 17 of 63 genes failed; all 63 plot now.
 - `create_ORFquant_html_report()` now renders the report from a copy of the
