@@ -16,7 +16,7 @@ get_reathr_seq(tx_name, orf, sequence, genetic_code)
 \item{genetic_code}{GENETIC_CODE table to use}
 }
 \value{
-GRanges object with the set of possible readthrough sequences
+GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it
 }
 \description{
 This function extracts readthrough regions for subsequent analysis

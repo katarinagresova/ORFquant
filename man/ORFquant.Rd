@@ -29,7 +29,7 @@ ORFquant(
 
 \item{orf_find.all_starts}{\code{get_all_starts} parameter for the \code{detect_translated_orfs} function}
 
-\item{orf_find.nostarts}{\code{Stop_Stop} parameter for the \code{detect_translated_orfs} function}
+\item{orf_find.nostarts}{\code{nostarts} parameter for the \code{detect_translated_orfs} function}
 
 \item{orf_find.start_sel_cutoff}{\code{cutoff} parameter for the \code{detect_translated_orfs} function}
 
