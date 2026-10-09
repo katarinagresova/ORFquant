@@ -150,7 +150,9 @@ In the order of the TSV file:
   \code{NC_protein_isoform} and \code{ORFs_spl_feat_longest}: the one with
   the longest annotated CDS in the ORF's gene (for a gene without one, the
   transcript of the region whose CDS covers most of the gene's ORFs).
-  \code{NA} when the ORF overlaps no annotated CDS.}
+  \code{NA} when the ORF overlaps no annotated CDS; \code{ORFs_spl_feat_longest}
+  then uses the longest annotated CDS of the ORF's gene, or none when the
+  gene has none.}
 \item{\code{ref_id_maxORF}}{The most translated ORF of the gene (the
   highest \code{ORF_pct_P_sites}), the reference for
   \code{ORFs_spl_feat_maxORF}. It can be the ORF itself.}
@@ -258,7 +260,11 @@ downstream, on the ORF's strand:
 }
 Only the start and the stop are compared: an ORF that skips an exon of the
 CDS can be \code{exact_start_stop}. \code{ORFs_spl_feat_longest} has the
-ORF's exons compared with those of the CDS of \code{ref_id}.
+ORF's exons compared with those of the CDS of \code{ref_id}. For an ORF
+that overlaps no annotated CDS, such as a uORF, it uses the longest
+annotated CDS of the ORF's gene: all its exons are then rows with a
+\code{spl_type} that starts with \code{missing_CDS}. When the gene has no
+CDS, it uses none, and the rows are the ORF's exons only.
 }
 
 \section{Stop codons in the annotation}{

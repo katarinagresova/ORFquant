@@ -285,3 +285,33 @@ test_that("run_ORFquant() finds ORFs without a start codon with stn.orf_find.nos
   # In the example, each is the part of the frame before the start codon of an ORF
   expect_true(all(paste(no_start$seqnames, no_start$end + 1) %in% paste(orfs$seqnames, orfs$start)))
 })
+
+test_that("the splice annotation of an ORF outside the CDS does not depend on the ORFs before it", {
+  skip_if(is.null(runs$one_core))
+  # Before, annotate_ORFs() compared such an ORF with the CDS of the last ORF that
+  # overlapped one, so with no CDS for the first ORF of a region. In the example,
+  # ENST00000495655.2_175_255 overlaps no CDS and is the 2nd of 3 ORFs of its gene
+  orf <- "ENST00000495655.2_175_255"
+  quiet(load_annotation(runs$annotation))
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  region <- GenomicRanges::reduce(unlist(GTF_annotation$txs_gene["ENSG00000184470.21"]))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  res <- NULL
+  quiet(res <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code))
+  expect_true(orf %in% names(res$ORFs_tx_position))
+  # annotate_ORFs() again, with the ORF first or last
+  spl_type_of_orf <- function(first) {
+    ids <- names(res$ORFs_tx_position)
+    ids <- if (first) c(orf, setdiff(ids, orf)) else c(setdiff(ids, orf), orf)
+    res$ORFs_tx_position <- res$ORFs_tx_position[ids]
+    res$ORFs_genomic_position <- res$ORFs_genomic_position[ids]
+    annotated <- NULL
+    quiet(annotated <- annotate_ORFs(res, GTF_annotation, genome_seq, region, genetic_code))
+    annotated$ORFs_splice_feats$annotation_wrt_longest[[orf]]$spl_type
+  }
+  first <- spl_type_of_orf(first = TRUE)
+  expect_identical(first, spl_type_of_orf(first = FALSE))
+  # The reference is the CDS of the gene: its exons that the ORF does not overlap are missing
+  expect_true(any(grepl("missing_CDS", first)))
+})

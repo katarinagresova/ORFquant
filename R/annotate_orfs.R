@@ -527,7 +527,8 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
 #' @param region genomic region being analyzed
 #' @param genetic_code GENETIC_CODE table to use
 #' @return \code{results_ORFs} with a new element \code{ORFs_splice_feats}: a list of two \code{GRangesList}, \code{annotation_wrt_longest} and \code{annotation_wrt_maxORF},
-#' with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}):
+#' with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}).
+#' An ORF that overlaps no CDS (\code{ref_id} \code{NA}) is compared with the longest CDS of its gene, or with none when the gene has none:
 #' the exons, including possible missing exons from reference, with a \code{spl_type} column
 #' including the annotation for each exon (e.g. alternative acceptors or donor).\cr\cr
 #' Additional columns are added to the ORFs_tx object:\cr
@@ -830,6 +831,9 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     
     if(sum(overl)==0){
       cols$ORF_category_Gen<-"novel"
+      #splice reference: the CDS of max_cds when the gene has one, else none (not the one of a previous ORF)
+      max_cdsok<-GRanges()
+      if(cols$gene_id%in%annotated_cds_tx_genes){max_cdsok<-annotated_cds_tx[[max_cds[cols$gene_id]]]}
       if(length(annotated_cds2)>0){
         nearest_cds<-annotated_cds[[names(unlist(annotated_cds))[nearest(orf_gen,unlist(annotated_cds))[1]]]]
         overl_whole<-orf_gen@ranges%over%IRanges(start=min(start(nearest_cds)),end=max(end(nearest_cds)))
