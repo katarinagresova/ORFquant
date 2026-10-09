@@ -202,13 +202,21 @@ deprecation warnings.
   frame that no ORF with a start codon covers: from the start of the
   transcript or a stop codon to the next stop codon, the first start codon or
   the end of the transcript, in frames that have an ORF with a start codon.
-  Their `Protein` does not start with M. They are selected and quantified
+  So an N-terminal extension gives two ORFs: the part before the start codon
+  and the ORF from the start codon. No column marks these ORFs. Their
+  `Protein` does not start with M, except with `canonical_start_only = FALSE`
+  when their first codon is TTG or CTG. They are selected and quantified
   with the other ORFs, so other ORFs of the same genes can change too. On the
   example data, one PPIL2 ORF without a start codon, before the start codon
-  of another ORF, replaces another PPIL2 ORF. There is no readthrough after
-  an ORF without a stop codon after it; before, this stopped the run with
-  `replacement has length zero`. With the default (`FALSE`), results don't
-  change.
+  of another ORF, replaces another PPIL2 ORF. On a human sample (SRR15513199
+  with GENCODE 47), 428 ORFs without a start codon join the 8,139 ORFs of the
+  default, 30 of these 8,139 ORFs are gone (21 of them `ORF_annotated`), and
+  448 others get other `P_sites`. 21 of the 25 genes of the 30 ORFs still
+  have an ORF with a start codon that overlaps them. In NUCB2, CNOT2, TMEM98
+  and EMC10, only ORFs without a start codon are left. There is no
+  readthrough after an ORF without a stop codon after it; before, this
+  stopped the run with `replacement has length zero`. With the default
+  (`FALSE`), results don't change.
 
 ## Bug fixes
 

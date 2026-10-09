@@ -21,7 +21,14 @@ included, so the width is 3 times the number of amino acids in
 \code{stn.orf_find.nostarts = TRUE}, ORFs without a start codon can also
 start after a stop codon or at the start of the transcript, and end before
 a start codon or at the end of the transcript, where the width need not be a
-multiple of 3 (see \code{Stop_Stop} in \code{\link{get_orfs}}).
+multiple of 3 (see \code{Stop_Stop} in \code{\link{get_orfs}}). So an
+N-terminal extension gives two ORFs: the part before the start codon, and
+the ORF from the start codon. No column marks the ORFs without a start
+codon. Their \code{Protein} does not start with M, except with
+\code{canonical_start_only = FALSE} when their first codon is an alternative
+start codon of the genetic code (TTG or CTG in the standard code). They are
+quantified with the other ORFs, so they can replace ORFs with a start codon
+of the same gene, also annotated CDSs.
 \code{ORFs_gen} has the exons of the same ORFs in genomic coordinates, named
 by \code{ORF_id_tr}.
 
