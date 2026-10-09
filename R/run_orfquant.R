@@ -133,7 +133,7 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' @param write_protein_fasta write a protein fasta file. Defaults to \code{TRUE}
 #' @param interactive should put R object in global environment? Defaults to \code{TRUE}
 #' @param stn.orf_find.all_starts \code{orf_find.all_starts} parameter for the \code{ORFquant} function
-#' @param stn.orf_find.nostarts \code{orf_find.nostarts} parameter for the \code{ORFquant} function: also find ORFs without a start codon (\code{Stop_Stop} of \code{\link{get_orfs}})? Defaults to \code{FALSE}
+#' @param stn.orf_find.nostarts \code{orf_find.nostarts} parameter for the \code{ORFquant} function: also find ORFs without a start codon (see \code{Stop_Stop} in \code{\link{get_orfs}}, and \code{\link{ORFquant_output}})? Defaults to \code{FALSE}
 #' @param stn.orf_find.start_sel_cutoff \code{orf_find.start_sel_cutoff} parameter for the \code{ORFquant} function
 #' @param stn.orf_find.start_sel_cutoff_ave \code{orf_find.start_sel_cutoff_ave} parameter for the \code{ORFquant} functio
 #' @param stn.orf_find.cutoff_fr_ave \code{orf_find.cutoff_fr_ave} parameter for the \code{ORFquant} function
