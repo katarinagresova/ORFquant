@@ -464,6 +464,22 @@ annotate_splicing<-function(orf_gen,ref_cds){
   spl_ran
 }
 
+# ORF_category_Tx of an ORF (start sta and end sto in the transcript, without the stop codon) with
+# respect to the annotated CDS (start ann_sta, and ann_sto = CDS end - 3). It replaces a cascade of
+# if where the last true one won (uORF over overl_uORF, dORF over overl_dORF), and gives the same
+# label for all inputs, also for a CDS shorter than 4 nt (ann_sta>ann_sto)
+tx_category<-function(sta,sto,ann_sta,ann_sto){
+  if(sto==ann_sto){
+    if(sta==ann_sta){"ORF_annotated"} else if(sta<ann_sta){"N_extension"} else {"N_truncation"}
+  } else if(sta==ann_sta){
+    if(sto<ann_sto){"C_truncation"} else {"C_extension"}
+  } else if(sto<ann_sto){
+    if(sta>ann_sta){"nested_ORF"} else if(sto<ann_sta){"uORF"} else {"overl_uORF"}
+  } else {
+    if(sta>ann_sto){"dORF"} else if(sta<ann_sta){"NC_extension"} else {"overl_dORF"}
+  }
+}
+
 #' Annotate detected ORFs in transcript and genome space
 #'
 #' This function annotates quantified ORFs with respect to other detected ORFs and annotated ones, in both genome and transcript space.
@@ -776,25 +792,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       ann_sto<-end(annotated_ORF)-3
       sta<-start(orf_tx)
       sto<-end(orf_tx)
-      if(sto==ann_sto){
-        
-        if(sta==ann_sta){cols$ORF_category_Tx<-"ORF_annotated"}
-        if(sta<ann_sta){cols$ORF_category_Tx<-"N_extension"}
-        if(sta>ann_sta){cols$ORF_category_Tx<-"N_truncation"}
-        
-      }
-      if(sto!=ann_sto){
-        
-        if(sta<ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"overl_uORF"}
-        if(sta<ann_sta & sto<ann_sta){cols$ORF_category_Tx<-"uORF"}
-        if(sta<ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"NC_extension"}
-        if(sta>ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"overl_dORF"}
-        if(sta>ann_sto & sto>ann_sto){cols$ORF_category_Tx<-"dORF"}
-        if(sta>ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"nested_ORF"}
-        if(sta==ann_sta & sto<ann_sto){cols$ORF_category_Tx<-"C_truncation"}
-        if(sta==ann_sta & sto>ann_sto){cols$ORF_category_Tx<-"C_extension"}
-        
-      }
+      cols$ORF_category_Tx<-tx_category(sta,sto,ann_sta,ann_sto)
     }
     
     
@@ -805,25 +803,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       #change
       sta<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)-1]}))
       sto<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)]}))
-      if(sto==ann_sto){
-        
-        if(sta==ann_sta){cols$ORF_category_Tx_compatible<-"ORF_annotated"}
-        if(sta<ann_sta){cols$ORF_category_Tx_compatible<-"N_extension"}
-        if(sta>ann_sta){cols$ORF_category_Tx_compatible<-"N_truncation"}
-        
-      }
-      if(sto!=ann_sto){
-        
-        if(sta<ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"overl_uORF"}
-        if(sta<ann_sta & sto<ann_sta){cols$ORF_category_Tx_compatible<-"uORF"}
-        if(sta<ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"NC_extension"}
-        if(sta>ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"overl_dORF"}
-        if(sta>ann_sto & sto>ann_sto){cols$ORF_category_Tx_compatible<-"dORF"}
-        if(sta>ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"nested_ORF"}
-        if(sta==ann_sta & sto<ann_sto){cols$ORF_category_Tx_compatible<-"C_truncation"}
-        if(sta==ann_sta & sto>ann_sto){cols$ORF_category_Tx_compatible<-"C_extension"}
-        
-      }
+      cols$ORF_category_Tx_compatible<-tx_category(sta,sto,ann_sta,ann_sto)
     }
     
     
