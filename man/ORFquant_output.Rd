@@ -57,7 +57,17 @@ In the order of the TSV file:
   the candidate start codons for a stop codon, ORFquant takes the most
   upstream one whose stretch has an \code{ave_pct_fr_st} of at least 50
   (\code{stn.orf_find.start_sel_cutoff_ave = 0.5}), or else the most
-  downstream one. \code{NA} when the ORF had no other candidate start codon,
+  downstream one. The candidates are the start codons whose ORF has P-sites
+  at more than 2 positions and an \code{ave_pct_fr} of at least 0.5, not
+  50: this filter compares the percentage with
+  \code{stn.orf_find.start_sel_cutoff_ave} as it is given, so it removes
+  only the candidates with almost no P-sites in frame. With
+  \code{stn.orf_find.start_sel_cutoff} (default \code{NA}, not applied), a
+  stretch also passes when at least that fraction of its P-sites is in
+  frame, and a start codon taken by this test gets both columns as
+  fractions (0 to 1). That option also removes the candidates whose ORF has
+  a lower percentage of its P-sites in frame, again compared with the value
+  as it is given. \code{NA} when the ORF had no other candidate start codon,
   or when no stretch passed.}
 \item{\code{pval}}{The p-value of the multitaper F-test for 3-nucleotide
   periodicity of the ORF's P-sites, at frequency 1/3 (24 tapers, bandwidth
