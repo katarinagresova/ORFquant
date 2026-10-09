@@ -33,7 +33,7 @@
 #' @param for_ORFquant "for_ORFquant" Robject containing P_sites positions and junction reads
 #' @param genetic_code_region GENETIC_CODE table to use
 #' @param orf_find.all_starts \code{get_all_starts} parameter for the \code{detect_translated_orfs} function
-#' @param orf_find.nostarts \code{Stop_Stop} parameter for the \code{detect_translated_orfs} function
+#' @param orf_find.nostarts \code{nostarts} parameter for the \code{detect_translated_orfs} function
 #' @param orf_find.start_sel_cutoff \code{cutoff} parameter for the \code{detect_translated_orfs} function
 #' @param orf_find.start_sel_cutoff_ave \code{cutoff_ave} parameter for the \code{detect_translated_orfs} function
 #' @param orf_find.cutoff_fr_ave \code{cutoff} parameter for the \code{detect_translated_orfs} function
@@ -75,7 +75,7 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
       res_orfs<-suppressWarnings(detect_translated_orfs(selected_txs = selected_transcripts,genome_sequence = genome_seq,annotation = GTF_annotation,
                                                         P_sites = P_sites_region,P_sites_uniq = P_sites_uniq_region,P_sites_uniq_mm = P_sites_uniq_mm_region,
                                                         genomic_region=region,genetic_code=genetic_code_region,
-                                                        all_starts=orf_find.all_starts,nostarts=,orf_find.nostarts,
+                                                        all_starts=orf_find.all_starts,nostarts=orf_find.nostarts,
                                                         start_sel_cutoff=orf_find.start_sel_cutoff,
                                                         start_sel_cutoff_ave=orf_find.start_sel_cutoff_ave,
                                                         cutoff_fr_ave=orf_find.cutoff_fr_ave,uniq_signal = unique_reads))
@@ -133,7 +133,7 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' @param write_protein_fasta write a protein fasta file. Defaults to \code{TRUE}
 #' @param interactive should put R object in global environment? Defaults to \code{TRUE}
 #' @param stn.orf_find.all_starts \code{orf_find.all_starts} parameter for the \code{ORFquant} function
-#' @param stn.orf_find.nostarts \code{orf_find.nostarts} parameter for the \code{ORFquant} function
+#' @param stn.orf_find.nostarts \code{orf_find.nostarts} parameter for the \code{ORFquant} function: also find ORFs without a start codon (\code{Stop_Stop} of \code{\link{get_orfs}})? Defaults to \code{FALSE}
 #' @param stn.orf_find.start_sel_cutoff \code{orf_find.start_sel_cutoff} parameter for the \code{ORFquant} function
 #' @param stn.orf_find.start_sel_cutoff_ave \code{orf_find.start_sel_cutoff_ave} parameter for the \code{ORFquant} functio
 #' @param stn.orf_find.cutoff_fr_ave \code{orf_find.cutoff_fr_ave} parameter for the \code{ORFquant} function

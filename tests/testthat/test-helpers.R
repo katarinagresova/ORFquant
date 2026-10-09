@@ -120,3 +120,15 @@ test_that("get_orfs() reports every start codon, or one ORF for each stop codon"
   expect_equal(IRanges::start(merged), 1)
   expect_equal(IRanges::end(merged), 9)
 })
+
+test_that("get_reathr_seq() gives no readthrough region for an ORF without a stop codon after it", {
+  # The ORF ends at the end of the transcript, as an ORF without a start codon
+  # (stn.orf_find.nostarts = TRUE) can; its frame has one stop codon, before it.
+  # Before, this stopped with "replacement has length zero"
+  orf <- GenomicRanges::GRanges("tx", IRanges::IRanges(4, 15), "+")
+  expect_length(get_reathr_seq("tx", orf, Biostrings::DNAString("TAAGCCGCCGCCGCC"), Biostrings::GENETIC_CODE), 0)
+  # After an ORF before a stop codon, the readthrough regions start at the stop codon
+  orf <- GenomicRanges::GRanges("tx", IRanges::IRanges(1, 6), "+")
+  regions <- get_reathr_seq("tx", orf, Biostrings::DNAString("ATGGCCTAAGCCGCCTAGGCC"), Biostrings::GENETIC_CODE)
+  expect_equal(IRanges::start(regions), c(7, 16))
+})

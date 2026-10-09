@@ -196,6 +196,19 @@ deprecation warnings.
   human sample with GENCODE 47, 9 of 33,146 ORFs (in TTN, OBSCN, NEB and
   others) change, by at most 1e-11 of their value; nothing else changes.
   With R's own BLAS, which uses one thread, nothing changes.
+- `run_ORFquant(stn.orf_find.nostarts = TRUE)` now also finds ORFs without a
+  start codon. Before, the option had no effect: `detect_translated_orfs()`
+  called `get_orfs()` with `Stop_Stop = FALSE`. These ORFs are the parts of a
+  frame that no ORF with a start codon covers: from the start of the
+  transcript or a stop codon to the next stop codon, the first start codon or
+  the end of the transcript, in frames that have an ORF with a start codon.
+  Their `Protein` does not start with M. They are selected and quantified
+  with the other ORFs, so other ORFs of the same genes can change too. On the
+  example data, one PPIL2 ORF without a start codon, before the start codon
+  of another ORF, replaces another PPIL2 ORF. There is no readthrough after
+  an ORF without a stop codon after it; before, this stopped the run with
+  `replacement has length zero`. With the default (`FALSE`), results don't
+  change.
 
 ## Bug fixes
 

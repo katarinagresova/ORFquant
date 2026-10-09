@@ -55,7 +55,7 @@ run_ORFquant(
 
 \item{stn.orf_find.all_starts}{\code{orf_find.all_starts} parameter for the \code{ORFquant} function}
 
-\item{stn.orf_find.nostarts}{\code{orf_find.nostarts} parameter for the \code{ORFquant} function}
+\item{stn.orf_find.nostarts}{\code{orf_find.nostarts} parameter for the \code{ORFquant} function: also find ORFs without a start codon (\code{Stop_Stop} of \code{\link{get_orfs}})? Defaults to \code{FALSE}}
 
 \item{stn.orf_find.start_sel_cutoff}{\code{orf_find.start_sel_cutoff} parameter for the \code{ORFquant} function}
 

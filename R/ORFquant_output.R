@@ -12,7 +12,11 @@
 #' always \code{+}, and the range goes from the first nucleotide of the start
 #' codon to the last nucleotide before the stop codon. The stop codon is not
 #' included, so the width is 3 times the number of amino acids in
-#' \code{Protein}. The names of the ranges are the \code{ORF_id_tr}.
+#' \code{Protein}. The names of the ranges are the \code{ORF_id_tr}. With
+#' \code{stn.orf_find.nostarts = TRUE}, ORFs without a start codon can also
+#' start after a stop codon or at the start of the transcript, and end before
+#' a start codon or at the end of the transcript, where the width need not be a
+#' multiple of 3 (see \code{Stop_Stop} in \code{\link{get_orfs}}).
 #' \code{ORFs_gen} has the exons of the same ORFs in genomic coordinates, named
 #' by \code{ORF_id_tr}.
 #'

@@ -270,3 +270,18 @@ test_that("run_ORFquant() gives no ORFs for a gene when stn.orf_quant.cutoff_P_s
   expect_true(any(max_P_sites < 30))
   expect_setequal(unique(orfs$gene_id), names(max_P_sites)[max_P_sites >= 30])
 })
+
+test_that("run_ORFquant() finds ORFs without a start codon with stn.orf_find.nostarts = TRUE", {
+  skip_if(is.null(runs$one_core))
+  # Before, stn.orf_find.nostarts had no effect
+  dir.create(file.path(work, "nostarts"))
+  prefix <- file.path(work, "nostarts", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     stn.orf_find.nostarts = TRUE, interactive = FALSE))
+  orfs <- read_tsv(result_files(prefix)$tsv)
+  no_start <- orfs[!startsWith(orfs$Protein, "M"), ]
+  expect_gt(nrow(no_start), 0)
+  # In the example, each is the part of the frame before the start codon of an ORF
+  expect_true(all(paste(no_start$seqnames, no_start$end + 1) %in% paste(orfs$seqnames, orfs$start)))
+})

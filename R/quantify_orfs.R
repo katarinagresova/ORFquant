@@ -304,7 +304,7 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
 #' @param sequence DNAString object containing the sequence of the transcript
 #' @param orf transcript-level ORF coordinates 
 #' @param genetic_code GENETIC_CODE table to use
-#' @return GRanges object with the set of possible readthrough sequences
+#' @return GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it
 #' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}
 #' @export
 
@@ -331,6 +331,8 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
     stop_pos<-stop_pos+u
   } else {stop_pos<-NA}
   stop_pos<-stop_pos[stop_pos>=end(orf)]
+  #no readthrough for an ORF without a stop codon after it (from get_orfs with Stop_Stop=T)
+  if(!end(orf)%in%stop_pos){return(GRanges())}
   
   vector_starts<-c()
   vector_stops<-c()

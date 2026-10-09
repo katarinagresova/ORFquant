@@ -31,7 +31,7 @@
 #' @param tx_name transcript_id
 #' @param sequence DNAString object containing the sequence of the transcript
 #' @param get_all_starts Output all possible start codons? Defaults to \code{TRUE}
-#' @param Stop_Stop Find Stop-Stop pairs (no defined start codon)? Defaults to \code{FALSE}
+#' @param Stop_Stop Also report the parts of a frame that no ORF with a start codon covers, as ORFs without a start codon (\code{type} \code{frame_ok})? Each goes from the start of the transcript or a stop codon to the next stop codon, the first start codon or the end of the transcript. Only frames with an ORF with a start codon have them. Defaults to \code{FALSE}
 #' @param scores Deprecated
 #' @param genetic_code_table GENETIC_CODE table to use
 #' @return \code{GRanges} object containing coordinates for the detected ORFs
@@ -471,7 +471,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
     
     seq_tx<-txs_seqs[[tx]]
     if(length(covtx)==0){next}
-    orfs<-unlist(get_orfs(tx_name = tx,sequence = seq_tx,get_all_starts=all_starts,Stop_Stop = F,genetic_code_table=genetic_code))
+    orfs<-unlist(get_orfs(tx_name = tx,sequence = seq_tx,get_all_starts=all_starts,Stop_Stop = nostarts,genetic_code_table=genetic_code))
     #no need to know frame for now
     #names(orfs)<-NULL
     if(length(orfs)==0){next}
