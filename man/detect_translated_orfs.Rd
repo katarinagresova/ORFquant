@@ -55,8 +55,8 @@ A list with transcript coordinates, exonic coordinates and statistics for each O
 The value for each column is as follows:\cr\cr
 \code{ave_pct_fr}: average percentage of in-frame reads for each codon in the ORF
 \code{pct_fr}: fraction (0 to 1) of in-frame reads in the ORF
-\code{ave_pct_fr_st}: average percentage of in-frame reads per each codon between the selected start codon and the next candidate one
-\code{pct_fr_st}: percentage of in-frame reads between the selected start codon and the next candidate one
+\code{ave_pct_fr_st}: average percentage of in-frame reads per each codon between the selected start codon and the next candidate one (a fraction when \code{start_sel_cutoff} selected it, see \code{\link{select_start}})
+\code{pct_fr_st}: percentage of in-frame reads between the selected start codon and the next candidate one (a fraction when \code{start_sel_cutoff} selected it)
 \code{longest_ORF}: GRanges coordinates for the longest ORF with the same stop codon
 \code{pval}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile
 \code{pval_uniq}: P-value for the multitaper F-test at 1/3 using the ORF P_sites profile (only uniquely mapping reads)

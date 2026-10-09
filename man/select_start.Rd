@@ -11,20 +11,29 @@ select_start(ORFs, P_sites_rle, cutoff = NA, cutoff_ave = 0.5)
 
 \item{P_sites_rle}{Rle signal of P_sites along the transcript}
 
-\item{cutoff}{cutoff of total in-frame signal between start codons (sensitive to outliers). Defaults to NA}
+\item{cutoff}{cutoff of total in-frame signal between start codons (sensitive to outliers), and as a percentage of the whole ORF (see Details). Defaults to NA (not applied)}
 
-\item{cutoff_ave}{cutoff for frequency of in-frame codons between two start codons (less sensitive to outliers). Defaults to .5}
+\item{cutoff_ave}{cutoff for frequency of in-frame codons between two start codons (less sensitive to outliers), and as a percentage of the whole ORF (see Details). Defaults to .5}
 }
 \value{
-Set of detected ORFs, including info about the possible longest ORF for that frame.
+Set of detected ORFs, including info about the possible longest ORF for that frame (\code{longest_ORF}).
+\code{ave_pct_fr} and \code{pct_fr} are the percentages of the whole ORF. \code{ave_pct_fr_st} and \code{pct_fr_st}
+are those of the stretch of the selected start codon: percentages, but fractions when the stretch passed \code{cutoff}.
+They are \code{NA} when one start codon of the stop codon remained, or when no stretch passed.
 }
 \description{
 This function selects the start codon for ORFs in the same transcript
 }
 \details{
 ORFs are divided based on stop codon and Ribo-seq signal between start codons is used to select one.\cr
-When more than \code{cutoff_ave} fraction of codons is in-frame between two candidate start codons, the most upstream
-is selected.
+First, ORFs with P_sites at 2 positions or fewer are removed, and so are ORFs with a \code{pct_fr} below \code{cutoff}
+or an \code{ave_pct_fr} below \code{cutoff_ave}. Here both columns are percentages (0 to 100), and the cutoffs are used
+as they are given: the default \code{cutoff_ave = .5} removes only the ORFs with an \code{ave_pct_fr} below 0.5 (not 50),
+that is, with almost no P_sites in frame.\cr
+Then, for each stop codon, the stretch from each remaining start codon to the next one (to the stop codon for the last one)
+is tested, from upstream to downstream. Here the cutoffs are fractions (0 to 1): the first start codon whose stretch has
+at least \code{cutoff} of its P_sites in frame, or an average in-frame fraction per codon of at least \code{cutoff_ave},
+is selected. If no stretch passes, the most downstream start codon is selected.
 }
 \seealso{
 \code{\link{detect_translated_orfs}}, \code{\link{get_orfs}}

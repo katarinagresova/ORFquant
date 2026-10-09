@@ -493,6 +493,21 @@ deprecation warnings.
   - `?calc_orf_pval` said that `cutoff` applies to the average in-frame
     signal per codon, but it applies to `pct_fr`. Its return value was
     described as that of `select_start()`.
+- `?select_start` and `?ORFquant_output` now describe the first filter of
+  `select_start()`. Before it chooses the start codon of each stop codon, it
+  removes the candidate ORFs below `cutoff_ave`
+  (`stn.orf_find.start_sel_cutoff_ave`) and `cutoff`
+  (`stn.orf_find.start_sel_cutoff`), but it compares them with the ORF's
+  in-frame percentages, not fractions. So the default 0.5 removes only the
+  candidates with an `ave_pct_fr` below 0.5, not 50: those with almost no
+  P-sites in frame. ORFquant has always worked this way, and it still does,
+  so that results don't change: with 50, 13 ORFs of a human sample change.
+  4 of its 8,139 ORFs (3 annotated CDSs), with an `ave_pct_fr` of 49 to 52,
+  are lost or replaced by an ORF that starts further downstream, and 7 more
+  such N-terminally truncated ORFs are new. When
+  `cutoff` selects a start codon, its `ave_pct_fr_st` and `pct_fr_st` are
+  fractions, not percentages. `?select_start` also said that the start codon
+  needs more than `cutoff_ave`; at least `cutoff_ave` is enough.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
