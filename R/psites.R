@@ -118,6 +118,20 @@ get_ps_fromsplicemin<-function(x,cutoff){
 #' @details This function uses a list of pre-determined read lengths, cutoffs and compartments to calculate P_sites positions.\cr
 #' Alternatively, bigwig files containing P_sites position for each strand can be specified. Optional bigwig files for uniquely mapping P_sites position (with and without mismatches)
 #' can be specified to obtain more statistics on the ORFquant-identified ORFs
+#'
+#' Alignments flagged as duplicates, secondary alignments and alignments with an insertion or a
+#' deletion (\code{I} or \code{D} in the CIGAR string) are not used: they give no P-sites and no
+#' junction reads. With P-site bigWig files, the P-sites come from these files, and this applies
+#' only to the junction reads. Alignments with a mapping quality above 50 count as uniquely mapping.
+#'
+#' The junction reads are counted only on the exon-exon junctions of the annotation, the introns of
+#' its transcripts: the junction of the read must have the same start, end and strand. Reads of all
+#' lengths count, also lengths that are not in the cutoff table. A read on another junction, for
+#' example of an isoform that is not in the annotation, is not counted as a junction read, but it
+#' gives a P-site as other reads do. \code{\link{run_ORFquant}} uses only the transcripts of the
+#' annotation. To find and quantify ORFs on other isoforms, for example from long-read sequencing,
+#' add them to the GTF file of \code{\link{prepare_annotation_files}}.
+#' The "for_ORFquant" files of Ribo-seQC are made in the same way.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param annotation_file Full path to the annotation file (*Rannot)
