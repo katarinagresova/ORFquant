@@ -565,6 +565,18 @@ deprecation warnings.
   `stn.orf_quant.cutoff_pct` does not take the ORF length into account, but
   on this sample it removed few uORFs: without it, there are 6 more (3 of
   them of 20 codons or fewer).
+- `?prepare_for_ORFquant` and the README now say which alignments ORFquant
+  uses. Alignments with an insertion or a deletion (`I` or `D` in the CIGAR)
+  give no P-sites and no junction reads. Junction reads are counted only on
+  the exon-exon junctions of the annotation; a read on another junction, for
+  example of an isoform that is not in the GTF, still gives a P-site.
+  ORFquant uses only the transcripts of the GTF, so isoforms to quantify, for
+  example from long-read sequencing, must be in the GTF. ORFquant has always
+  worked this way, and it still does. In two human samples aligned with STAR,
+  0.7% (SRR15513199) and 0.03% (HCT116 cells) of the alignments have an
+  insertion or a deletion, and 128 and 317 of them are on a CDS. 0.1% and
+  0.5% of the junction reads are on junctions that are not in GENCODE 47;
+  with a long-read annotation of the HCT116 cells, 0.4%.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
