@@ -286,6 +286,20 @@ test_that("run_ORFquant() finds ORFs without a start codon with stn.orf_find.nos
   expect_true(all(paste(no_start$seqnames, no_start$end + 1) %in% paste(orfs$seqnames, orfs$start)))
 })
 
+test_that("each CDS line of the GTF has the ORF_id of its ORF, also on a transcript with more than one ORF", {
+  # Before, all CDS lines of a transcript had the ORF_id of its first ORF
+  # (lcalviell/ORFquant#13). The example has no transcript with more than one
+  # ORF, but the run of the test above has: the part before the start codon is
+  # an ORF of the same transcript
+  prefix <- file.path(work, "nostarts", "example")
+  skip_if(!file.exists(result_files(prefix)$gtf))
+  expect_true(anyDuplicated(read_tsv(result_files(prefix)$tsv)$transcript_id) > 0)
+  gtf <- rtracklayer::import(result_files(prefix)$gtf, format = "gtf")
+  cds <- gtf[gtf$type == "CDS"]
+  ORFs_gen <- get(load(paste0(prefix, "_final_ORFquant_results")))$ORFs_gen
+  expect_setequal(paste(as.character(cds), cds$ORF_id), paste(as.character(ORFs_gen), names(ORFs_gen)))
+})
+
 test_that("the splice annotation of an ORF outside the CDS does not depend on the ORFs before it", {
   skip_if(is.null(runs$one_core))
   # Before, annotate_ORFs() compared such an ORF with the CDS of the last ORF that
