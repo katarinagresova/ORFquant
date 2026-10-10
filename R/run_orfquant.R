@@ -42,6 +42,8 @@
 #' @param orf_quant.cutoff_P_sites \code{cutoff_P_sites} parameter for the \code{select_quantify_ORFs} function
 #' @param unique_reads Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @param orf_quant.scaling \code{scaling} parameter for the \code{select_quantify_ORFs} function. Defaults to total_Psites 
+#' @param annotation the annotated features, as \code{GTF_annotation} of \code{\link{load_annotation}}. Defaults to the global variable \code{GTF_annotation}
+#' @param genome_sequence the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}. Defaults to the global variable \code{genome_seq}
 #' @return A list containing transcript coordinates, exonic coordinates and annotation for each ORF.\cr\cr
 #' The description for each list object is as follows:\cr\cr
 #' \code{ORFs_tx}: transcript coordinates of the detected ORFs, with the columns described in \code{\link{ORFquant_output}}.\cr
@@ -57,7 +59,7 @@
 
 ORFquant<-function(region,for_ORFquant,genetic_code_region,
                    orf_find.all_starts=T,orf_find.nostarts=F,orf_find.start_sel_cutoff = NA,orf_find.start_sel_cutoff_ave = .5,
-                   orf_find.cutoff_fr_ave=.5,orf_quant.cutoff_cums = NA,orf_quant.cutoff_pct = 2,orf_quant.cutoff_P_sites=NA,unique_reads=F,orf_quant.scaling="total_Psites"){
+                   orf_find.cutoff_fr_ave=.5,orf_quant.cutoff_cums = NA,orf_quant.cutoff_pct = 2,orf_quant.cutoff_P_sites=NA,unique_reads=F,orf_quant.scaling="total_Psites",annotation=GTF_annotation,genome_sequence=genome_seq){
   if(!orf_quant.scaling%in%c("total_Psites","average_coverage")){stop(paste("orf_quant.scaling parameter must be either total_Psites (recommended) or average_coverage"),date())}
   
   P_sites_region<-for_ORFquant$P_sites_all[for_ORFquant$P_sites_all%over%region]
@@ -70,9 +72,9 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
   
   if(minimum_reads){
     
-    selected_transcripts<-select_txs(region = region,P_sites = P_sites_region,P_sites_uniq = P_sites_uniq_region,annotation = GTF_annotation,junction_counts=for_ORFquant$junctions,uniq_signal = unique_reads)
+    selected_transcripts<-select_txs(region = region,P_sites = P_sites_region,P_sites_uniq = P_sites_uniq_region,annotation = annotation,junction_counts=for_ORFquant$junctions,uniq_signal = unique_reads)
     if(length(selected_transcripts)>0){
-      res_orfs<-suppressWarnings(detect_translated_orfs(selected_txs = selected_transcripts,genome_sequence = genome_seq,annotation = GTF_annotation,
+      res_orfs<-suppressWarnings(detect_translated_orfs(selected_txs = selected_transcripts,genome_sequence = genome_sequence,annotation = annotation,
                                                         P_sites = P_sites_region,P_sites_uniq = P_sites_uniq_region,P_sites_uniq_mm = P_sites_uniq_mm_region,
                                                         genomic_region=region,genetic_code=genetic_code_region,
                                                         all_starts=orf_find.all_starts,nostarts=orf_find.nostarts,
@@ -86,9 +88,9 @@ ORFquant<-function(region,for_ORFquant,genetic_code_region,
     }
     if(length(res_orfs)>0){
       
-      res_orfs<-annotate_ORFs(results_ORFs=res_orfs,Annotation=GTF_annotation,genome_sequence = genome_seq,region=region,genetic_code=genetic_code_region)
+      res_orfs<-annotate_ORFs(results_ORFs=res_orfs,Annotation=annotation,genome_sequence = genome_sequence,region=region,genetic_code=genetic_code_region)
       res_orfs[["readthrough"]]<-suppressWarnings(detect_readthrough(results_orf = res_orfs,P_sites = P_sites_region,P_sites_uniq = P_sites_uniq_region,P_sites_uniq_mm = P_sites_uniq_mm_region,
-                                                                     genome_sequence=genome_seq, annotation = GTF_annotation,genetic_code_table=genetic_code_region,cutoff_fr_ave=orf_find.cutoff_fr_ave,uniq_signal = unique_reads))
+                                                                     genome_sequence=genome_sequence, annotation = annotation,genetic_code_table=genetic_code_region,cutoff_fr_ave=orf_find.cutoff_fr_ave,uniq_signal = unique_reads))
       
       
     }
@@ -137,7 +139,7 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' @param write_temp_files write temporary files. Defaults to \code{TRUE}
 #' @param write_GTF_file write a GTF files with the ORF coordinates. Defaults to \code{TRUE}
 #' @param write_protein_fasta write a protein fasta file. Defaults to \code{TRUE}
-#' @param interactive should put R object in global environment? Defaults to \code{TRUE}
+#' @param interactive assign the results and the P-sites to the global variables \code{ORFquant_results} and \code{for_ORFquant}? Defaults to \code{TRUE}. The function also returns the results, invisibly
 #' @param stn.orf_find.all_starts \code{orf_find.all_starts} parameter for the \code{ORFquant} function
 #' @param stn.orf_find.nostarts \code{orf_find.nostarts} parameter for the \code{ORFquant} function: also find ORFs without a start codon (see \code{Stop_Stop} in \code{\link{get_orfs}}, and \code{\link{ORFquant_output}})? Defaults to \code{FALSE}
 #' @param stn.orf_find.start_sel_cutoff \code{orf_find.start_sel_cutoff} parameter for the \code{ORFquant} function
@@ -183,7 +185,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   
   message("Loading annotation and Ribo-seq signal ... ",date())
   
-  load_annotation(annotation_file)
+  loaded_annotation<-load_annotation(annotation_file)
+  GTF_annotation<-loaded_annotation$GTF_annotation
+  genome_seq<-loaded_annotation$genome_seq
   for_ORFquant_data<-get(load(for_ORFquant_file))
   
   #the P-sites must come from the same genome as the annotation (e.g. not from a for_ORFquant_file made with another annotation)
@@ -272,7 +276,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
                orf_find.start_sel_cutoff = stn.orf_find.start_sel_cutoff,orf_find.start_sel_cutoff_ave = stn.orf_find.start_sel_cutoff_ave,
                orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
-               orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling)
+               orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling,
+               annotation = GTF_annotation,genome_sequence = genome_seq)
       
     }
     cl<-NULL
@@ -310,7 +315,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
                                 orf_find.all_starts=stn.orf_find.all_starts,orf_find.nostarts=stn.orf_find.nostarts,
                                 orf_find.start_sel_cutoff = stn.orf_find.start_sel_cutoff,orf_find.start_sel_cutoff_ave = stn.orf_find.start_sel_cutoff_ave,
                                 orf_find.cutoff_fr_ave=stn.orf_find.cutoff_fr_ave,orf_quant.cutoff_cums = stn.orf_quant.cutoff_cums,
-                                orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling)
+                                orf_quant.cutoff_pct = stn.orf_quant.cutoff_pct,orf_quant.cutoff_P_sites=stn.orf_quant.cutoff_P_sites,unique_reads = unique_reads_only,orf_quant.scaling = stn.orf_quant.scaling,
+                                annotation = GTF_annotation,genome_sequence = genome_seq)
       
       
     }
@@ -499,8 +505,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   mc_value(tmp_save)
   
   if(interactive){
-    for_ORFquant<<-for_ORFquant_data
-    ORFquant_results<<-ORFquant_results
+    assign("for_ORFquant",for_ORFquant_data,envir = globalenv())
+    assign("ORFquant_results",ORFquant_results,envir = globalenv())
   }
   message("Exporting ORFquant results --- Done! ",date())
   invisible(ORFquant_results)

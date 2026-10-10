@@ -89,9 +89,11 @@ annotation_file <- file.path(out_dir, "chr22_example.gtf.gz_Rannot")
 the *TxDb* has no genome version; both are harmless.)
 
 `load_annotation()` loads it into two global variables: `GTF_annotation`, a
-list of the annotated features, and `genome_seq`, the genome sequence. The
-other functions load the annotation themselves: run each analysis in a new R
-session, and don't load two annotations in one session.
+list of the annotated features, and `genome_seq`, the genome sequence. It also
+returns them, invisibly, as a list with these two elements; `ORFquant()`, which
+analyses one genomic region, takes them as its arguments `annotation` and
+`genome_sequence`. The other functions load the annotation themselves: run each
+analysis in a new R session, and don't load two annotations in one session.
 
 ```{r load_annotation}
 load_annotation(annotation_file)

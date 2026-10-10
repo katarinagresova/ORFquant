@@ -17,7 +17,9 @@ ORFquant(
   orf_quant.cutoff_pct = 2,
   orf_quant.cutoff_P_sites = NA,
   unique_reads = F,
-  orf_quant.scaling = "total_Psites"
+  orf_quant.scaling = "total_Psites",
+  annotation = GTF_annotation,
+  genome_sequence = genome_seq
 )
 }
 \arguments{
@@ -46,6 +48,10 @@ ORFquant(
 \item{unique_reads}{Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.}
 
 \item{orf_quant.scaling}{\code{scaling} parameter for the \code{select_quantify_ORFs} function. Defaults to total_Psites}
+
+\item{annotation}{the annotated features, as \code{GTF_annotation} of \code{\link{load_annotation}}. Defaults to the global variable \code{GTF_annotation}}
+
+\item{genome_sequence}{the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}. Defaults to the global variable \code{genome_seq}}
 }
 \value{
 A list containing transcript coordinates, exonic coordinates and annotation for each ORF.\cr\cr
