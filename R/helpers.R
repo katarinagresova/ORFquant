@@ -195,19 +195,29 @@ mc_release<-function(res){
 #' Map transcript coordinates to genomic coordinates
 #'
 #' This function uses the \code{mapFromTranscripts} function to switch between transcript
-#' and genomic coordinates
+#' and genomic coordinates, for the ORFs of one transcript
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
-#' @param ORFs Set of detected ORFs from the \code{calc_orf_pval} function
-#' @param exons exonic regions of the analyzed transcripts, as a GRangesList object
-#' @param introns intronic regions of the analyzed transcripts, as a GRangesList object
-#' @return exonic coordinates for each ORF.
+#' @param ORFs Set of detected ORFs from the \code{calc_orf_pval} function, on one transcript
+#' (their \code{seqnames} is its name), with the column \code{ORF_id_tr}
+#' @param exons exonic regions of the transcript, as a GRangesList object with one element,
+#' named as the transcript
+#' @param introns intronic regions of the transcript, as a GRanges object
+#' @return exonic coordinates for each ORF, as a GRangesList named by \code{ORF_id_tr}. The
+#' function stops if an ORF is not inside the transcript, or is inside more than one transcript
+#' of \code{exons} with its name.
 #' @seealso \code{\link[GenomicFeatures]{mapFromTranscripts}}
 #' @export
 
 from_tx_togen<-function(ORFs,exons,introns){
   strand(ORFs)<-rep("*",length(ORFs))
   orfs_gen<-mapFromTranscripts(x = ORFs,transcripts = exons,ignore.strand=F)
+  # range i must be ORF i (psetdiff() and names<- below): mapFromTranscripts() drops an ORF that is not
+  # inside its transcript, and maps an ORF more than once if 'exons' has its transcript name more than once
+  if(!identical(orfs_gen$xHits,seq_along(ORFs))){
+    stop("from_tx_togen(): these ORFs are not inside exactly one transcript of 'exons': ",
+         paste(ORFs$ORF_id_tr[tabulate(orfs_gen$xHits,length(ORFs))!=1],collapse=", "),call. = FALSE)
+  }
   strand(orfs_gen)<-strand(exons[[1]][1])
   # setdiff() of each ORF and the introns, for all ORFs at once: per ORF, setdiff() and [[<- on
   # the GRangesList cost several ms

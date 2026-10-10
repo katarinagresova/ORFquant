@@ -7,18 +7,22 @@
 from_tx_togen(ORFs, exons, introns)
 }
 \arguments{
-\item{ORFs}{Set of detected ORFs from the \code{calc_orf_pval} function}
+\item{ORFs}{Set of detected ORFs from the \code{calc_orf_pval} function, on one transcript
+(their \code{seqnames} is its name), with the column \code{ORF_id_tr}}
 
-\item{exons}{exonic regions of the analyzed transcripts, as a GRangesList object}
+\item{exons}{exonic regions of the transcript, as a GRangesList object with one element,
+named as the transcript}
 
-\item{introns}{intronic regions of the analyzed transcripts, as a GRangesList object}
+\item{introns}{intronic regions of the transcript, as a GRanges object}
 }
 \value{
-exonic coordinates for each ORF.
+exonic coordinates for each ORF, as a GRangesList named by \code{ORF_id_tr}. The
+function stops if an ORF is not inside the transcript, or is inside more than one transcript
+of \code{exons} with its name.
 }
 \description{
 This function uses the \code{mapFromTranscripts} function to switch between transcript
-and genomic coordinates
+and genomic coordinates, for the ORFs of one transcript
 }
 \seealso{
 \code{\link[GenomicFeatures]{mapFromTranscripts}}
