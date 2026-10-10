@@ -597,6 +597,16 @@ deprecation warnings.
   insertion or a deletion, and 128 and 317 of them are on a CDS. 0.1% and
   0.5% of the junction reads are on junctions that are not in GENCODE 47;
   with a long-read annotation of the HCT116 cells, 0.4%.
+- `?run_ORFquant` now says that a run on a few genes (`gene_name`, `gene_id`
+  or `genomic_region`) gives the same ORFs and values as a run on all genes,
+  except `ORFs_pM`, which sums to a million over the ORFs of the run.
+  ORFquant analyzes each region of overlapping genes whole, with all its
+  P-sites. On a human sample (SRR15513199), a run on 51 genes, and a run on
+  each of 9 of them, gave the ORFs of the whole-genome run, with the same
+  values in all other columns of `ORFs_tx`. A GTF or BAM file cut to a few
+  genes can give other results, because a region then loses genes or their
+  reads. In our test, 28 of 52 genes shared their region with genes that the
+  cut removed. For 1 of them, the `P_sites` of its 2 ORFs changed by 0.01.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

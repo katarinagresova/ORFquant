@@ -118,16 +118,22 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' Run the ORFquant pipeline
 #'
 #' This wrapper function runs the entire ORFquant pipeline
-#' @details A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
+#' @details A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs\cr\cr
+#' ORFquant analyzes the genome in regions: genes whose transcripts overlap on the same strand form one region.
+#' \code{gene_name}, \code{gene_id} and \code{genomic_region} select the regions to analyze. Each selected region
+#' is analyzed with all its genes and all its P_sites, so a run on a few genes gives the same ORFs and values as a
+#' run on all genes, except \code{ORFs_pM}, which sums to a million over the ORFs of the run. This is not so for
+#' a GTF or BAM file cut to a few genes: without the other genes of a region, or their reads, the region and the
+#' results of its ORFs can change.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param annotation_file REQUIRED - path to the *Rannot R file in the annotation directory used in the \code{prepare_annotation_files function}
 #' @param for_ORFquant_file REQUIRED - path to the "for_ORFquant" file containing P_sites positions and junction reads
 #' @param n_cores REQUIRED - number of cores to use
 #' @param prefix prefix to use for the output files. Defaults to same as \code{for_ORFquant_file} (appends to its filename)
-#' @param gene_name \code{character} vector of gene names to analyze.
-#' @param gene_id \code{character} vector of gene ids to analyze
-#' @param genomic_region \code{GRanges} object with genomic regions to analyze
+#' @param gene_name \code{character} vector of gene names to analyze: the regions of these genes are analyzed (see Details)
+#' @param gene_id \code{character} vector of gene ids to analyze: the regions of these genes are analyzed (see Details)
+#' @param genomic_region \code{GRanges} object with genomic regions to analyze: the regions that overlap it are analyzed whole (see Details)
 #' @param write_temp_files write temporary files. Defaults to \code{TRUE}
 #' @param write_GTF_file write a GTF files with the ORF coordinates. Defaults to \code{TRUE}
 #' @param write_protein_fasta write a protein fasta file. Defaults to \code{TRUE}

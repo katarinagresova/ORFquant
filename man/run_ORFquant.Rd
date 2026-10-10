@@ -39,11 +39,11 @@ run_ORFquant(
 
 \item{prefix}{prefix to use for the output files. Defaults to same as \code{for_ORFquant_file} (appends to its filename)}
 
-\item{gene_name}{\code{character} vector of gene names to analyze.}
+\item{gene_name}{\code{character} vector of gene names to analyze: the regions of these genes are analyzed (see Details)}
 
-\item{gene_id}{\code{character} vector of gene ids to analyze}
+\item{gene_id}{\code{character} vector of gene ids to analyze: the regions of these genes are analyzed (see Details)}
 
-\item{genomic_region}{\code{GRanges} object with genomic regions to analyze}
+\item{genomic_region}{\code{GRanges} object with genomic regions to analyze: the regions that overlap it are analyzed whole (see Details)}
 
 \item{write_temp_files}{write temporary files. Defaults to \code{TRUE}}
 
@@ -92,7 +92,13 @@ In addition, new columns are added in the ORFs_tx file:\cr\cr
 This wrapper function runs the entire ORFquant pipeline
 }
 \details{
-A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs
+A set of transcripts, together with genome sequence and Ribo-signal are analyzed to extract translated ORFs\cr\cr
+ORFquant analyzes the genome in regions: genes whose transcripts overlap on the same strand form one region.
+\code{gene_name}, \code{gene_id} and \code{genomic_region} select the regions to analyze. Each selected region
+is analyzed with all its genes and all its P_sites, so a run on a few genes gives the same ORFs and values as a
+run on all genes, except \code{ORFs_pM}, which sums to a million over the ORFs of the run. This is not so for
+a GTF or BAM file cut to a few genes: without the other genes of a region, or their reads, the region and the
+results of its ORFs can change.
 }
 \seealso{
 \code{\link{prepare_annotation_files}}, \code{\link{load_annotation}}, \code{\link{ORFquant}}, \code{\link{ORFquant_output}}
