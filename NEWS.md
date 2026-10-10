@@ -290,6 +290,12 @@ deprecation warnings.
   its `transcript_id`, so tools that take one CDS for each transcript, such
   as a conversion to genePred, join them into one CDS: `?run_ORFquant` now
   describes the GTF and says to group its `CDS` lines by `ORF_id`.
+- `annotate_splicing()` now gives the right `spl_type` when the exons of
+  `orf_gen` are not in ascending order, for example minus-strand exons in
+  transcript order. Before, it took each exon's overlap with the reference
+  from another exon: it gave wrong labels, or failed with `failed to rbind
+  column 'ref' across DataFrame objects`. `run_ORFquant()` always gives the
+  exons in ascending order, so its results don't change.
 - `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
   the annotation has exactly one protein-coding transcript.
 - `prepare_annotation_files()` now reads the GTF's ids, biotypes and gene

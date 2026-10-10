@@ -34,3 +34,14 @@ test_that("annotate_splicing() gives the same spl_type on both strands", {
     expect_identical(spl_5to3(annotate_splicing(mirror(p$orf), mirror(p$ref))), p$spl, info = paste("- strand, case", k))
   }
 })
+
+test_that("annotate_splicing() does not depend on the order of the ORF exons", {
+  # Before, exons in descending order got the overlap of another exon: wrong
+  # labels, or an error when an exon got none (R/annotate_orfs.R L49 @ 4c1fd44)
+  for (k in seq_along(splicing_cases)) {
+    p <- splicing_cases[[k]]
+    expect_identical(annotate_splicing(rev(p$orf), p$ref), annotate_splicing(p$orf, p$ref), info = paste("+ strand, case", k))
+    m <- mirror(p$orf); mref <- mirror(p$ref)
+    expect_identical(annotate_splicing(rev(m), mref), annotate_splicing(m, mref), info = paste("- strand, case", k))
+  }
+})

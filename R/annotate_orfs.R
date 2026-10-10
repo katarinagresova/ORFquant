@@ -68,6 +68,8 @@ annotate_splicing<-function(orf_gen,ref_cds){
   
   o<-order(orf_gen)
   orf_gen<-sort(orf_gen)
+  #in the order of the sorted orf_gen, as hq below
+  overref<-overref[o]
   if(length(orf_gen)>0){
     # overlaps found and exons combined once, not per exon: each GRanges op costs several ms.
     # The hits of ov, with the queries numbered as in the sorted orf_gen (sort() orders as order())
