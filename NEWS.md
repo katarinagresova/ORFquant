@@ -267,6 +267,18 @@ deprecation warnings.
   where all ORFs have fewer than 10 P-sites. The region now has no ORFs, as a
   region where no ORF is detected. When no region has ORFs, the run stops
   with `No ORFs found!`. Runs that did not fail give the same results.
+- In `<prefix>_Detected_ORFs.gtf`, the `ORF_id` of each `CDS` line is now the
+  ORF of the line. Before, all `CDS` lines of a transcript with more than one
+  ORF had the `ORF_id` of one of them, for example a uORF and the annotated
+  CDS of its transcript (lcalviell/ORFquant#13); their other values
+  (`P_sites`, `ORF_pct_P_sites`, `ORF_pct_P_sites_pN`, `ORFs_pM`) were
+  already right. On a human sample (SRR15513199 with GENCODE 47), 141 of
+  7,994 transcripts with ORFs have more than one, and 1,232 `CDS` lines of 145
+  ORFs had the id of another ORF. The ORFs, the other output files and the
+  coordinates in the GTF don't change. All ORFs of a transcript still have
+  its `transcript_id`, so tools that take one CDS for each transcript, such
+  as a conversion to genePred, join them into one CDS: `?run_ORFquant` now
+  describes the GTF and says to group its `CDS` lines by `ORF_id`.
 - `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
   the annotation has exactly one protein-coding transcript.
 - `prepare_annotation_files()` now reads the GTF's ids, biotypes and gene

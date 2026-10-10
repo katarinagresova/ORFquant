@@ -83,7 +83,7 @@ The description for each list object is as follows:\cr\cr
 \code{tmp_ORFquant_results}: (Optional) RData object file containing the entire set of results for each genomic region.\cr
 \code{final_ORFquant_results}: RData object file containing the final ORFquant results, see \code{ORFquant}.\cr
 \code{Protein_sequences.fasta}: (Optional) Fasta file containing the set of translated proteins .\cr
-\code{Detected_ORFs.gtf}: GTF file containing coordinates of the detected ORFs.\cr
+\code{Detected_ORFs.gtf}: GTF file with the exons of the selected transcripts (\code{exon} lines) and the exons of the detected ORFs, without the stop codon (\code{CDS} lines). A \code{CDS} line has the \code{transcript_id} of the ORF's transcript, and the \code{ORF_id} (\code{ORF_id_tr}), \code{P_sites}, \code{ORF_pct_P_sites}, \code{ORF_pct_P_sites_pN} and \code{ORFs_pM} of the ORF. A transcript can have more than one ORF, for example a uORF and the annotated CDS, so group the \code{CDS} lines by \code{ORF_id}: tools that take one CDS for each \code{transcript_id}, such as a conversion to genePred or \code{txdbmaker::makeTxDbFromGFF()}, join these ORFs into one CDS or keep only one of them.\cr
 \code{Detected_ORFs.tsv}: (Optional) Tab-separated file with one row per ORF: the columns of \code{as.data.frame(ORFs_tx)}, transcript coordinates first. Columns with several values per ORF have them separated by commas, and ranges are written as \code{seqname:start-end:strand}. \code{\link{ORFquant_output}} describes its columns.\cr\cr
 In addition, new columns are added in the ORFs_tx file:\cr\cr
 \code{ORFs_pM}: number of P_sites for each ORF, divided by ORF length and summing up to a million (akin to TPM).\cr
