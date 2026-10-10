@@ -29,6 +29,9 @@
 #' \code{5ss} and \code{3ss} indicate exon 5' and 3', respectively. \code{CDS_spanning} indicates retained intron;
 #' \code{missing_CDS} indicates no overlapping exon (missed or included); \code{monoCDS} indicates a single-exon ORF; 
 #' \code{firstCDS} and \code{lastCDS} indicate first CDS exon or last CDS exon.
+#' \code{new} exons (exons of the ORF that overlap no exon of the reference) and \code{missing_CDS} exons before the first exon of the ORF
+#' that overlaps the reference get \code{_5prime}, those after the last one get \code{_3prime}, in 5' to 3' order on both strands.
+#' When no exon of the ORF overlaps the reference, all exons get \code{_notoverl}.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param orf_gen Exon structure of a detected ORF
@@ -457,9 +460,10 @@ annotate_splicing<-function(orf_gen,ref_cds){
   lenna<-length(runValue(rlesp))
   if(runValue(rlesp)[lenna]=="new_miss"){
     if(as.character(strand(spl_ran)[1])=="+"){cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)]<-paste(cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_3prime",sep = "")}
-    if(as.character(strand(spl_ran)[1])=="-"){paste(cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_5prime",sep = "")}
+    if(as.character(strand(spl_ran)[1])=="-"){cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)]<-paste(cols$spl_type[(length(spl_ran)-(runLength(rlesp)[lenna]-1)):length(spl_ran)],"_5prime",sep = "")}
   }
-  cols$spl_type<-gsub(cols$spl_type,pattern = "_5prime_3prime",replacement = "_notoverl")
+  #on the - strand, the 3' end is first: _3prime_5prime
+  cols$spl_type<-gsub(cols$spl_type,pattern = "_5prime_3prime|_3prime_5prime",replacement = "_notoverl")
   mcols(spl_ran)<-cols
   spl_ran
 }
