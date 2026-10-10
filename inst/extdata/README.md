@@ -10,7 +10,7 @@ A small data set for the vignette, the tests and the command-line script
 | `chr22_example.gtf.gz` | All GENCODE release 47 lines of the 7 genes, unchanged. | GENCODE [1] |
 | `chr22_example.fa.gz`, `.fai`, `.gzi` | The sequence of chr22 from the GRCh38 primary assembly (GENCODE's `GRCh38.primary_assembly.genome.fa`). Every base more than 1 kb from the 7 genes is replaced by N. Compressed with `bgzip` and indexed. | GRCh38, Genome Reference Consortium [2] |
 | `chr22_example.bam`, `.bai` | The primary alignments of the Ribo-seq reads of SRA run SRR15513199 within 500 bp of the 7 genes. The alignment used STAR 2.7.10a and the GENCODE 47 annotation. Only the MD and NH tags are kept. | Chothani et al. [3] |
-| `chr22_example_cutoffs.tsv` | The P-site offset for each read length of this sample, computed with Ribo-seQC. | Ribo-seQC [4] |
+| `chr22_example_cutoffs.tsv` | The P-site offset for each read length of this sample: the offsets that Ribo-seQC used for its P-sites of the whole sample (with `rescue_all_rls = TRUE`), that is, those of the read lengths it selected, and 12 for all others. | Ribo-seQC [4] |
 
 SRR15513199 is GEO sample GSM5527724: untreated human aortic endothelial cells
 (GEO series GSE182371, BioProject PRJNA756018).
