@@ -72,7 +72,9 @@ ORFs that overlap no CDS exon of the analyzed genomic region are annotated in ge
 \code{novel_Upstream}: ORF is upstream of annotated CDS regions (does not overlap).\cr
 \code{novel_Downstream}: ORF is downstream of annotated CDS regions (does not overlap).\cr
 \code{novel_Internal}: genomic location of the ORF is present between the start of the first,
- and the end of the last CDS region (does not overlap).\cr\cr
+ and the end of the last CDS region (does not overlap).\cr
+An ORF with exons on both sides of the CDS, and none between, is \code{novel_Upstream} on the \code{+} strand,
+but \code{novel_Downstream} on the \code{-} strand (see \code{\link{ORFquant_output}}).\cr\cr
 The start and stop codons of the other ORFs are compared with those of the CDS of \code{ref_id} (the longest annotated CDS of the gene; see \code{\link{ORFquant_output}} for genes without one):\cr\cr
 \code{exact_start_stop}: Same start and end locations.\cr
 \code{Alt5_start}: Different start region, upstream.\cr

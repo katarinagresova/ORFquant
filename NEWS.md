@@ -636,6 +636,20 @@ deprecation warnings.
   genes can give other results, because a region then loses genes or their
   reads. In our test, 28 of 52 genes shared their region with genes that the
   cut removed. For 1 of them, the `P_sites` of its 2 ORFs changed by 0.01.
+- `?ORFquant_output` and `?annotate_ORFs` now say how `ORF_category_Gen`
+  labels an ORF that overlaps no CDS, but has exons on both sides of the CDS
+  of the nearest gene and none between them, that is, an intron that holds
+  this whole CDS. It is `novel_Upstream` on the plus strand, but
+  `novel_Downstream` on the minus strand: on the plus strand, the label comes
+  from the start of the ORF; on the minus strand, an ORF whose end is
+  downstream of the CDS is `novel_Downstream`. For all other ORFs, the two
+  rules give the same label. ORFquant has always worked this way, and it
+  still does. No ORF is like this in a human sample (SRR15513199, with 148
+  `novel_Upstream`, `novel_Downstream` and `novel_Internal` ORFs) or in the
+  data of lcalviell/ORFquant#26 (139). `?ORFquant_output` also says that the
+  nearest gene is the one with the CDS exon nearest to the ORF's first exon
+  in genomic coordinates, and that an ORF is `novel_Internal` when one of its
+  exons is between the first and the last CDS nucleotide.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
