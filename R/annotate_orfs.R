@@ -465,7 +465,7 @@ annotate_splicing<-function(orf_gen,ref_cds){
 }
 
 # ORF_category_Tx of an ORF (start sta and end sto in the transcript, without the stop codon) with
-# respect to the annotated CDS (start ann_sta, and ann_sto = CDS end - 3). It replaces a cascade of
+# respect to the annotated CDS (start ann_sta, and ann_sto = CDS end without the stop codon). It replaces a cascade of
 # if where the last true one won (uORF over overl_uORF, dORF over overl_dORF), and gives the same
 # label for all inputs, also for a CDS shorter than 4 nt (ann_sta>ann_sto)
 tx_category<-function(sta,sto,ann_sta,ann_sto){
@@ -558,6 +558,9 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   annotated_cds_tx<-Annotation$cds_txs[Annotation$cds_txs%over%region]
   annotated_cds_tx_genes<-Annotation$trann$gene_id[match(names(annotated_cds_tx),Annotation$trann$transcript_id)]
   annotated_exons_tx<-Annotation$exons_txs[Annotation$exons_txs%over%region]
+  #nucleotides of the stop codon in the annotated CDS: none when most CDS end before it (stop_in_gtf NA, e.g. CDS lines
+  #of factR without stop_codon lines), so that the annotated stop codon is the codon after the CDS
+  stop_len<-if(isTRUE(is.na(Annotation$stop_in_gtf))) 0 else 3
   
   ORFs_tx<-results_ORFs$ORFs_tx_position
   ORFs_gen<-results_ORFs$ORFs_genomic_position
@@ -790,7 +793,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF)>0){
       
       ann_sta<-start(annotated_ORF)
-      ann_sto<-end(annotated_ORF)-3
+      ann_sto<-end(annotated_ORF)-stop_len
       sta<-start(orf_tx)
       sto<-end(orf_tx)
       cols$ORF_category_Tx<-tx_category(sta,sto,ann_sta,ann_sto)
@@ -800,7 +803,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF_compatible)>0){
       
       ann_sta<-start(annotated_ORF_compatible)
-      ann_sto<-end(annotated_ORF_compatible)-3
+      ann_sto<-end(annotated_ORF_compatible)-stop_len
       #change
       sta<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)-1]}))
       sto<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)]}))
@@ -882,13 +885,14 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       cols$ref_id<-max_cds[cols$gene_id]
       max_cds_seq<-unlist(getSeq(x=genome_sequence,max_cdsok))
       segm<-10
-      if(length(max_cds_seq)<33 | nchar(orf_tx$Protein)<10){
-        segm<-min(c(as.integer(length(max_cds_seq)/3)-1,nchar(orf_tx$Protein)))
+      #the length of the CDS with its stop codon
+      if(length(max_cds_seq)+3-stop_len<33 | nchar(orf_tx$Protein)<10){
+        segm<-min(c(as.integer((length(max_cds_seq)+3-stop_len)/3)-1,nchar(orf_tx$Protein)))
       }
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
       N_ann<-translate_solve(max_cds_seq[1:(segm*3)],genetic.code = genetic_code)
-      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+3)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
+      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+stop_len)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       cols$NC_protein_isoform<-"N_C"
@@ -909,7 +913,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         gen_sto<-max(end(max_cdsok))
         
         sta_or<-min(start(orf_gen))
-        sto_or<-max(end(orf_gen))+3
+        sto_or<-max(end(orf_gen))+stop_len
         if(sto_or==gen_sto){
           if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}
           if(sta_or<gen_sta){cols$ORF_category_Gen<-"Alt5_start"}
@@ -933,7 +937,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         gen_sto<-min(start(max_cdsok))
         
         sta_or<-max(end(orf_gen))
-        sto_or<-min(start(orf_gen))-3
+        sto_or<-min(start(orf_gen))-stop_len
         
         if(sto_or==gen_sto){
           if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}

@@ -259,13 +259,18 @@
 #' CDS, it uses none, and the rows are the ORF's exons only.
 #'
 #' @section Stop codons in the annotation:
-#' Both kinds of categories assume that the annotated CDS includes its stop
-#' codon, as it does when the GTF has \code{stop_codon} lines (GENCODE and
-#' Ensembl GTFs do): \code{\link{prepare_annotation_files}} adds them to the
-#' CDS. With a GTF whose CDS lines exclude the stop codon and that has no
-#' \code{stop_codon} lines, ORFs are compared with annotated ends 3
-#' nucleotides too early: the annotated ORF itself becomes \code{C_extension}
-#' and \code{Alt3_stop}, not \code{ORF_annotated} and
+#' Both kinds of categories, and \code{NC_protein_isoform}, compare the ORF's
+#' stop codon with the annotated one. The annotated CDS includes its stop
+#' codon when the GTF has \code{stop_codon} lines (GENCODE, Ensembl and
+#' RefSeq GTFs do): \code{\link{prepare_annotation_files}} adds them to the
+#' CDS. When most CDS end before their stop codon (CDS lines made by factR, or
+#' a GTF without its \code{stop_codon} lines), the annotation's
+#' \code{stop_in_gtf} is \code{NA}, and the codon after each CDS is its stop
+#' codon (\code{run_ORFquant} says so in a message). One rule is used for the
+#' whole annotation: with a GTF that has both kinds of CDS, ORFs at the stop
+#' codons of the smaller part are compared with an annotated end 3
+#' nucleotides away. Such an annotated ORF itself becomes, for example,
+#' \code{C_extension} and \code{Alt3_stop}, not \code{ORF_annotated} and
 #' \code{exact_start_stop}.
 #'
 #' @seealso \code{\link{run_ORFquant}}, \code{\link{ORFquant}},

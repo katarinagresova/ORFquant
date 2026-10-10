@@ -151,3 +151,24 @@ test_that("run_ORFquant() runs on a gene that genes() dropped", {
     expect_true(all(golden$ORF_id_tr %in% orfs$ORF_id_tr), info = names(by))
   }
 })
+
+# GENCODE's CDS lines end before the stop codon, and its stop_codon lines add it to the CDS.
+# Without them, as in GTFs with CDS lines from factR, the codon after the CDS is the stop codon
+test_that("without stop_codon lines, the ORFs get the results of the example", {
+  skip_on_os("windows")   # run_ORFquant() forks its workers
+  quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
+  annotation <- annotation_of(gtf_example[line_type(gtf_example) != "stop_codon"], "no_stop_codons")
+  expect_identical(ann_genc$stop_in_gtf, "*")
+  expect_true(is.na(get(load(annotation))$stop_in_gtf))
+  prefix <- file.path(work, "no_stop_codons", "example")
+  quiet(prepare_for_ORFquant(annotation_file = annotation,
+                             bam_file = example_file("chr22_example.bam"),
+                             path_to_rl_cutoff_file = example_file("chr22_example_cutoffs.tsv"),
+                             dest_name = prefix, n_cores = 1))
+  msgs <- character()
+  quiet(withCallingHandlers(run_ORFquant(for_ORFquant_file = paste0(prefix, "_for_ORFquant"), annotation_file = annotation,
+                                         n_cores = 1, prefix = prefix, interactive = FALSE),
+                            message = function(m) msgs <<- c(msgs, conditionMessage(m))))
+  expect_true(any(grepl("end before their stop codon", msgs)))
+  expect_equal(read_tsv(result_files(prefix)$tsv), read_tsv(golden_files()$tsv), tolerance = 1e-6)
+})
