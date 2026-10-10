@@ -23,6 +23,9 @@ each exon is aligned to the closest one to match acceptor and donor sites, or to
 \code{5ss} and \code{3ss} indicate exon 5' and 3', respectively. \code{CDS_spanning} indicates retained intron;
 \code{missing_CDS} indicates no overlapping exon (missed or included); \code{monoCDS} indicates a single-exon ORF; 
 \code{firstCDS} and \code{lastCDS} indicate first CDS exon or last CDS exon.
+\code{new} exons (exons of the ORF that overlap no exon of the reference) and \code{missing_CDS} exons before the first exon of the ORF
+that overlaps the reference get \code{_5prime}, those after the last one get \code{_3prime}, in 5' to 3' order on both strands.
+When no exon of the ORF overlaps the reference, all exons get \code{_notoverl}.
 }
 \seealso{
 \code{\link{detect_translated_orfs}}, \code{\link{annotate_ORFs}}

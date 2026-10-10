@@ -251,6 +251,17 @@ deprecation warnings.
   with the CDS of another gene (1), and 12 in genes without a CDS, such as
   pseudogenes, compared before with the CDS of another gene. `ref_id` stays
   `NA`, and all other outputs don't change.
+- In `ORFs_spl_feat_longest` and `ORFs_spl_feat_maxORF`, ORFs on the minus
+  strand now get the `spl_type` suffixes of the plus strand. New and missing
+  exons at their 5' end now end with `_5prime` (for example
+  `missing_CDS_5prime`, not `missing_CDS`), and when no exon of the ORF
+  overlaps the reference, all its rows end with `_notoverl`, not `_3prime`.
+  `annotate_splicing()` computed the `_5prime` labels of the minus strand but
+  did not keep them. On a human sample (SRR15513199 with GENCODE 47), 4,298
+  rows of 1,093 of the 8,139 ORFs change in `ORFs_spl_feat_longest`, and
+  1,747 rows of 206 ORFs in `ORFs_spl_feat_maxORF`. The plus strand, the
+  other outputs and the report don't change. `?annotate_splicing` now
+  describes these suffixes.
 
 ## Bug fixes
 
@@ -279,6 +290,12 @@ deprecation warnings.
   its `transcript_id`, so tools that take one CDS for each transcript, such
   as a conversion to genePred, join them into one CDS: `?run_ORFquant` now
   describes the GTF and says to group its `CDS` lines by `ORF_id`.
+- `annotate_splicing()` now gives the right `spl_type` when the exons of
+  `orf_gen` are not in ascending order, for example minus-strand exons in
+  transcript order. Before, it took each exon's overlap with the reference
+  from another exon: it gave wrong labels, or failed with `failed to rbind
+  column 'ref' across DataFrame objects`. `run_ORFquant()` always gives the
+  exons in ascending order, so its results don't change.
 - `prepare_annotation_files()` no longer fails with `NA/NaN argument` when
   the annotation has exactly one protein-coding transcript.
 - `prepare_annotation_files()` now reads the GTF's ids, biotypes and gene
