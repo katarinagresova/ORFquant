@@ -247,7 +247,8 @@ coordinates. For an ORF that overlaps no CDS annotated in its region:
   nucleotide of that gene, for example in a retained intron.}
 }
 For the other ORFs, the start (the first nucleotide of the start codon) and
-the stop (the last nucleotide of the stop codon) are compared with those of
+the stop (the last nucleotide before the stop codon, as for the transcript
+categories; the stop codon can be after an intron) are compared with those of
 the CDS of \code{ref_id}; \code{Alt5} means upstream and \code{Alt3}
 downstream, on the ORF's strand:
 \describe{

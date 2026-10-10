@@ -912,14 +912,21 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
       
       #ann genomic
+      #the stop is the last nucleotide before the stop codon, of the ORF and of the CDS (as for ORF_category_Tx). For the
+      #CDS it is found through its exons, as its stop codon (its last stop_len nt) can be split by an intron or be the
+      #first codon of an exon: sto_ex is the exon of the CDS with this nucleotide, sto_in_ex the nt of the stop codon in it
+      cds_ex<-sort(max_cdsok,decreasing=as.vector(strand(orf_gen[1]))=="-")
+      nt_to_end<-rev(cumsum(rev(width(cds_ex))))
+      sto_ex<-max(which(nt_to_end>stop_len),1)
+      sto_in_ex<-stop_len-(nt_to_end[sto_ex]-width(cds_ex)[sto_ex])
       
       if(as.vector(strand(orf_gen[1]))=="+"){
         
         gen_sta<-min(start(max_cdsok))
-        gen_sto<-max(end(max_cdsok))
+        gen_sto<-end(cds_ex[sto_ex])-sto_in_ex
         
         sta_or<-min(start(orf_gen))
-        sto_or<-max(end(orf_gen))+stop_len
+        sto_or<-max(end(orf_gen))
         if(sto_or==gen_sto){
           if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}
           if(sta_or<gen_sta){cols$ORF_category_Gen<-"Alt5_start"}
@@ -940,10 +947,10 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       if(as.vector(strand(orf_gen[1]))=="-"){
         
         gen_sta<-max(end(max_cdsok))
-        gen_sto<-min(start(max_cdsok))
+        gen_sto<-start(cds_ex[sto_ex])+sto_in_ex
         
         sta_or<-max(end(orf_gen))
-        sto_or<-min(start(orf_gen))-stop_len
+        sto_or<-min(start(orf_gen))
         
         if(sto_or==gen_sto){
           if(sta_or==gen_sta){cols$ORF_category_Gen<-"exact_start_stop"}
