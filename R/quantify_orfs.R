@@ -155,9 +155,8 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
   if(length(ident)>0){nest<-nest[!nest%in%unique(sapply(strsplit(ident,";"),"[[",1))]}
   txs_sofar<-txs_sofar[!txs_sofar%in%nest]
   
-  change<-1
-  
-  while(change>0){
+  # one pass: a second pass on txs_good would select the same set
+  {
     
     mat<-matrix(data=0,nrow=length(d),ncol=length(txs_sofar))
     colnames(mat)<-txs_sofar
@@ -267,7 +266,6 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
       
     }
     txs_sofar<-txs_good
-    change<-abs(length(txs_good)-length(txs_sofar))
   }
   
   cols<-mcols(gen_bins_junct)
@@ -749,9 +747,8 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
   }
   if(length(ident)>0){nest<-nest[!nest%in%unique(sapply(strsplit(ident,";"),"[[",1))]}
   txs_sofar<-txs_sofar[!txs_sofar%in%nest]
-  change<-1
-  
-  while(change>0){
+  # one pass: a second pass on txs_good would select the same set
+  {
     
     mat<-matrix(data=0,nrow=length(d),ncol=length(txs_sofar))
     colnames(mat)<-txs_sofar
@@ -862,7 +859,6 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       
     }
     txs_sofar<-txs_good
-    change<-abs(length(txs_good)-length(txs_sofar))
   }
   
   cols<-mcols(gene_feat)
