@@ -19,7 +19,8 @@ annotate_ORFs(results_ORFs, Annotation, genome_sequence, region, genetic_code)
 }
 \value{
 \code{results_ORFs} with a new element \code{ORFs_splice_feats}: a list of two \code{GRangesList}, \code{annotation_wrt_longest} and \code{annotation_wrt_maxORF},
-with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}):
+with, for each ORF, its exon structure compared with the CDS of \code{ref_id} or with the ORF \code{ref_id_maxORF} (see \code{annotate_splicing}).
+An ORF that overlaps no CDS (\code{ref_id} \code{NA}) is compared with the longest CDS of its gene, or with none when the gene has none:
 the exons, including possible missing exons from reference, with a \code{spl_type} column
 including the annotation for each exon (e.g. alternative acceptors or donor).\cr\cr
 Additional columns are added to the ORFs_tx object:\cr

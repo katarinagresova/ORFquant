@@ -217,6 +217,18 @@ deprecation warnings.
   readthrough after an ORF without a stop codon after it; before, this
   stopped the run with `replacement has length zero`. With the default
   (`FALSE`), results don't change.
+- In `ORFs_spl_feat_longest`, an ORF that overlaps no annotated CDS (its
+  `ref_id` is `NA`), such as a uORF, is now compared with the longest
+  annotated CDS of its gene, or with no CDS when its gene has none. Before,
+  it was compared with the CDS used for the last ORF before it in its region
+  that overlapped a CDS, which could be of another gene, or with no CDS when
+  there was no such ORF: the result depended on the order of the ORFs. On a
+  human sample (SRR15513199 with GENCODE 47), 379 of the 8,139 ORFs overlap
+  no CDS, and 115 of them change their rows of `ORFs_spl_feat_longest`: 103
+  in genes with a CDS, mostly uORFs, compared before with no CDS (102) or
+  with the CDS of another gene (1), and 12 in genes without a CDS, such as
+  pseudogenes, compared before with the CDS of another gene. `ref_id` stays
+  `NA`, and all other outputs don't change.
 
 ## Bug fixes
 
