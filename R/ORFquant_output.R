@@ -231,11 +231,19 @@
 #' \describe{
 #' \item{\code{novel}}{The region has no annotated CDS.}
 #' \item{\code{novel_Upstream}, \code{novel_Downstream}}{The ORF is upstream
-#'   or downstream, on its strand, of the CDS of the gene with the nearest CDS
-#'   exon.}
-#' \item{\code{novel_Internal}}{The ORF is between the first and the last CDS
-#'   nucleotide of that gene, for example in a retained intron.}
+#'   or downstream, on its strand, of the CDS of the gene with the CDS exon
+#'   nearest to the ORF's first exon in genomic coordinates.}
+#' \item{\code{novel_Internal}}{An exon of the ORF is between the first and
+#'   the last CDS nucleotide of that gene, for example in a retained intron.}
 #' }
+#' On the \code{+} strand, \code{novel_Upstream} and \code{novel_Downstream}
+#' come from the start of the ORF. On the \code{-} strand, an ORF whose end
+#' is downstream of the CDS is \code{novel_Downstream}. The two rules differ
+#' only for an ORF with exons on both sides of the CDS and none between its
+#' first and last nucleotide, that is, with an intron that holds the whole
+#' CDS: it is \code{novel_Upstream} on the \code{+} strand, but
+#' \code{novel_Downstream} on the \code{-} strand.
+#'
 #' For the other ORFs, the start (the first nucleotide of the start codon) and
 #' the stop (the last nucleotide before the stop codon, as for the transcript
 #' categories; the stop codon can be after an intron) are compared with those of
