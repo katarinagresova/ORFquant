@@ -516,6 +516,21 @@ deprecation warnings.
   `cutoff` selects a start codon, its `ave_pct_fr_st` and `pct_fr_st` are
   fractions, not percentages. `?select_start` also said that the start codon
   needs more than `cutoff_ave`; at least `cutoff_ave` is enough.
+- `?calc_orf_pval`, `?take_Fvals_spect` and `?ORFquant_output` now say why
+  ORFquant finds fewer short ORFs, such as uORFs (lcalviell/ORFquant#14).
+  The 3-nucleotide periodicity test has less power for short ORFs. There is
+  no minimum length, but an ORF shorter than 25 nt (8 codons or fewer) is
+  padded with zeros to 50 nt before the test. In simulations (P-sites from a
+  Poisson distribution, 70% in frame), with 30 P-sites in the ORF, the test
+  gives a p-value below 0.05 for 95% of ORFs of 30 codons, 93% of ORFs of
+  10 codons and 57% of ORFs of 3 codons. In a human sample (SRR15513199,
+  8,139 ORFs), 32 of the 131 uORFs have 10 codons or fewer (the shortest
+  has 3), but only 1 of the 49 ORFs of 12 codons or fewer has a `pval`
+  below 0.001, against 51% of the longer ORFs. ORFquant has always worked
+  this way, and it still does. The quantification cutoff
+  `stn.orf_quant.cutoff_pct` does not take the ORF length into account, but
+  on this sample it removed few uORFs: without it, there are 6 more (3 of
+  them of 20 codons or fewer).
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

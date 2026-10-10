@@ -158,6 +158,8 @@ get_orfs<-function(tx_name,sequence,get_all_starts=T,Stop_Stop=F,scores=c(1,.5),
 #'
 #' This function uses the multitaper tool to extract F-values and multitaper spectral coefficients
 #' @details Values reported correspond to the closest frequency to 1/3 (same parameters as in RiboTaper). \cr
+#' A signal shorter than 25 is first padded with zeros on both sides to a length of 50, so \code{slepians_values} must then
+#' be calculated for a length of 50 (as \code{\link{calc_orf_pval}} does).
 #' Padding to a minimum length of 1024 is performed to increase spectral resolution.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
@@ -308,7 +310,13 @@ select_start<-function(ORFs,P_sites_rle,cutoff=NA,cutoff_ave=.5){
 #'
 #' This function calculates statistics for the analysis of P_sites profiles for each ORF
 #' @details Number of P_sites (uniquely mapping or all), frame percentage and multitaper test 
-#' statistics are collected for each ORF. The parameter space for the multitaper analysis was explored in the RiboTaper paper.
+#' statistics are collected for each ORF. The parameter space for the multitaper analysis was explored in the RiboTaper paper.\cr
+#' The test has less power for short ORFs, such as most uORFs, so fewer of them are found. There is no minimum length, but an
+#' ORF shorter than 25 nt (8 codons or fewer, without the stop codon) is padded with zeros to 50 nt (see \code{\link{take_Fvals_spect}}),
+#' and an ORF of 1 or 2 codons is tested only when it also has P_sites out of frame. In simulations (P_sites from a Poisson
+#' distribution, 70\% of them in frame), with 30 P_sites in the ORF, the test gives a p-value below 0.05 for 95\% of ORFs of
+#' 30 codons, 93\% of ORFs of 10 codons and 57\% of ORFs of 3 codons. With 1 P_site per codon on average, it does so for 46\%
+#' of ORFs of 10 codons and 8\% of ORFs of 3 codons.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param ORFs Set of detected ORFs

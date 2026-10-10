@@ -23,6 +23,8 @@ This function uses the multitaper tool to extract F-values and multitaper spectr
 }
 \details{
 Values reported correspond to the closest frequency to 1/3 (same parameters as in RiboTaper). \cr
+A signal shorter than 25 is first padded with zeros on both sides to a length of 50, so \code{slepians_values} must then
+be calculated for a length of 50 (as \code{\link{calc_orf_pval}} does).
 Padding to a minimum length of 1024 is performed to increase spectral resolution.
 }
 \seealso{
