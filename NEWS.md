@@ -214,8 +214,9 @@ deprecation warnings.
   lcalviell/ORFquant#26 (a StringTie and factR GTF, 7,399 ORFs), 6,918 ORFs
   had another annotation than with `stop_codon` lines added to the GTF, and
   no ORF was `ORF_annotated`; now all but 9 have the same. 5 of these 9 have
-  a stop codon after an intron, and get the right `ORF_category_Gen` only
-  now. Which ORFs are found, their P-sites and p-values don't change. GTFs
+  a stop codon after an intron, and with `stop_codon` lines they got the
+  wrong `ORF_category_Gen` (fixed too, see below). Which ORFs are found,
+  their P-sites and p-values don't change. GTFs
   whose CDS lines include the stop codon or that have `stop_codon` lines,
   such as GENCODE, Ensembl, RefSeq, gffread and ORFanage GTFs, are not
   affected.
@@ -274,6 +275,21 @@ deprecation warnings.
   1,747 rows of 206 ORFs in `ORFs_spl_feat_maxORF`. The plus strand, the
   other outputs and the report don't change. `?annotate_splicing` now
   describes these suffixes.
+- `ORF_category_Gen` now compares the last nucleotide before the stop codon
+  of the ORF with that of the annotated CDS, as `ORF_category_Tx` does.
+  Before, it compared the end of the CDS with the position 3 nt after the
+  ORF's last exon, which is in an intron when the ORF's stop codon is split
+  by the intron or is the first codon of an exon. Such an ORF with the
+  annotated stop codon was `Alt5_stop` or `Alt3_start_Alt5_stop`, not
+  `exact_start_stop` or `Alt3_start`. On a human sample (SRR15513199 with
+  GENCODE 47), 22 of the 8,139 ORFs have such a stop codon, and 8 of them
+  change: 5 from `Alt5_stop` to `exact_start_stop`, and 3 from
+  `Alt3_start_Alt5_stop` to `Alt3_start`. The other 14 end at another place
+  than the CDS of their `ref_id`, so their category stays the same. All other
+  outputs don't change. GTFs whose CDS lines end before the stop codon
+  (`stop_in_gtf` `NA`, see above) already got this rule and are not affected,
+  so a GTF with and without its `stop_codon` lines now gives these ORFs the
+  same category.
 
 ## Bug fixes
 

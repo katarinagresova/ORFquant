@@ -172,3 +172,72 @@ test_that("without stop_codon lines, the ORFs get the results of the example", {
   expect_true(any(grepl("end before their stop codon", msgs)))
   expect_equal(read_tsv(result_files(prefix)$tsv), read_tsv(golden_files()$tsv), tolerance = 1e-6)
 })
+
+# The lines with an intron just before the stop codon of transcript `tx`, which is in its last exon: the
+# exon ends before the stop codon, and a new exon goes from the next stop codon of the genome (at least
+# 3 nt downstream) to the end of the old exon. The ORF does not change, and its stop codon is the first
+# codon of an exon. The UTR lines of `tx` are removed (GenomicFeatures does not read them)
+intron_before_stop <- function(lines, tx) {
+  of_tx <- which(line_attr(lines, "transcript_id") == tx)
+  f <- strsplit(lines[of_tx], "\t", fixed = TRUE)
+  type <- sapply(f, `[`, 3)
+  from <- as.integer(sapply(f, `[`, 4))
+  to <- as.integer(sapply(f, `[`, 5))
+  plus <- f[[1]][7] == "+"
+  stop <- which(type == "stop_codon")
+  ex <- which(type == "exon" & from <= from[stop] & to >= to[stop])
+  # the stop codons in the exon's sequence (5' to 3'), after the annotated one
+  exon_seq <- as.character(Biostrings::getSeq(Rsamtools::FaFile(fasta),
+                                              GRanges(f[[1]][1], IRanges(from[ex], to[ex]), f[[1]][7])))
+  at <- if (plus) from[stop] - from[ex] + 1 else to[ex] - to[stop] + 1
+  stops <- gregexpr("(?=TAA|TAG|TGA)", exon_seq, perl = TRUE)[[1]]
+  new <- min(stops[stops >= at + 3])
+  new <- if (plus) from[ex] + new - 1 else to[ex] - new - 1
+  set_range <- function(line, a, b) {
+    x <- strsplit(line, "\t", fixed = TRUE)[[1]]
+    x[4:5] <- c(a, b)
+    paste(x, collapse = "\t")
+  }
+  exon_line <- lines[of_tx[ex]]
+  if (plus) {
+    lines[of_tx[ex]] <- set_range(exon_line, from[ex], from[stop] - 1)
+    new_exon <- set_range(exon_line, new, to[ex])
+  } else {
+    lines[of_tx[ex]] <- set_range(exon_line, to[stop] + 1, to[ex])
+    new_exon <- set_range(exon_line, from[ex], new + 2)
+  }
+  lines[of_tx[stop]] <- set_range(lines[of_tx[stop]], new, new + 2)
+  lines <- append(lines, sub('exon_id "([^"]*)"', 'exon_id "\\1_2"', new_exon), after = of_tx[ex])
+  lines[!(line_type(lines) == "UTR" & line_attr(lines, "transcript_id") %in% tx)]
+}
+
+# ORF_category_Gen compares the last nucleotide before the stop codon, also when an intron is before the stop codon
+test_that("an ORF with the annotated stop codon after an intron has the annotated stop", {
+  skip_on_os("windows")   # run_ORFquant() forks its workers
+  quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
+  # TOP3B (- strand) and TCN2 (+ strand): the transcripts of their ORFs and of their ref_id
+  txs <- c("ENST00000357179.10", "ENST00000698268.1", "ENST00000698271.1")
+  lines <- gtf_example
+  for (tx in txs) lines <- intron_before_stop(lines, tx)
+  annotation <- annotation_of(lines, "intron_before_stop")
+  ann <- get(load(annotation))
+  # the CDS has one more exon, with the stop codon only
+  expect_identical(lengths(ann$cds_txs[txs]), lengths(ann_genc$cds_txs[txs]) + 1L)
+  expect_identical(sum(width(ann$cds_txs[txs])), sum(width(ann_genc$cds_txs[txs])))
+  expect_identical(unname(sapply(width(ann$cds_txs[txs]), function(w) w[length(w)])), rep(3L, 3))
+  prefix <- file.path(work, "intron_before_stop", "example")
+  quiet(prepare_for_ORFquant(annotation_file = annotation,
+                             bam_file = example_file("chr22_example.bam"),
+                             path_to_rl_cutoff_file = example_file("chr22_example_cutoffs.tsv"),
+                             dest_name = prefix, n_cores = 1))
+  quiet(run_ORFquant(for_ORFquant_file = paste0(prefix, "_for_ORFquant"), annotation_file = annotation,
+                     n_cores = 1, prefix = prefix, interactive = FALSE, gene_name = c("TOP3B", "TCN2")))
+  golden <- read_tsv(golden_files()$tsv)
+  golden <- golden[golden$transcript_id %in% txs, ]
+  expect_identical(golden$ORF_category_Gen, c("exact_start_stop", "exact_start_stop"))
+  orfs <- read_tsv(result_files(prefix)$tsv)
+  orfs <- orfs[match(golden$ORF_id_tr, orfs$ORF_id_tr), ]
+  expect_identical(orfs$ref_id, golden$ref_id)
+  expect_identical(orfs$ORF_category_Tx, golden$ORF_category_Tx)
+  expect_identical(orfs$ORF_category_Gen, golden$ORF_category_Gen)
+})
