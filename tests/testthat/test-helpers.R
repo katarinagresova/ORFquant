@@ -132,3 +132,32 @@ test_that("get_reathr_seq() gives no readthrough region for an ORF without a sto
   regions <- get_reathr_seq("tx", orf, Biostrings::DNAString("ATGGCCTAAGCCGCCTAGGCC"), Biostrings::GENETIC_CODE)
   expect_equal(IRanges::start(regions), c(7, 16))
 })
+
+test_that("from_tx_togen() gives each ORF its own genomic exons, under its ORF_id_tr", {
+  # A transcript of 2 exons (30 nt) on each strand. The ORFs are not sorted,
+  # and one of them crosses the intron.
+  coordinates <- function(x) vapply(x, function(g) {
+    paste(IRanges::start(g), IRanges::end(g), sep = "-", collapse = ",")
+  }, "")
+  orfs <- gr("tx", rg(c(13, 1, 4), c(27, 9, 18)), "+")
+  orfs$ORF_id_tr <- paste("tx", IRanges::start(orfs), IRanges::end(orfs), sep = "_")
+  expected <- list("+" = c(tx_13_27 = "203-217", tx_1_9 = "101-109", tx_4_18 = "104-110,201-208"),
+                   "-" = c(tx_13_27 = "104-110,201-208", tx_1_9 = "212-220", tx_4_18 = "203-217"))
+  for (s in c("+", "-")) {
+    exons <- GenomicRanges::GRangesList(tx = gr("chr1", rg(c(101, 201), c(110, 220)), s))
+    introns <- gr("chr1", rg(111, 200), s)
+    res <- from_tx_togen(orfs, exons, introns)
+    expect_equal(coordinates(res), expected[[s]])
+    expect_true(all(unlist(GenomicRanges::strand(res), use.names = FALSE) == s))
+
+    # mapFromTranscripts() drops an ORF outside the transcript. Then
+    # from_tx_togen() stops; it does not give the next ORF's exons to it.
+    outside <- gr("tx", rg(c(1, 22, 13), c(9, 33, 27)), "+")
+    outside$ORF_id_tr <- paste("tx", IRanges::start(outside), IRanges::end(outside), sep = "_")
+    expect_error(from_tx_togen(outside, exons, introns), "exactly one transcript of 'exons': tx_22_33$")
+    # With the transcript name 2 times, each ORF maps 2 times. Before, the
+    # second ORF got the second range of the first ORF, without an error.
+    twice <- c(exons, GenomicRanges::GRangesList(tx = gr("chr1", rg(301, 330), s)))
+    expect_error(from_tx_togen(orfs, twice, introns), "tx_13_27, tx_1_9, tx_4_18$")
+  }
+})

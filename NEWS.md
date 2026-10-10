@@ -398,6 +398,14 @@ deprecation warnings.
   came from R closing the databases later, and did not change the results.
 - `prepare_annotation_files()` now gives the message "N genes were dropped
   because they have exons located on both strands..." once, not twice.
+- `from_tx_togen()` now stops with an error naming the ORFs that are not
+  inside exactly one transcript of `exons`. Before, an ORF outside its
+  transcript gave `subscript contains out-of-bounds indices`, and with a
+  transcript name twice in `exons`, ORFs got the genomic coordinates of
+  another ORF, without an error. `?from_tx_togen` now says that it maps the
+  ORFs of one transcript: `exons` has one element and `introns` is a
+  `GRanges`. `run_ORFquant()` calls it this way, with ORFs inside the
+  transcript, so results don't change.
 
 ## Performance
 
