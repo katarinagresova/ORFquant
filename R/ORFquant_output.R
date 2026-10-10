@@ -69,7 +69,9 @@
 #'   \code{pct_fr} above 0.5 (\code{stn.orf_find.cutoff_fr_ave}) are tested,
 #'   and kept if \code{pval} is below 0.05 (\code{pval_uniq}, with
 #'   \code{unique_reads_only = TRUE}). The p-values are not corrected for
-#'   multiple testing.}
+#'   multiple testing. The test has less power for short ORFs, such as most
+#'   uORFs: they need more P-sites per codon to pass (see Details of
+#'   \code{\link{calc_orf_pval}}).}
 #' \item{\code{pval_uniq}}{The same test on the P-sites of uniquely mapping
 #'   reads. \code{NA} when the ORF has none.}
 #' \item{\code{P_sites_raw}}{The number of P-sites in the ORF.}
