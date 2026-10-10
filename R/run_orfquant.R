@@ -191,6 +191,9 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
            "Run prepare_for_ORFquant with this annotation.")
     }
   }
+  if(isTRUE(is.na(GTF_annotation$stop_in_gtf))){
+    message("Most annotated CDS regions end before their stop codon (stop_in_gtf is NA): the ORF categories use the codon after the CDS as the annotated stop codon")
+  }
   
   genes_red<-reduce(unlist(GTF_annotation$txs_gene))
   

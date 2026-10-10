@@ -185,6 +185,28 @@ deprecation warnings.
   biotypes removed, 1 of 16 ORFs gets `overl_dORF` instead of GENCODE's
   `N_truncation`. GTFs in which every transcript has a biotype, such as
   GENCODE, Ensembl and NCBI RefSeq GTFs, are not affected.
+- With GTFs whose CDS lines end before the stop codon and that have no
+  `stop_codon` lines, `run_ORFquant()` now takes the codon after each
+  annotated CDS as its stop codon. These are GTFs with CDS lines made by
+  factR (lcalviell/ORFquant#26), and GENCODE, Ensembl or RefSeq GTFs without
+  their `stop_codon` lines. Before, ORFs were compared with annotated stop
+  codons 3 nt too early: the annotated ORF itself was `C_extension` and
+  `Alt3_stop`, not `ORF_annotated` and `exact_start_stop`, and
+  `NC_protein_isoform` compared the wrong C-terminus.
+  `prepare_annotation_files()` already found these GTFs: their `stop_in_gtf`
+  is `NA`, because most CDS don't end with a stop codon. `annotate_ORFs()`
+  now uses it, and `run_ORFquant()` says so in a message; annotations made
+  before don't need to be made again. One rule is used for the whole
+  annotation, so in a GTF with both kinds of CDS, ORFs at the stop codons of
+  the smaller part still get wrong categories. On the data of
+  lcalviell/ORFquant#26 (a StringTie and factR GTF, 7,399 ORFs), 6,918 ORFs
+  had another annotation than with `stop_codon` lines added to the GTF, and
+  no ORF was `ORF_annotated`; now all but 9 have the same. 5 of these 9 have
+  a stop codon after an intron, and get the right `ORF_category_Gen` only
+  now. Which ORFs are found, their P-sites and p-values don't change. GTFs
+  whose CDS lines include the stop codon or that have `stop_codon` lines,
+  such as GENCODE, Ensembl, RefSeq, gffread and ORFanage GTFs, are not
+  affected.
 - `run_orfquant.sbatch` runs R with one BLAS thread per process
   (`OPENBLAS_NUM_THREADS=1` and `OMP_NUM_THREADS=1`), and the README asks
   users of a multi-threaded BLAS to do the same (see Performance). The
