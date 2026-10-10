@@ -10,7 +10,9 @@ load_annotation(path)
 \item{path}{Full path to the *Rannot R file in the annotation directory used in the \code{prepare_annotation_files function}}
 }
 \value{
-introduces a \code{GTF_annotation} object and a \code{genome_seq} object in the parent environment
+invisibly, a list with the annotated features (\code{GTF_annotation}) and the genome sequence (\code{genome_seq}).
+The function also assigns the two objects to the global variables \code{GTF_annotation} and \code{genome_seq}:
+\code{\link{ORFquant}} uses them when its \code{annotation} and \code{genome_sequence} are not given, and \code{\link{plot_orfquant_locus}} uses \code{GTF_annotation}.
 }
 \description{
 This function loads the annotation created by the \code{prepare_annotation_files function}

@@ -51,7 +51,7 @@ run_ORFquant(
 
 \item{write_protein_fasta}{write a protein fasta file. Defaults to \code{TRUE}}
 
-\item{interactive}{should put R object in global environment? Defaults to \code{TRUE}}
+\item{interactive}{assign the results and the P-sites to the global variables \code{ORFquant_results} and \code{for_ORFquant}? Defaults to \code{TRUE}. The function also returns the results, invisibly}
 
 \item{stn.orf_find.all_starts}{\code{orf_find.all_starts} parameter for the \code{ORFquant} function}
 

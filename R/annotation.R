@@ -28,7 +28,9 @@
 #' @keywords ORFquant, Ribo-seQC
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param path Full path to the *Rannot R file in the annotation directory used in the \code{prepare_annotation_files function}
-#' @return introduces a \code{GTF_annotation} object and a \code{genome_seq} object in the parent environment
+#' @return invisibly, a list with the annotated features (\code{GTF_annotation}) and the genome sequence (\code{genome_seq}).
+#' The function also assigns the two objects to the global variables \code{GTF_annotation} and \code{genome_seq}:
+#' \code{\link{ORFquant}} uses them when its \code{annotation} and \code{genome_sequence} are not given, and \code{\link{plot_orfquant_locus}} uses \code{GTF_annotation}.
 #' @seealso \code{\link{prepare_annotation_files}}
 #' @export
 
@@ -40,8 +42,9 @@ load_annotation<-function(path){
     library(GTF_annotation$genome_package,character.only = T)
     genome_sequence<-get(GTF_annotation$genome_package)
   }
-  GTF_annotation<<-GTF_annotation
-  genome_seq<<-genome_sequence
+  assign("GTF_annotation",GTF_annotation,envir = globalenv())
+  assign("genome_seq",genome_sequence,envir = globalenv())
+  invisible(list(GTF_annotation=GTF_annotation,genome_seq=genome_sequence))
 }
 
 

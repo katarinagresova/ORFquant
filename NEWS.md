@@ -112,6 +112,18 @@ deprecation warnings.
   standard output, and `suppressMessages()` or `--quiet`-style redirects can
   hide them. Their text is the same. The scripts `run_orfquant.R` and
   `run_orfquant.sbatch` show them as before.
+- `load_annotation()` now returns the annotation and the genome sequence,
+  invisibly, as a list with the elements `GTF_annotation` and `genome_seq`,
+  and `ORFquant()` takes them as its new arguments `annotation` and
+  `genome_sequence`. So `ORFquant()` can run without global variables.
+  Before, `load_annotation()` returned the genome sequence, invisibly, which
+  was not documented. The global variables stay as they were, so old scripts
+  work unchanged: `load_annotation()` still assigns `GTF_annotation` and
+  `genome_seq`, `ORFquant()` without the new arguments reads them, and
+  `run_ORFquant(interactive = TRUE)` still assigns `ORFquant_results` and
+  `for_ORFquant`. `run_ORFquant()` and `prepare_for_ORFquant()` now use the
+  annotation that they load, not the global variables. `R CMD check` no
+  longer gives a note for these assignments.
 
 ## Changes in results
 

@@ -329,3 +329,25 @@ test_that("the splice annotation of an ORF outside the CDS does not depend on th
   # The reference is the CDS of the gene: its exons that the ORF does not overlap are missing
   expect_true(any(grepl("missing_CDS", first)))
 })
+
+test_that("ORFquant() takes the annotation that load_annotation() returns, without the global variables", {
+  skip_if(is.null(runs$one_core))
+  loaded <- NULL
+  quiet(loaded <- load_annotation(runs$annotation))
+  expect_named(loaded, c("GTF_annotation", "genome_seq"))
+  # load_annotation() also assigns the global variables, as before
+  expect_identical(get("GTF_annotation", envir = globalenv()), loaded$GTF_annotation)
+  expect_identical(get("genome_seq", envir = globalenv()), loaded$genome_seq)
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  region <- GenomicRanges::reduce(unlist(loaded$GTF_annotation$txs_gene["ENSG00000184470.21"]))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  with_globals <- NULL
+  quiet(with_globals <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code))
+  rm(list = c("GTF_annotation", "genome_seq"), envir = globalenv())
+  without_globals <- NULL
+  quiet(without_globals <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
+                                    annotation = loaded$GTF_annotation, genome_sequence = loaded$genome_seq))
+  expect_true(length(with_globals$ORFs_tx_position) > 0)
+  expect_equal(without_globals, with_globals)
+})
