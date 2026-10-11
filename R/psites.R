@@ -124,6 +124,13 @@ get_ps_fromsplicemin<-function(x,cutoff){
 #' junction reads. With P-site bigWig files, the P-sites come from these files, and this applies
 #' only to the junction reads. Alignments with a mapping quality above 50 count as uniquely mapping.
 #'
+#' Soft-clipped bases (\code{S} in the CIGAR string) are not counted: the read length of the cutoff
+#' table is the length of the aligned part of the read, and the cutoff counts from its first aligned
+#' base at the 5' end. Aligners that soft-clip reads, for example STAR with its default
+#' \code{--alignEndsType Local}, can give other read lengths and P-sites than an end-to-end alignment
+#' of the same reads (lcalviell/ORFquant#10). Use the cutoff table that was calculated on the same
+#' alignments, for example by Ribo-seQC.
+#'
 #' The junction reads are counted only on the exon-exon junctions of the annotation, the introns of
 #' its transcripts: the junction of the read must have the same start, end and strand. Reads of all
 #' lengths count, also lengths that are not in the cutoff table. A read on another junction, for

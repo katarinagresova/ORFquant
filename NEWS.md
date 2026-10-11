@@ -621,6 +621,8 @@ deprecation warnings.
   - `?calc_orf_pval` said that `cutoff` applies to the average in-frame
     signal per codon, but it applies to `pct_fr`. Its return value was
     described as that of `select_start()`.
+  - `?get_orfs` said that the function loads the annotation. It finds the
+    ORFs of a transcript sequence.
 - `?select_start` and `?ORFquant_output` now describe the first filter of
   `select_start()`. Before it chooses the start codon of each stop codon, it
   removes the candidate ORFs below `cutoff_ave`
@@ -663,6 +665,13 @@ deprecation warnings.
   insertion or a deletion, and 128 and 317 of them are on a CDS. 0.1% and
   0.5% of the junction reads are on junctions that are not in GENCODE 47;
   with a long-read annotation of the HCT116 cells, 0.4%.
+- `?prepare_for_ORFquant` now says that soft-clipped bases (`S` in the CIGAR)
+  are not counted: the read length of the cutoff table is the aligned length,
+  and the cutoff counts from the first aligned base at the 5' end. So
+  alignments with soft clipping (e.g. STAR's default) can give other read
+  lengths and P-sites than end-to-end alignments, and the cutoff table must
+  come from the same alignments (lcalviell/ORFquant#10). ORFquant has always
+  worked this way.
 - `?run_ORFquant` now says that a run on a few genes (`gene_name`, `gene_id`
   or `genomic_region`) gives the same ORFs and values as a run on all genes,
   except `ORFs_pM`, which sums to a million over the ORFs of the run.
