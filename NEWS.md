@@ -310,6 +310,11 @@ deprecation warnings.
   `<prefix>_Protein_sequences.fasta`, as `write_protein_fasta` (default
   `TRUE`) asks. Before, the FASTA file was written only together with the GTF
   file. Runs with the default values write the same files as before.
+- `run_ORFquant()` with a `gene_id` value that is not in the annotation now
+  stops with an error that names the value. Before, it stopped with an unclear
+  error from the subsetting of `txs_gene`. A `gene_name` value that is not in
+  the annotation now gives a warning that names it; as before, the other values
+  are used. Runs with known genes give the same results.
 - In `<prefix>_Detected_ORFs.gtf`, the `ORF_id` of each `CDS` line is now the
   ORF of the line. Before, all `CDS` lines of a transcript with more than one
   ORF had the `ORF_id` of one of them, for example a uORF and the annotated

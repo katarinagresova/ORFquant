@@ -225,6 +225,22 @@ test_that("run_ORFquant() refuses an output directory that does not exist", {
   expect_match(msg, "Cannot write the output files")
 })
 
+test_that("run_ORFquant() names the gene_id and gene_name values that are not in the annotation", {
+  skip_if(is.null(runs$one_core))
+  run_genes <- function(...) {
+    refusal(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                         annotation_file = runs$annotation, n_cores = 1,
+                         prefix = file.path(work, "unknown_genes"), interactive = FALSE, ...))
+  }
+  # Before, an unknown gene_id stopped with an S4 subsetting error
+  known_id <- read_tsv(result_files(runs$one_core)$tsv)$gene_id[1]
+  expect_match(run_genes(gene_id = c(known_id, "no_such_id"))$message, "1 gene_id values are not in the annotation.*no_such_id")
+  # and an unknown gene_name was not used, without a message
+  out <- run_genes(gene_name = "no_such_name")
+  expect_match(out$warnings, "1 gene_name values are not in the annotation.*no_such_name")
+  expect_match(out$message, "Incorrect gene_id \\| gene_name \\| genomic_region")
+})
+
 test_that("prepare_for_ORFquant() sorts the P-sites of bigWig files by the chromosomes of the annotation", {
   skip_if(is.null(runs$one_core))
   # The annotation has chr22 and then chr1; the bigWig files have chr1 first

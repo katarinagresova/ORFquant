@@ -208,6 +208,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   genes_red<-reduce(unlist(GTF_annotation$txs_gene))
   
   if(!is.na(gene_name[1])){
+    unknown<-setdiff(gene_name,GTF_annotation$trann$gene_name)
+    if(length(unknown)>0){
+      warning(length(unknown)," gene_name values are not in the annotation ",annotation_file," and are not used: ",
+              paste(head(unknown,10),collapse=", "),if(length(unknown)>10) ", ...")
+    }
     gnid<-unique(GTF_annotation$trann$gene_id[GTF_annotation$trann$gene_name%in%gene_name])
     #the genes' ranges from their transcripts, as genes() makes them, also for genes on several chromosomes
     #or strands (e.g. UCSC's PAR genes), which aren't in GTF_annotation$genes
@@ -215,6 +220,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   }
   
   if(!is.na(gene_id[1])){
+    unknown<-setdiff(gene_id,names(GTF_annotation$txs_gene))
+    if(length(unknown)>0){
+      stop(length(unknown)," gene_id values are not in the annotation ",annotation_file,": ",
+           paste(head(unknown,10),collapse=", "),if(length(unknown)>10) ", ...")
+    }
     genes_red<-genes_red[genes_red%over%unlist(range(GTF_annotation$txs_gene[gene_id]))]
   }
   
