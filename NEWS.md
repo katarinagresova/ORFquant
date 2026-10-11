@@ -306,6 +306,10 @@ deprecation warnings.
   where all ORFs have fewer than 10 P-sites. The region now has no ORFs, as a
   region where no ORF is detected. When no region has ORFs, the run stops
   with `No ORFs found!`. Runs that did not fail give the same results.
+- `run_ORFquant(write_GTF_file = FALSE)` now writes
+  `<prefix>_Protein_sequences.fasta`, as `write_protein_fasta` (default
+  `TRUE`) asks. Before, the FASTA file was written only together with the GTF
+  file. Runs with the default values write the same files as before.
 - In `<prefix>_Detected_ORFs.gtf`, the `ORF_id` of each `CDS` line is now the
   ORF of the line. Before, all `CDS` lines of a transcript with more than one
   ORF had the `ORF_id` of one of them, for example a uORF and the annotated

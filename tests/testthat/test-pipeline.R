@@ -271,6 +271,25 @@ test_that("run_ORFquant() gives no ORFs for a gene when stn.orf_quant.cutoff_P_s
   expect_setequal(unique(orfs$gene_id), names(max_P_sites)[max_P_sites >= 30])
 })
 
+test_that("run_ORFquant() writes the protein FASTA file without the GTF file, and the GTF file without the FASTA file", {
+  skip_if(is.null(runs$one_core))
+  # Before, write_GTF_file = FALSE also turned off the FASTA file
+  dir.create(file.path(work, "no_gtf"))
+  dir.create(file.path(work, "no_fasta"))
+  no_gtf <- file.path(work, "no_gtf", "example")
+  no_fasta <- file.path(work, "no_fasta", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = no_gtf,
+                     write_GTF_file = FALSE, interactive = FALSE))
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = no_fasta,
+                     write_protein_fasta = FALSE, interactive = FALSE))
+  expect_false(file.exists(result_files(no_gtf)$gtf))
+  expect_identical(readLines(result_files(no_gtf)$fasta), readLines(result_files(runs$one_core)$fasta))
+  expect_false(file.exists(result_files(no_fasta)$fasta))
+  expect_identical(gtf_lines(result_files(no_fasta)$gtf), gtf_lines(result_files(runs$one_core)$gtf))
+})
+
 test_that("run_ORFquant() finds ORFs without a start codon with stn.orf_find.nostarts = TRUE", {
   skip_if(is.null(runs$one_core))
   # Before, stn.orf_find.nostarts had no effect
