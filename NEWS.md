@@ -400,6 +400,14 @@ deprecation warnings.
 - `plot_ORFquant_results()` no longer fails with `'breaks' are not unique`
   when the largest number of selected transcripts per gene is 3, 6 or 9
   (lcalviell/ORFquant#18). All other plots are unchanged.
+- `plot_ORFquant_results()` with coverage files no longer fails when all
+  regions of a type of splice site have the same value, for example when the
+  type has one region (lcalviell/ORFquant#7). These regions are now one group,
+  as when the type has two different values. Before, the function failed with
+  `invalid number of intervals` when the value was below 2. When the value was
+  2 or more, it failed with `Insufficient values in manual scale` if the type
+  also had regions without a mixture of ORFs, and else it drew the line in a
+  different red (`#B60048`, now `#6D0091`). All other plots are unchanged.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
