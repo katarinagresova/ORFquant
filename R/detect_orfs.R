@@ -545,7 +545,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   }
   tx_orfs<-unique(sapply(strsplit(names(orfs_gr),split="_"),function(x){
     len<-length(x)
-    x[-c(len-1,len)]
+    paste(x[-c(len-1,len)],collapse="_")
   }))
   a<-lapply(selected_txs$txs,function(x){x[x%in%tx_orfs]})
   cols<-mcols(selected_txs)
