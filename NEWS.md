@@ -102,6 +102,10 @@ deprecation warnings.
     `prepare_for_ORFquant()` stops when it found no P-sites. Before, a BAM
     file with the chromosome names `1`, `2` for an annotation with `chr1`,
     `chr2` gave an empty `for_ORFquant` file without an error.
+  - The chromosomes of the BAM file that are in the annotation must have the
+    same lengths as in the annotation. Before, a BAM file of another genome
+    assembly failed in the first chunk of reads with the unclear error
+    `sequence chr22 has incompatible seqlengths`.
   - The P-sites in `for_ORFquant_file` must be on the same chromosomes, with
     the same lengths, as the annotation of `run_ORFquant()`, which did not
     check this. It catches a `for_ORFquant_file` made for another genome

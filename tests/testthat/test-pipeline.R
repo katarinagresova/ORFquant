@@ -198,6 +198,18 @@ test_that("prepare_for_ORFquant() refuses a BAM file with other chromosomes than
   expect_match(out$warnings, "mito")
 })
 
+test_that("prepare_for_ORFquant() refuses a BAM file with other chromosome lengths than the annotation", {
+  skip_if(is.null(runs$annotation))
+  # Before, it stopped in the first chunk of reads with "sequence chr22 has incompatible seqlengths"
+  longer <- changed_annotation(function(si) {
+    GenomeInfoDb::seqlengths(si) <- GenomeInfoDb::seqlengths(si) + 1L
+    si
+  })
+  msg <- prepare_with(example_file("chr22_example_cutoffs.tsv"), annotation = longer)$message
+  expect_match(msg, "is not on the genome of the annotation")
+  expect_match(msg, "chr22 has [0-9]+ nt in the BAM file and [0-9]+ nt in the annotation")
+})
+
 test_that("prepare_for_ORFquant() refuses a cutoff table that gives no P-sites", {
   skip_if(is.null(runs$annotation))
   msg <- prepare_with(write_cutoffs(c("read_length\tcutoff\tcompartment", "99\t12\tnucl")))$message

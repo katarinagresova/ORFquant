@@ -222,6 +222,13 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
     stop("No chromosome of the BAM file is in the annotation. The BAM file has e.g. ",paste(head(seqlevels(seqs),3),collapse=", "),
          " and the annotation has e.g. ",paste(head(seqlevels(GTF_annotation$seqinfo),3),collapse=", "))
   }
+  common_chroms<-intersect(seqlevels(seqs),seqlevels(GTF_annotation$seqinfo))
+  diff_len<-common_chroms[which(seqlengths(seqs)[common_chroms]!=seqlengths(GTF_annotation$seqinfo)[common_chroms])]
+  if(length(diff_len)>0){
+    stop("The BAM file ",bam_file," is not on the genome of the annotation ",annotation_file,": ",length(diff_len),
+         " chromosomes have other lengths, e.g. ",diff_len[1]," has ",seqlengths(seqs)[[diff_len[1]]]," nt in the BAM file and ",
+         seqlengths(GTF_annotation$seqinfo)[[diff_len[1]]]," nt in the annotation")
+  }
   circs <- seqs@seqnames[which(seqs@seqnames%in%circs_seq)]
   
   param <- ScanBamParam(flag=scanBamFlag(isDuplicate=FALSE,isSecondaryAlignment=FALSE),what=c("mapq"),tag = "MD")
