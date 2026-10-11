@@ -198,6 +198,18 @@ test_that("prepare_for_ORFquant() refuses a BAM file with other chromosomes than
   expect_match(out$warnings, "mito")
 })
 
+test_that("prepare_for_ORFquant() refuses a BAM file with other chromosome lengths than the annotation", {
+  skip_if(is.null(runs$annotation))
+  # Before, it stopped in the first chunk of reads with "sequence chr22 has incompatible seqlengths"
+  longer <- changed_annotation(function(si) {
+    GenomeInfoDb::seqlengths(si) <- GenomeInfoDb::seqlengths(si) + 1L
+    si
+  })
+  msg <- prepare_with(example_file("chr22_example_cutoffs.tsv"), annotation = longer)$message
+  expect_match(msg, "is not on the genome of the annotation")
+  expect_match(msg, "chr22 has [0-9]+ nt in the BAM file and [0-9]+ nt in the annotation")
+})
+
 test_that("prepare_for_ORFquant() refuses a cutoff table that gives no P-sites", {
   skip_if(is.null(runs$annotation))
   msg <- prepare_with(write_cutoffs(c("read_length\tcutoff\tcompartment", "99\t12\tnucl")))$message
@@ -223,6 +235,22 @@ test_that("run_ORFquant() refuses an output directory that does not exist", {
                               annotation_file = runs$annotation, n_cores = 1,
                               prefix = file.path(work, "no_dir", "sample"), interactive = FALSE))$message
   expect_match(msg, "Cannot write the output files")
+})
+
+test_that("run_ORFquant() names the gene_id and gene_name values that are not in the annotation", {
+  skip_if(is.null(runs$one_core))
+  run_genes <- function(...) {
+    refusal(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                         annotation_file = runs$annotation, n_cores = 1,
+                         prefix = file.path(work, "unknown_genes"), interactive = FALSE, ...))
+  }
+  # Before, an unknown gene_id stopped with an S4 subsetting error
+  known_id <- read_tsv(result_files(runs$one_core)$tsv)$gene_id[1]
+  expect_match(run_genes(gene_id = c(known_id, "no_such_id"))$message, "1 gene_id values are not in the annotation.*no_such_id")
+  # and an unknown gene_name was not used, without a message
+  out <- run_genes(gene_name = "no_such_name")
+  expect_match(out$warnings, "1 gene_name values are not in the annotation.*no_such_name")
+  expect_match(out$message, "Incorrect gene_id \\| gene_name \\| genomic_region")
 })
 
 test_that("prepare_for_ORFquant() sorts the P-sites of bigWig files by the chromosomes of the annotation", {
@@ -269,6 +297,25 @@ test_that("run_ORFquant() gives no ORFs for a gene when stn.orf_quant.cutoff_P_s
   max_P_sites <- tapply(all_orfs$P_sites, all_orfs$gene_id, max)
   expect_true(any(max_P_sites < 30))
   expect_setequal(unique(orfs$gene_id), names(max_P_sites)[max_P_sites >= 30])
+})
+
+test_that("run_ORFquant() writes the protein FASTA file without the GTF file, and the GTF file without the FASTA file", {
+  skip_if(is.null(runs$one_core))
+  # Before, write_GTF_file = FALSE also turned off the FASTA file
+  dir.create(file.path(work, "no_gtf"))
+  dir.create(file.path(work, "no_fasta"))
+  no_gtf <- file.path(work, "no_gtf", "example")
+  no_fasta <- file.path(work, "no_fasta", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = no_gtf,
+                     write_GTF_file = FALSE, interactive = FALSE))
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = no_fasta,
+                     write_protein_fasta = FALSE, interactive = FALSE))
+  expect_false(file.exists(result_files(no_gtf)$gtf))
+  expect_identical(readLines(result_files(no_gtf)$fasta), readLines(result_files(runs$one_core)$fasta))
+  expect_false(file.exists(result_files(no_fasta)$fasta))
+  expect_identical(gtf_lines(result_files(no_fasta)$gtf), gtf_lines(result_files(runs$one_core)$gtf))
 })
 
 test_that("run_ORFquant() finds ORFs without a start codon with stn.orf_find.nostarts = TRUE", {

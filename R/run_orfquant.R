@@ -208,6 +208,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   genes_red<-reduce(unlist(GTF_annotation$txs_gene))
   
   if(!is.na(gene_name[1])){
+    unknown<-setdiff(gene_name,GTF_annotation$trann$gene_name)
+    if(length(unknown)>0){
+      warning(length(unknown)," gene_name values are not in the annotation ",annotation_file," and are not used: ",
+              paste(head(unknown,10),collapse=", "),if(length(unknown)>10) ", ...")
+    }
     gnid<-unique(GTF_annotation$trann$gene_id[GTF_annotation$trann$gene_name%in%gene_name])
     #the genes' ranges from their transcripts, as genes() makes them, also for genes on several chromosomes
     #or strands (e.g. UCSC's PAR genes), which aren't in GTF_annotation$genes
@@ -215,6 +220,11 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   }
   
   if(!is.na(gene_id[1])){
+    unknown<-setdiff(gene_id,names(GTF_annotation$txs_gene))
+    if(length(unknown)>0){
+      stop(length(unknown)," gene_id values are not in the annotation ",annotation_file,": ",
+           paste(head(unknown,10),collapse=", "),if(length(unknown)>10) ", ...")
+    }
     genes_red<-genes_red[genes_red%over%unlist(range(GTF_annotation$txs_gene[gene_id]))]
   }
   
@@ -447,6 +457,23 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     write.table(ORFs_tx_as_table(ORFquant_results$ORFs_tx),file=paste(prefix,"Detected_ORFs.tsv",sep="_"),sep="\t",quote=F,row.names=F)
   }
   
+  if(write_protein_fasta){
+    ORFs_readthroughs<-ORFquant_results$ORFs_readthroughs
+    if(is(ORFs_readthroughs$Protein,"list")){
+      proteins_readthrough<-AAStringSet(lapply(ORFs_readthroughs$Protein,"[[",1))
+    }else{proteins_readthrough<-AAStringSet(ORFs_readthroughs$Protein)}
+    if(length(proteins_readthrough)>0){
+      names(proteins_readthrough)<-paste(ORFs_readthroughs$ORF_id_tr,ORFs_readthroughs$gene_biotype,ORFs_readthroughs$gene_id,"readthrough","readthrough",sep="|")
+      proteins_readthrough<-narrow(proteins_readthrough,start = start(proteins_readthrough)[1]+1)
+      proteins_readthrough<-AAStringSet(gsub(proteins_readthrough,pattern = "[*]",replacement = "X"))
+    }
+    
+    proteins<-AAStringSet(ORFs_tx$Protein)
+    names(proteins)<-paste(ORFs_tx$ORF_id_tr,ORFs_tx$gene_biotype,ORFs_tx$gene_id,ORFs_tx$ORF_category_Gen,ORFs_tx$ORF_category_Tx_compatible,sep="|")
+    proteins<-c(proteins,proteins_readthrough)
+    writeXStringSet(proteins,filepath= paste(prefix,"Protein_sequences.fasta",sep="_"))
+  }
+  
   if(write_GTF_file){
     map_tx_genes<-mcols(ORFs_tx)[,c("ORF_id_tr","gene_id","gene_biotype","gene_name","transcript_id","transcript_biotype","P_sites","ORF_pct_P_sites","ORF_pct_P_sites_pN","ORFs_pM")]
     
@@ -466,22 +493,6 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
     ORFs_gen$ORF_pct_P_sites<-round(map_tx_genes[match_ORF,"ORF_pct_P_sites"],digits=4)
     ORFs_gen$ORF_pct_P_sites_pN<-round(map_tx_genes[match_ORF,"ORF_pct_P_sites_pN"],digits=4)
     ORFs_gen$ORFs_pM<-round(map_tx_genes[match_ORF,"ORFs_pM"],digits=4)
-    ORFs_readthroughs<-ORFquant_results$ORFs_readthroughs
-    if(is(ORFs_readthroughs$Protein,"list")){
-      proteins_readthrough<-AAStringSet(lapply(ORFs_readthroughs$Protein,"[[",1))
-    }else{proteins_readthrough<-AAStringSet(ORFs_readthroughs$Protein)}
-    if(length(proteins_readthrough)>0){
-      names(proteins_readthrough)<-paste(ORFs_readthroughs$ORF_id_tr,ORFs_readthroughs$gene_biotype,ORFs_readthroughs$gene_id,"readthrough","readthrough",sep="|")
-      proteins_readthrough<-narrow(proteins_readthrough,start = start(proteins_readthrough)[1]+1)
-      proteins_readthrough<-AAStringSet(gsub(proteins_readthrough,pattern = "[*]",replacement = "X"))
-    }
-    
-    proteins<-AAStringSet(ORFs_tx$Protein)
-    names(proteins)<-paste(ORFs_tx$ORF_id_tr,ORFs_tx$gene_biotype,ORFs_tx$gene_id,ORFs_tx$ORF_category_Gen,ORFs_tx$ORF_category_Tx_compatible,sep="|")
-    proteins<-c(proteins,proteins_readthrough)
-    if(write_protein_fasta){
-      writeXStringSet(proteins,filepath= paste(prefix,"Protein_sequences.fasta",sep="_"))
-    }
     
     map_tx_genes<-GTF_annotation$trann
     #ORFs_gen$transcript_id<-names(ORFs_gen)

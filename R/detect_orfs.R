@@ -25,7 +25,7 @@
 
 #' Find ATG-starting ORFs in a sequence
 #'
-#' This function loads the annotation created by the \code{prepare_annotation_files function}
+#' Finds the ORFs in the three frames of a transcript sequence. Each ORF goes from a start codon, an \code{M} in the translation of the frame, to the last nucleotide before the next stop codon in the frame. A start codon without a stop codon after it in the transcript gives no ORF.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param tx_name transcript_id
@@ -545,7 +545,7 @@ detect_translated_orfs<-function(selected_txs,genome_sequence,annotation,P_sites
   }
   tx_orfs<-unique(sapply(strsplit(names(orfs_gr),split="_"),function(x){
     len<-length(x)
-    x[-c(len-1,len)]
+    paste(x[-c(len-1,len)],collapse="_")
   }))
   a<-lapply(selected_txs$txs,function(x){x[x%in%tx_orfs]})
   cols<-mcols(selected_txs)

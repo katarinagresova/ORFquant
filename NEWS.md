@@ -102,6 +102,10 @@ deprecation warnings.
     `prepare_for_ORFquant()` stops when it found no P-sites. Before, a BAM
     file with the chromosome names `1`, `2` for an annotation with `chr1`,
     `chr2` gave an empty `for_ORFquant` file without an error.
+  - The chromosomes of the BAM file that are in the annotation must have the
+    same lengths as in the annotation. Before, a BAM file of another genome
+    assembly failed in the first chunk of reads with the unclear error
+    `sequence chr22 has incompatible seqlengths`.
   - The P-sites in `for_ORFquant_file` must be on the same chromosomes, with
     the same lengths, as the annotation of `run_ORFquant()`, which did not
     check this. It catches a `for_ORFquant_file` made for another genome
@@ -306,6 +310,15 @@ deprecation warnings.
   where all ORFs have fewer than 10 P-sites. The region now has no ORFs, as a
   region where no ORF is detected. When no region has ORFs, the run stops
   with `No ORFs found!`. Runs that did not fail give the same results.
+- `run_ORFquant(write_GTF_file = FALSE)` now writes
+  `<prefix>_Protein_sequences.fasta`, as `write_protein_fasta` (default
+  `TRUE`) asks. Before, the FASTA file was written only together with the GTF
+  file. Runs with the default values write the same files as before.
+- `run_ORFquant()` with a `gene_id` value that is not in the annotation now
+  stops with an error that names the value. Before, it stopped with an unclear
+  error from the subsetting of `txs_gene`. A `gene_name` value that is not in
+  the annotation now gives a warning that names it; as before, the other values
+  are used. Runs with known genes give the same results.
 - In `<prefix>_Detected_ORFs.gtf`, the `ORF_id` of each `CDS` line is now the
   ORF of the line. Before, all `CDS` lines of a transcript with more than one
   ORF had the `ORF_id` of one of them, for example a uORF and the annotated
@@ -396,6 +409,14 @@ deprecation warnings.
 - `plot_ORFquant_results()` no longer fails with `'breaks' are not unique`
   when the largest number of selected transcripts per gene is 3, 6 or 9
   (lcalviell/ORFquant#18). All other plots are unchanged.
+- `plot_ORFquant_results()` with coverage files no longer fails when all
+  regions of a type of splice site have the same value, for example when the
+  type has one region (lcalviell/ORFquant#7). These regions are now one group,
+  as when the type has two different values. Before, the function failed with
+  `invalid number of intervals` when the value was below 2. When the value was
+  2 or more, it failed with `Insufficient values in manual scale` if the type
+  also had regions without a mixture of ORFs, and else it drew the line in a
+  different red (`#B60048`, now `#6D0091`). All other plots are unchanged.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
@@ -600,6 +621,8 @@ deprecation warnings.
   - `?calc_orf_pval` said that `cutoff` applies to the average in-frame
     signal per codon, but it applies to `pct_fr`. Its return value was
     described as that of `select_start()`.
+  - `?get_orfs` said that the function loads the annotation. It finds the
+    ORFs of a transcript sequence.
 - `?select_start` and `?ORFquant_output` now describe the first filter of
   `select_start()`. Before it chooses the start codon of each stop codon, it
   removes the candidate ORFs below `cutoff_ave`
@@ -642,6 +665,13 @@ deprecation warnings.
   insertion or a deletion, and 128 and 317 of them are on a CDS. 0.1% and
   0.5% of the junction reads are on junctions that are not in GENCODE 47;
   with a long-read annotation of the HCT116 cells, 0.4%.
+- `?prepare_for_ORFquant` now says that soft-clipped bases (`S` in the CIGAR)
+  are not counted: the read length of the cutoff table is the aligned length,
+  and the cutoff counts from the first aligned base at the 5' end. So
+  alignments with soft clipping (e.g. STAR's default) can give other read
+  lengths and P-sites than end-to-end alignments, and the cutoff table must
+  come from the same alignments (lcalviell/ORFquant#10). ORFquant has always
+  worked this way.
 - `?run_ORFquant` now says that a run on a few genes (`gene_name`, `gene_id`
   or `genomic_region`) gives the same ORFs and values as a run on all genes,
   except `ORFs_pM`, which sums to a million over the ORFs of the run.

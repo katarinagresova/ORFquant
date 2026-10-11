@@ -890,6 +890,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       }
       rans$delta_iso<-rans$delta_iso2
       qnt<-unique(quantile(rans$delta_iso,probs=seq(0,1,length.out = 4),include.lowest = T))
+      #all values are equal: cut() would take the one break as the number of intervals (lcalviell/ORFquant#7), so make one interval
+      if(length(qnt)==1){qnt<-qnt+c(-1,1)}
       
       rans$group<-as.character(cut(rans$delta_iso,breaks = qnt,include.lowest = T))
       
