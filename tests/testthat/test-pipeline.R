@@ -135,6 +135,22 @@ test_that("plot_orfquant_locus() plots a gene of the example without warnings", 
   expect_true(file.exists(plotfile))
 })
 
+test_that("plot_ORFquant_results() plots the splice sites of the example with coverage files", {
+  skip_if(is.null(runs$one_core))
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  cov <- file.path(work, c("coverage_plus.bw", "coverage_minus.bw"))
+  rtracklayer::export(ps[strand(ps) == "+"], cov[1], format = "bigWig")
+  rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
+  # before, it stopped when a type of splice site had no regions, or regions on
+  # one strand only, as a type of the example has (S24)
+  quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                              ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
+                              annotation_file = runs$annotation,
+                              coverage_file_plus = cov[1], coverage_file_minus = cov[2],
+                              output_plots_path = file.path(work, "plots"), prefix = "example"))
+  expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
+})
+
 # Input that cannot work stops the run before the BAM file is read, or before
 # the regions are quantified; these use the annotation and P-sites made above
 

@@ -545,7 +545,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     aggregate_regions<-function(range,coverage_plus,coverage_minus,norm_x=NA,norm_y=NA,nozero=F){
       pl<-range[strand(range)=="+"]
       min<-range[strand(range)=="-"]
-      mat_pl<-t(sapply(coverage_plus[pl],as.vector))
+      #vapply keeps the window columns when a strand has no regions (S24)
+      wd<-max(c(0,width(range)))
+      mat_pl<-t(vapply(coverage_plus[pl],as.vector,numeric(wd)))
       if(nozero){
         mat_pl<-mat_pl[rowSums(mat_pl)>0,]
       }
@@ -555,7 +557,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       if(!is.na(norm_y)){
         mat_pl<-mat_pl/(colSums(mat_pl)/norm_y)
       }
-      mat_min<-t(sapply(coverage_minus[min],as.vector))
+      mat_min<-t(vapply(coverage_minus[min],as.vector,numeric(wd)))
       if(nozero){
         mat_min<-mat_min[rowSums(mat_min)>0,]
       }
@@ -566,9 +568,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         mat_min<-mat_min/(colSums(mat_min)/norm_y)
       }
       
-      mat<-rbind(mat_pl,mat_min[,dim(mat_min)[2]:1])
+      mat<-rbind(mat_pl,mat_min[,rev(seq_len(dim(mat_min)[2]))])
       rownames(mat)<-c(names(pl),names(min))
-      mat<-mat[match(names(range),rownames(mat)),]
+      mat<-mat[match(names(range),rownames(mat)),,drop=F]
       mat
     }
     
@@ -700,10 +702,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       }
       
       if(!i%in%c("CDS_spanning")){
-        region1$iso<-0
+        region1$iso<-rep(0,length(region1))
         region1$iso[as.vector(strand(region1)=="+")]<-mean(covisopl[region1[as.vector(strand(region1)=="+")]])
         region1$iso[as.vector(strand(region1)=="-")]<-mean(covisomn[region1[as.vector(strand(region1)=="-")]])
-        region2$iso<-0
+        region2$iso<-rep(0,length(region2))
         region2$iso[as.vector(strand(region2)=="+")]<-mean(covisopl[region2[as.vector(strand(region2)=="+")]])
         region2$iso[as.vector(strand(region2)=="-")]<-mean(covisomn[region2[as.vector(strand(region2)=="-")]])
         region$iso_1<-region1$iso
@@ -722,31 +724,31 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       if(i%in%c("CDS_spanning")){
         region<-region[elementNROWS(region$ref)==2]
         ress<-unlist(region$ref)
-        start(ress[seq(1,length(region)*2,by = 2)])<-end(ress[seq(1,length(region)*2,by = 2)])
+        start(ress[seq_along(region)*2-1])<-end(ress[seq_along(region)*2-1])
         
-        region1_a<-promoters(ress[seq(1,length(region)*2,by = 2)],upstream = 25,downstream = 0)
-        region2_a<-promoters(ress[seq(1,length(region)*2,by = 2)],upstream = 0,downstream = 25)
-        region2_b<-promoters(ress[seq(2,length(region)*2,by = 2)],upstream = 25,downstream = 0)
-        region1_b<-promoters(ress[seq(2,length(region)*2,by = 2)],upstream = 0,downstream = 25)
-        region_a<-promoters(ress[seq(1,length(region)*2,by = 2)],upstream = 25,downstream = 25)
+        region1_a<-promoters(ress[seq_along(region)*2-1],upstream = 25,downstream = 0)
+        region2_a<-promoters(ress[seq_along(region)*2-1],upstream = 0,downstream = 25)
+        region2_b<-promoters(ress[seq_along(region)*2],upstream = 25,downstream = 0)
+        region1_b<-promoters(ress[seq_along(region)*2],upstream = 0,downstream = 25)
+        region_a<-promoters(ress[seq_along(region)*2-1],upstream = 25,downstream = 25)
         names(region_a)<-names(region)
-        region_b<-promoters(ress[seq(2,length(region)*2,by = 2)],upstream = 25,downstream = 25)
+        region_b<-promoters(ress[seq_along(region)*2],upstream = 25,downstream = 25)
         names(region_b)<-names(region)
-        region_a$dist<-sapply(region$ref,function(x){min(width(gaps(x)))})
-        region_b$dist<-sapply(region$ref,function(x){min(width(gaps(x)))})
+        region_a$dist<-vapply(region$ref,function(x){min(width(gaps(x)))},numeric(1))
+        region_b$dist<-vapply(region$ref,function(x){min(width(gaps(x)))},numeric(1))
         
         #check for upstr and dowstr, or maybe main and secondary
         
-        region1_a$iso<-0
+        region1_a$iso<-rep(0,length(region1_a))
         region1_a$iso[as.vector(strand(region1_a)=="+")]<-mean(covisopl[region1_a[as.vector(strand(region1_a)=="+")]])
         region1_a$iso[as.vector(strand(region1_a)=="-")]<-mean(covisomn[region1_a[as.vector(strand(region1_a)=="-")]])
-        region1_b$iso<-0
+        region1_b$iso<-rep(0,length(region1_b))
         region1_b$iso[as.vector(strand(region1_b)=="+")]<-mean(covisopl[region1_b[as.vector(strand(region1_b)=="+")]])
         region1_b$iso[as.vector(strand(region1_b)=="-")]<-mean(covisomn[region1_b[as.vector(strand(region1_b)=="-")]])
-        region2_a$iso<-0
+        region2_a$iso<-rep(0,length(region2_a))
         region2_a$iso[as.vector(strand(region2_a)=="+")]<-mean(covisopl[region2_a[as.vector(strand(region2_a)=="+")]])
         region2_a$iso[as.vector(strand(region2_a)=="-")]<-mean(covisomn[region2_a[as.vector(strand(region2_a)=="-")]])
-        region2_b$iso<-0
+        region2_b$iso<-rep(0,length(region2_b))
         region2_b$iso[as.vector(strand(region2_b)=="+")]<-mean(covisopl[region2_b[as.vector(strand(region2_b)=="+")]])
         region2_b$iso[as.vector(strand(region2_b)=="-")]<-mean(covisomn[region2_b[as.vector(strand(region2_b)=="-")]])
         
@@ -759,8 +761,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         
         region_a$delta_iso<-region_a$iso_1-region_a$iso_2
         region_b$delta_iso<-region_b$iso_1-region_b$iso_2
-        names(region_a)<-paste(names(region),"left",sep = "_")
-        names(region_b)<-paste(names(region),"right",sep = "_")
+        names(region_a)<-paste(names(region),"left",sep = "_",recycle0 = T)
+        names(region_b)<-paste(names(region),"right",sep = "_",recycle0 = T)
         region<-c(region_a,region_b)
         
         listrang[[i]]<-region
@@ -772,10 +774,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     
     same_all<-ORFs_ok[grep("same_5ss;same_3ss",ORFs_ok$spl_type)]
     same_all<-same_all[width(same_all)>110]
-    same_all$dist<-50
-    same_all$iso_1<-50
-    same_all$iso_2<-50
-    same_all$delta_iso<-50
+    same_all$dist<-rep(50,length(same_all))
+    same_all$iso_1<-rep(50,length(same_all))
+    same_all$iso_2<-rep(50,length(same_all))
+    same_all$delta_iso<-rep(50,length(same_all))
     set.seed(666)
     if(length(same_all)>1000){same_all<-same_all[sample(x = 1:length(same_all),size = 1000,replace = F)]}
     same_all_5<-promoters(resize(same_all,width = 1,fix = "center"),upstream = 50,downstream = 0)
@@ -807,7 +809,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         vals_contr<-rbind(listvals[["same_3ss"]],listvals[["same_5ss"]])
         isos_contr<-rbind(listiso[["same_3ss"]],listiso[["same_5ss"]])
         rans_contr<-c(listrang[["same_3ss"]],listrang[["same_5ss"]])
-        names(rans_contr)<-paste(names(rans_contr),c(rep("left",length(listrang[["same_3ss"]])),rep("right",length(listrang[["same_3ss"]]))),sep = "_")
+        names(rans_contr)<-paste(names(rans_contr),c(rep("left",length(listrang[["same_3ss"]])),rep("right",length(listrang[["same_5ss"]]))),sep = "_")
         
       }
       
@@ -876,10 +878,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       }
       
       rans_contr<-rans_contr[rowSums(vals_contr)>.1]
-      isos_contr<-isos_contr[rowSums(vals_contr)>.1,]
-      vals_contr<-vals_contr[rowSums(vals_contr)>.1,]
-      vals<-vals[ok,]
-      isos<-isos[ok,]
+      isos_contr<-isos_contr[rowSums(vals_contr)>.1,,drop=F]
+      vals_contr<-vals_contr[rowSums(vals_contr)>.1,,drop=F]
+      vals<-vals[ok,,drop=F]
+      isos<-isos[ok,,drop=F]
       rans<-rans[ok]
       rownames(vals)<-rans$id
       rownames(isos)<-rans$id
@@ -898,11 +900,11 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       tb<-aggregate(rans$delta_iso,by=list(rans$group),mean)
       rans$group<-round(tb$x[match(rans$group,tb$Group.1)],digits = 2)
       ok<-which(!is.na(rans$group))
-      vals<-vals[ok,]
-      isos<-isos[ok,]
+      vals<-vals[ok,,drop=F]
+      isos<-isos[ok,,drop=F]
       rans<-rans[ok]
       rans_contr$id<-paste(names(rans_contr),GRanges(rans_contr),sep = "_")
-      rans_contr$group<-"No_mixture"
+      rans_contr$group<-rep("No_mixture",length(rans_contr))
       rownames(isos_contr)<-rans_contr$id
       rownames(vals_contr)<-rans_contr$id
       levss<-sort(unique(rans$group),decreasing = F)
@@ -910,7 +912,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       if(topl_ok[i]=="CDS_spanning"){
         rans$spanning<-"downstream"
         rans$spanning[grep(names(rans),pattern = "left")]<-"upstream"
-        rans_contr$spanning<-"downstream"
+        rans_contr$spanning<-rep("downstream",length(rans_contr))
         rans_contr$spanning[grep(names(rans_contr),pattern = "left")]<-"upstream"
       }
       notcol<-names(mcols(rans))[!names(mcols(rans))%in%names(mcols(rans_contr))]

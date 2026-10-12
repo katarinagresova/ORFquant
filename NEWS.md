@@ -417,6 +417,18 @@ deprecation warnings.
   2 or more, it failed with `Insufficient values in manual scale` if the type
   also had regions without a mixture of ORFs, and else it drew the line in a
   different red (`#B60048`, now `#6D0091`). All other plots are unchanged.
+- `plot_ORFquant_results()` with coverage files no longer fails in the plots
+  of the splice sites when a type of splice site has no regions (`1 elements
+  in value to replace 0 elements`), has regions on one strand only (`subscript
+  out of bounds`), or has one region to plot (`attempt to set 'rownames' on an
+  object with no dimensions`). A type without regions gets the panel "Not
+  enough distinct regions". On our 4 test data sets and on chromosome 21 of
+  SRR15513199, the function failed; it now makes all plots.
+- In the `CDS_spanning` plot of `plot_ORFquant_results()`, all `same_5ss`
+  regions (the regions without a mixture of ORFs at 5' splice sites) are now
+  in the downstream panel. Before, when there were more of them than of
+  `same_3ss` regions, some were in the upstream panel; when there were fewer,
+  the function failed with `attempt to set too many names`.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
