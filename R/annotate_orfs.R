@@ -658,7 +658,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       cols$compatible_tx_longest<-cols$transcript_id
       cols$compatible_ORF_id_tr_longest<-paste(as.character(seqnames(lng)[1]),start(lng),end(lng),sep = "_")
       
-      compats<-elementNROWS(cols$compatible_with)>1
+      compats<-elementNROWS(cols$compatible_with_longest)>1
       comp_txs<-cols$compatible_with_longest[compats]
       if(length(comp_txs)>0){
         compid<-sapply(comp_txs,function(x){
