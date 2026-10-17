@@ -28,8 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # RiboseQC comes from GitHub (the Remotes field of DESCRIPTION); the token
+      # keeps remotes within the rate limit of the GitHub API.
       - name: Install the dependencies
         shell: Rscript {0}
+        env:
+          GITHUB_PAT: ${{ github.token }}
         run: |
           BiocManager::install(c("remotes", "rcmdcheck"), ask = FALSE, update = FALSE)
           remotes::install_deps(dependencies = TRUE, upgrade = "never",

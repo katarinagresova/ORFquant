@@ -45,22 +45,3 @@ check_output_dir<-function(prefix){
     stop("Cannot write the output files, ",out_dir," is not a directory that exists and can be written to (",prefix,")",call. = FALSE)
   }
 }
-
-#the first exon line of the GTF file, which must have transcript_id and gene_id, tells the file apart from an empty
-#one, or one without exon lines; this stops reading at that line
-check_gtf<-function(gtf_file){
-  con<-file(gtf_file,"r")
-  on.exit(close(con))
-  repeat{
-    lines<-readLines(con,n=10000)
-    if(length(lines)==0){break}
-    exon_line<-grep("^[^\t]*\t[^\t]*\texon\t",lines,value = TRUE)
-    if(length(exon_line)>0){
-      if(!grepl("(^|[;\t ])transcript_id[ =]",exon_line[1]) || !grepl("(^|[;\t ])gene_id[ =]",exon_line[1])){
-        stop("An exon line of the GTF file ",gtf_file," has no transcript_id or gene_id: ORFquant needs both on every line",call. = FALSE)
-      }
-      return(invisible(TRUE))
-    }
-  }
-  stop("The GTF file ",gtf_file," is empty or has no exon lines: ORFquant needs the exons and the coding sequences (CDS) of the transcripts",call. = FALSE)
-}

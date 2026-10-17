@@ -38,8 +38,7 @@ import(gridExtra)
 import(multitaper)
 import(reshape2)
 import(rtracklayer)
-importClassesFrom(Rsamtools,FaFile)
-importFrom(AnnotationDbi,saveDb)
+importClassesFrom(RiboseQC,FaFile_Circ)
 importFrom(GenomicRanges,
   GRanges,
   GRangesList
@@ -63,12 +62,15 @@ importFrom(IRanges,
   subsetByOverlaps,
   trim
 )
+importFrom(RiboseQC,
+  FaFile_Circ,
+  load_annotation,
+  prepare_annotation_files
+)
 importFrom(Rsamtools,
   BamFile,
   ScanBamParam,
-  scanBamFlag,
-  scanFa,
-  scanFaIndex
+  scanBamFlag
 )
 importFrom(S4Vectors,
   "mcols<-",
@@ -101,11 +103,7 @@ importFrom(grDevices,
 )
 importFrom(methods,
   as,
-  is,
-  new,
-  representation,
-  setMethod,
-  setRefClass
+  is
 )
 importFrom(stats,
   as.ts,

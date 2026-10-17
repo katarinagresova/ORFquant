@@ -376,7 +376,15 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
 #' Analyzed translation on possible readthrough regions (beta)
 #'
 #' This function uses the multitaper method to look for readthrough translation
-#' @details The function looks for stop-stop pairs after the stop codon of the detected ORF
+#' @details The function looks for stop-stop pairs after the stop codon of the detected ORF.\cr
+#' The same readthrough can be found after the ORFs of several transcripts of the region. The function removes most of these
+#' duplicates: \code{compatible_id} has the \code{ORF_id_tr} of the other readthroughs of the region with the same \code{Protein},
+#' and \code{compatible_original_id} their \code{ORF_orig_tr} (the detected ORF before the readthrough), so these ids are usually
+#' not in the result.\cr
+#' Because of an indexing error, a readthrough found after a readthrough with another \code{Protein} in the same region has its own
+#' \code{ORF_id_tr} in \code{compatible_id} and its own \code{ORF_orig_tr} in \code{compatible_original_id}, and can lack the id of
+#' one other readthrough with the same \code{Protein}. ORFquant has always worked this way, and it still does. No other column or
+#' output of ORFquant uses these two columns.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param results_orf Full list of detected ORFs, from \code{select_quantify_ORFs} and \code{annotate_ORFs}

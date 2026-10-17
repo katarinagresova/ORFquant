@@ -21,7 +21,6 @@ Depends:
     R (>= 4.5.0),
     GenomicRanges
 Imports:
-    AnnotationDbi,
     BiocGenerics,
     Biostrings,
     BSgenome,
@@ -38,13 +37,13 @@ Imports:
     multitaper,
     parallel,
     reshape2,
+    RiboseQC (>= 1.2.1),
     Rsamtools,
     rtracklayer,
     S4Vectors,
     Seqinfo,
     stats,
     SummarizedExperiment,
-    txdbmaker,
     utils
 Suggests:
     dplyr,
@@ -56,6 +55,7 @@ Suggests:
     testthat (>= 3.1.5),
     withr
 VignetteBuilder: knitr
+Remotes: katarinagresova/RiboseQC@v1.2.1
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0

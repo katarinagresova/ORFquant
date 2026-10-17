@@ -190,7 +190,7 @@ prepare_for_ORFquant<-function(annotation_file,bam_file,path_to_rl_cutoff_file=N
                       path_to_P_sites_uniq_mm_plus_bw,path_to_P_sites_uniq_mm_minus_bw))
   check_output_dir(dest_name)
   
-  GTF_annotation<-load_annotation(annotation_file)$GTF_annotation
+  GTF_annotation<-load_annotation(annotation_file,envir = globalenv())$GTF_annotation
   
   if(!is.na(path_to_rl_cutoff_file)){
     rl_cutoff<-read.table(path_to_rl_cutoff_file,header = T,sep = "\t",stringsAsFactors = F)

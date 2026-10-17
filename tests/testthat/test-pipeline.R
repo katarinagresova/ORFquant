@@ -43,8 +43,11 @@ test_that("the annotation of the example is prepared", {
 
 test_that("the example runs with 1 core", {
   skip_if(is.null(runs$annotation))
+  rm(list = intersect(c("GTF_annotation", "genome_seq"), ls(globalenv())), envir = globalenv())
   runs$one_core <- run_example("one_core", n_cores = 1, chunk_size = 5e6)
   expect_true(all(file.exists(unlist(result_files(runs$one_core)))))
+  # prepare_for_ORFquant() and run_ORFquant() leave the annotation in the global variables, as before
+  expect_true(all(c("GTF_annotation", "genome_seq") %in% ls(globalenv())))
 })
 
 test_that("the example runs with 2 cores, and 6 chunks of alignments", {
@@ -369,7 +372,7 @@ test_that("the splice annotation of an ORF outside the CDS does not depend on th
   # overlapped one, so with no CDS for the first ORF of a region. In the example,
   # ENST00000495655.2_175_255 overlaps no CDS and is the 2nd of 3 ORFs of its gene
   orf <- "ENST00000495655.2_175_255"
-  quiet(load_annotation(runs$annotation))
+  quiet(load_annotation(runs$annotation, envir = globalenv()))
   for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
   region <- GenomicRanges::reduce(unlist(GTF_annotation$txs_gene["ENSG00000184470.21"]))
   genetic_code <- Biostrings::getGeneticCode("SGC0")
@@ -396,9 +399,9 @@ test_that("the splice annotation of an ORF outside the CDS does not depend on th
 test_that("ORFquant() takes the annotation that load_annotation() returns, without the global variables", {
   skip_if(is.null(runs$one_core))
   loaded <- NULL
-  quiet(loaded <- load_annotation(runs$annotation))
+  quiet(loaded <- load_annotation(runs$annotation, envir = globalenv()))
   expect_named(loaded, c("GTF_annotation", "genome_seq"))
-  # load_annotation() also assigns the global variables, as before
+  # load_annotation() also assigns the variables in its argument envir
   expect_identical(get("GTF_annotation", envir = globalenv()), loaded$GTF_annotation)
   expect_identical(get("genome_seq", envir = globalenv()), loaded$genome_seq)
   for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))

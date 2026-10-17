@@ -20,16 +20,11 @@
 # <http://www.gnu.org/licenses/>.
 
 # Helpers used by several steps: faster versions of Bioconductor functions, the parallel
-# helpers (mc_*), from_tx_togen() and the circular chromosomes.
+# helpers (mc_*) and from_tx_togen().
 
 
 setMethods(f = "unlist","GRanges",function(x){return(x)})
 
-
-DEFAULT_CIRC_SEQS <- unique(c("chrM","MT","MtDNA","mit","Mito","mitochondrion",
-                              "dmel_mitochondrion_genome","Pltd","ChrC","Pt","chloroplast",
-                              "Chloro","2micron","2-micron","2uM",
-                              "Mt", "NC_001879.2", "NC_006581.1","ChrM"))
 
 # translate(x, ..., if.fuzzy.codon = "solve"), faster. "solve" costs a fixed
 # ~80 ms per call, to build the lookup of all fuzzy codons; a sequence with
