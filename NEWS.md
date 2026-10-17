@@ -47,6 +47,15 @@
   the repository's version 1.02.0, which still called `disjointExons()`, no
   longer in GenomicFeatures.
 
+- ORFquant now needs RiboseQC (1.2.1 or later), which it imports for the
+  annotation step (see "New features"). RiboseQC is not on Bioconductor:
+  `BiocManager::install("katarinagresova/ORFquant")` and
+  `remotes::install_github()` install it from GitHub (the `Remotes` field of
+  `DESCRIPTION`), and `environment.yml` has its dependencies. Through
+  RiboseQC, ORFquant needs DT, ggpubr, scales, viridis and withr, and knitr
+  and rmarkdown again. ORFquant itself no longer imports AnnotationDbi and
+  txdbmaker, but RiboseQC does. `library(ORFquant)` attaches no new package.
+
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
 deprecation warnings.
@@ -128,6 +137,47 @@ deprecation warnings.
   `for_ORFquant`. `run_ORFquant()` and `prepare_for_ORFquant()` now use the
   annotation that they load, not the global variables. `R CMD check` no
   longer gives a note for these assignments.
+
+- The annotation step is now the code of RiboseQC. `prepare_annotation_files()`,
+  `load_annotation()` and the class `FaFile_Circ` (with its `getSeq()` and
+  `seqinfo()` methods) come from RiboseQC (1.2.0), and ORFquant exports them
+  again, so scripts that call them after `library(ORFquant)` still work.
+  Both packages had a copy of this code, and the copies had drifted apart;
+  the copy of ORFquant, with its fixes, went to RiboseQC, so each fix is now
+  in one place. The annotation of a GTF is the same as before, apart from
+  the changes listed here and under "Changes in results" and "Bug fixes".
+  `_Rannot` files that earlier versions of ORFquant or RiboseQC made still
+  load. New files hold the class `FaFile_Circ` of RiboseQC, and R needs
+  RiboseQC to load them. What users can see:
+  - The `*_similbed.bed` files in the annotation directory have a header line,
+    as those of RiboseQC always had; for a set of regions that is empty, the
+    file has only the header line. Before, ORFquant wrote no header, and an
+    empty file for an empty set.
+  - `prepare_annotation_files()` has the new argument `annot_file`, the path
+    of the `_Rannot` file. Its default gives the path of before,
+    `<annotation_directory>/<name of the GTF file>_Rannot`.
+  - `load_annotation()` has the new argument `envir`, where it assigns
+    `GTF_annotation` and `genome_seq`. Its default is the environment of the
+    caller, not always the global environment. A script that calls it at the
+    top level doesn't change. A function that calls `load_annotation()` and
+    then `ORFquant()`, which by default reads the global variables, must give
+    `envir = globalenv()`. `run_ORFquant()` and `prepare_for_ORFquant()` do,
+    so they still assign the two global variables.
+  - `load_annotation()` gives two messages: "assigning FaFile_Circ object
+    <path> to the global workspace as genome_seq" and "assigning
+    GTF_annotation object GTF_annotation to parent workspace".
+  - Four messages of `prepare_annotation_files()` no longer say "ORFquant".
+    They are the stop without `genome_seq` ("prepare_annotation_files() no
+    longer forges a BSgenome package"), the stop for a GTF without CDS lines
+    ("the annotation needs the coding sequences (CDS) of the transcripts"),
+    and the two stops for a GTF without exon lines or without ids ("the
+    annotation needs both on every line", "the annotation needs the exons and
+    the coding sequences (CDS) of the transcripts").
+  - `prepare_annotation_files()` no longer changes the random numbers of the
+    session. Before, it called `set.seed(666)` when the TxDb had no exons for
+    some transcripts (the message with 3 examples).
+  - When `genome_seq` is a `FaFile_Circ`, the TxDb also marks the chromosomes
+    of `circ_chroms` as circular. For a FASTA file, nothing changes.
 
 ## Changes in results
 
@@ -294,6 +344,20 @@ deprecation warnings.
   (`stop_in_gtf` `NA`, see above) already got this rule and are not affected,
   so a GTF with and without its `stop_codon` lines now gives these ORFs the
   same category.
+
+- `prepare_annotation_files()` now chooses the representative start and stop
+  codons of each gene from that gene's own codons. Before, when the start
+  and stop codons of two genes alternated along a chromosome (for example in
+  overlapping genes), the flags for a gene's most common and outermost
+  codons could go to the other gene's codons. So `upstr_stasto`,
+  `mostfreq_stasto` and the columns `reprentative_mostcommon`,
+  `reprentative_boundaries` and `reprentative_5len` of `cds_txs_coords` (and
+  of `cds_txs_coords_similbed.bed`) were wrong for some transcripts and
+  genes: on GENCODE v47, 339 of 20,503 genes get another
+  `reprentative_mostcommon` transcript. ORFquant doesn't read these columns,
+  so the ORFs don't change. RiboseQC reads them for its metagene, so with a
+  new annotation its results can change. Annotations that earlier versions
+  made keep their values.
 
 ## Bug fixes
 
@@ -484,6 +548,13 @@ deprecation warnings.
   ORFs of one transcript: `exons` has one element and `introns` is a
   `GRanges`. `run_ORFquant()` calls it this way, with ORFs inside the
   transcript, so results don't change.
+- `prepare_annotation_files()` no longer stops with `solving row <n>:
+  'allow.nonnarrowing' is FALSE and the solved start (0) is < 1` when a
+  transcript has a CDS shorter than 3 nt. It removes these transcripts from
+  the annotation.
+- `load_annotation()` also reads `_Rannot` files that early versions of
+  RiboseQC made, with the name of a BSgenome package in `genome`. Before, it
+  stopped with `'package' must be of length 1`.
 
 ## Performance
 

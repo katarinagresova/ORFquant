@@ -185,7 +185,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   
   message("Loading annotation and Ribo-seq signal ... ",date())
   
-  loaded_annotation<-load_annotation(annotation_file)
+  loaded_annotation<-load_annotation(annotation_file,envir = globalenv())
   GTF_annotation<-loaded_annotation$GTF_annotation
   genome_seq<-loaded_annotation$genome_seq
   for_ORFquant_data<-get(load(for_ORFquant_file))
