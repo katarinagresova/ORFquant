@@ -70,7 +70,8 @@ dir.create(out_dir)
 
 ## Prepare the annotation
 
-`prepare_annotation_files()` reads a GTF file and the genome sequence, and
+`prepare_annotation_files()` (from the *RiboseQC* package, which *ORFquant*
+exports again) reads a GTF file and the genome sequence, and
 writes a *TxDb* and an `_Rannot` file to `annotation_directory`. The `_Rannot`
 file holds the annotated transcript and genomic features (exons, CDS, UTRs,
 introns, start and stop codons, ...) that the other steps use. The genome
@@ -88,7 +89,8 @@ annotation_file <- file.path(out_dir, "chr22_example.gtf.gz_Rannot")
 (*txdbmaker* warns that it ignores the phase of the `stop_codon` lines and that
 the *TxDb* has no genome version; both are harmless.)
 
-`load_annotation()` loads it into two global variables: `GTF_annotation`, a
+`load_annotation()` loads it into two variables of the environment that calls
+it (its argument `envir`): `GTF_annotation`, a
 list of the annotated features, and `genome_seq`, the genome sequence. It also
 returns them, invisibly, as a list with these two elements; `ORFquant()`, which
 analyses one genomic region, takes them as its arguments `annotation` and

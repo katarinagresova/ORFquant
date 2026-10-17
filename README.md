@@ -32,7 +32,7 @@ install.packages(c("BiocManager", "remotes"))
 BiocManager::install("katarinagresova/ORFquant", dependencies = TRUE)
 ```
 
-`dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
+This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the annotation step: `prepare_annotation_files()`, `load_annotation()` and `FaFile_Circ` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
 
 Or with conda, using [environment.yml](environment.yml) from this repository (R 4.5, Bioconductor 3.22, all dependencies and pandoc):
 
