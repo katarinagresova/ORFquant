@@ -708,6 +708,19 @@ deprecation warnings.
   nearest gene is the one with the CDS exon nearest to the ORF's first exon
   in genomic coordinates, and that an ORF is `novel_Internal` when one of its
   exons is between the first and the last CDS nucleotide.
+- `?detect_readthrough` now describes the columns `compatible_id` and
+  `compatible_original_id` of `ORFs_readthroughs` (beta). When ORFquant finds
+  the same readthrough after the ORFs of several transcripts of a region, it
+  usually keeps one of them, and these columns have the `ORF_id_tr` and the
+  `ORF_orig_tr` of the others. Because of an indexing error in
+  `detect_readthrough()`, a readthrough found after a readthrough with
+  another protein in the same region has its own ids in these columns, and
+  can lack the id of one other readthrough with the same protein. ORFquant
+  has always worked this way, and it still does. No other column or output
+  of ORFquant uses these two columns. In 22 human samples (GENCODE 47), 66 of
+  2,470 readthroughs have their own id in `compatible_id`. A fix changes
+  only these 66 values: 60 become empty, and 6 get the id of another
+  readthrough.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

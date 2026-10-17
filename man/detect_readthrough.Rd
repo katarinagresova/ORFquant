@@ -42,7 +42,15 @@ GRanges object with the set of translated readthrough regions
 This function uses the multitaper method to look for readthrough translation
 }
 \details{
-The function looks for stop-stop pairs after the stop codon of the detected ORF
+The function looks for stop-stop pairs after the stop codon of the detected ORF.\cr
+The same readthrough can be found after the ORFs of several transcripts of the region. The function removes most of these
+duplicates: \code{compatible_id} has the \code{ORF_id_tr} of the other readthroughs of the region with the same \code{Protein},
+and \code{compatible_original_id} their \code{ORF_orig_tr} (the detected ORF before the readthrough), so these ids are usually
+not in the result.\cr
+Because of an indexing error, a readthrough found after a readthrough with another \code{Protein} in the same region has its own
+\code{ORF_id_tr} in \code{compatible_id} and its own \code{ORF_orig_tr} in \code{compatible_original_id}, and can lack the id of
+one other readthrough with the same \code{Protein}. ORFquant has always worked this way, and it still does. No other column or
+output of ORFquant uses these two columns.
 }
 \seealso{
 \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{annotate_ORFs}}, \code{\link{get_reathr_seq}}
