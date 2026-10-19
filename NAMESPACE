@@ -64,6 +64,8 @@ importFrom(IRanges,
 )
 importFrom(RiboseQC,
   FaFile_Circ,
+  get_ps_fromsplicemin,
+  get_ps_fromspliceplus,
   load_annotation,
   prepare_annotation_files
 )
