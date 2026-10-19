@@ -16,7 +16,7 @@
 #' @importFrom IRanges NumericList RleList countOverlaps disjoin nearest
 #' @importFrom IRanges quantile reduce resize restrict shift subsetByOverlaps
 #' @importFrom IRanges trim
-#' @importFrom Rsamtools BamFile ScanBamParam scanBamFlag
+#' @importFrom RiboseQC check_n_cores check_output_dir mc_job mc_lapply mc_value
 #' @importFrom S4Vectors mcols<- DataFrame Rle aggregate cbind.DataFrame
 #' @importFrom S4Vectors endoapply na.omit queryHits runLength runValue
 #' @importFrom S4Vectors splitAsList subjectHits
@@ -25,7 +25,7 @@
 #' @importFrom grDevices colorRampPalette dev.off pdf rgb
 #' @importFrom methods as is
 #' @importFrom stats as.ts optim pf setNames
-#' @importFrom utils read.table write.table
+#' @importFrom utils write.table
 NULL
 
 # Column names used in aes() and subset(), which R CMD check takes for globals.

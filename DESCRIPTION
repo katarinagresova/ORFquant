@@ -24,7 +24,6 @@ Imports:
     BiocGenerics,
     Biostrings,
     BSgenome,
-    cigarillo,
     cowplot,
     GenomicAlignments,
     GenomicFeatures,
@@ -37,8 +36,7 @@ Imports:
     multitaper,
     parallel,
     reshape2,
-    RiboseQC (>= 1.2.1),
-    Rsamtools,
+    RiboseQC (>= 1.3.0),
     rtracklayer,
     S4Vectors,
     Seqinfo,
@@ -52,10 +50,11 @@ Suggests:
     knitr,
     lemon,
     rmarkdown,
+    Rsamtools,
     testthat (>= 3.1.5),
     withr
 VignetteBuilder: knitr
-Remotes: katarinagresova/RiboseQC@v1.2.1
+Remotes: katarinagresova/RiboseQC@v1.3.0
 biocViews: RiboSeq, GenomeAnnotation, Transcriptomics, Software
 Encoding: UTF-8
 Config/roxygen2/version: 8.1.0

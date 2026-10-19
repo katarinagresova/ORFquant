@@ -58,12 +58,6 @@ test_that("the example runs with 2 cores, and 6 chunks of alignments", {
   expect_true(all(file.exists(unlist(result_files(runs$two_cores)))))
 })
 
-test_that("the P-sites do not depend on the number of cores or of chunks", {
-  skip_if(is.null(runs$one_core) || is.null(runs$two_cores))
-  expect_identical(get(load(paste0(runs$one_core, "_for_ORFquant"))),
-                   get(load(paste0(runs$two_cores, "_for_ORFquant"))))
-})
-
 test_that("the command-line script runs, with 2 cores and the annotation", {
   skip_if(is.null(runs$annotation))
   # Its steps run in new R processes, which need ORFquant to be installed
@@ -154,8 +148,9 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
 })
 
-# Input that cannot work stops the run before the BAM file is read, or before
-# the regions are quantified; these use the annotation and P-sites made above
+# Input that cannot work stops run_ORFquant() before the regions are quantified;
+# these use the annotation and P-sites made above. The tests of
+# prepare_for_ORFquant() are in RiboseQC, which has its code now.
 
 # The error message of a call, and the warnings that came before it
 refusal <- function(expr) {
@@ -176,65 +171,6 @@ changed_annotation <- function(change) {
   save(ann, file = f)
   f
 }
-prepare_with <- function(cutoffs, annotation = runs$annotation, dest = file.path(work, "refused")) {
-  refusal(prepare_for_ORFquant(annotation_file = annotation,
-                               bam_file = example_file("chr22_example.bam"),
-                               path_to_rl_cutoff_file = cutoffs, dest_name = dest))
-}
-write_cutoffs <- function(lines) {
-  f <- tempfile("cutoffs_", work, fileext = ".tsv")
-  writeLines(lines, f)
-  f
-}
-
-test_that("prepare_for_ORFquant() refuses an output directory that does not exist", {
-  skip_if(is.null(runs$annotation))
-  msg <- prepare_with(example_file("chr22_example_cutoffs.tsv"), dest = file.path(work, "no_dir", "sample"))$message
-  expect_match(msg, "Cannot write the output files")
-})
-
-test_that("prepare_for_ORFquant() refuses a wrong cutoff table", {
-  skip_if(is.null(runs$annotation))
-  head <- "read_length\tcutoff\tcompartment"
-  expect_match(prepare_with(write_cutoffs(head))$message, "has no rows")
-  expect_match(prepare_with(write_cutoffs(c(head, "twenty\t12\tnucl")))$message, "must be numbers")
-  out <- prepare_with(write_cutoffs(c(head, "28\t12\tmito")))
-  expect_match(out$message, "No compartment of the rl_cutoff file is 'nucl'")
-  expect_match(out$message, "mito")
-})
-
-test_that("prepare_for_ORFquant() refuses a BAM file with other chromosomes than the annotation", {
-  skip_if(is.null(runs$annotation))
-  other <- changed_annotation(function(si) {
-    GenomeInfoDb::seqlevels(si) <- paste0("other", seq_along(GenomeInfoDb::seqlevels(si)))
-    si
-  })
-  out <- prepare_with(write_cutoffs(c("read_length\tcutoff\tcompartment", "28\t12\tnucl", "29\t12\tmito")),
-                      annotation = other)
-  expect_match(out$message, "No chromosome of the BAM file is in the annotation")
-  expect_match(out$message, "chr22")
-  # the compartment that is not used is a warning, not an error
-  expect_match(out$warnings, "mito")
-})
-
-test_that("prepare_for_ORFquant() refuses a BAM file with other chromosome lengths than the annotation", {
-  skip_if(is.null(runs$annotation))
-  # Before, it stopped in the first chunk of reads with "sequence chr22 has incompatible seqlengths"
-  longer <- changed_annotation(function(si) {
-    GenomeInfoDb::seqlengths(si) <- GenomeInfoDb::seqlengths(si) + 1L
-    si
-  })
-  msg <- prepare_with(example_file("chr22_example_cutoffs.tsv"), annotation = longer)$message
-  expect_match(msg, "is not on the genome of the annotation")
-  expect_match(msg, "chr22 has [0-9]+ nt in the BAM file and [0-9]+ nt in the annotation")
-})
-
-test_that("prepare_for_ORFquant() refuses a cutoff table that gives no P-sites", {
-  skip_if(is.null(runs$annotation))
-  msg <- prepare_with(write_cutoffs(c("read_length\tcutoff\tcompartment", "99\t12\tnucl")))$message
-  expect_match(msg, "No P-sites were found")
-  expect_false(file.exists(file.path(work, "refused_for_ORFquant")))
-})
 
 test_that("run_ORFquant() refuses P-sites that are not on the genome of the annotation", {
   skip_if(is.null(runs$one_core))
@@ -270,33 +206,6 @@ test_that("run_ORFquant() names the gene_id and gene_name values that are not in
   out <- run_genes(gene_name = "no_such_name")
   expect_match(out$warnings, "1 gene_name values are not in the annotation.*no_such_name")
   expect_match(out$message, "Incorrect gene_id \\| gene_name \\| genomic_region")
-})
-
-test_that("prepare_for_ORFquant() sorts the P-sites of bigWig files by the chromosomes of the annotation", {
-  skip_if(is.null(runs$one_core))
-  # The annotation has chr22 and then chr1; the bigWig files have chr1 first
-  annotation <- changed_annotation(function(si) {
-    Seqinfo::seqlevels(si) <- c(Seqinfo::seqlevels(si), "chr1")
-    Seqinfo::seqlengths(si)[["chr1"]] <- Seqinfo::seqlengths(si)[["chr22"]]
-    si
-  })
-  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
-  in_bw <- GenomicRanges::GRanges(rep(c("chr1", "chr22"), each = length(ps)), rep(IRanges::ranges(ps), 2),
-                                  rep(BiocGenerics::strand(ps), 2), score = rep(ps$score, 2),
-                                  seqinfo = get(load(annotation))$seqinfo[c("chr1", "chr22")])
-  bw <- file.path(work, c("plus.bw", "minus.bw"))
-  rtracklayer::export(in_bw[BiocGenerics::strand(in_bw) == "+"], bw[1], format = "bigWig")
-  rtracklayer::export(in_bw[BiocGenerics::strand(in_bw) == "-"], bw[2], format = "bigWig")
-  dest <- file.path(work, "bigwig")
-  quiet(prepare_for_ORFquant(annotation_file = annotation, bam_file = example_file("chr22_example.bam"),
-                             path_to_P_sites_plus_bw = bw[1], path_to_P_sites_minus_bw = bw[2], dest_name = dest))
-  got <- get(load(paste0(dest, "_for_ORFquant")))$P_sites_all
-  expect_false(BiocGenerics::is.unsorted(got))
-  expected <- in_bw
-  Seqinfo::seqlevels(expected) <- c("chr22", "chr1")
-  expected <- BiocGenerics::sort(expected)
-  expected$score <- as.numeric(expected$score)   # the scores of bigWig files are double
-  expect_identical(as.data.frame(got), as.data.frame(expected))
 })
 
 test_that("run_ORFquant() gives no ORFs for a gene when stn.orf_quant.cutoff_P_sites removes all its ORFs", {
