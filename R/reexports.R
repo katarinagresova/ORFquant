@@ -24,10 +24,19 @@ RiboseQC::get_ps_fromspliceplus
 #' @export
 RiboseQC::get_ps_fromsplicemin
 
+# ORFquant has no S4 classes or methods of its own, so R ignores exportClasses() and
+# exportMethods() in its NAMESPACE. It exports the generics getSeq() and seqinfo() as
+# functions, so they work after library(ORFquant), as before.
+
+#' @importFrom Biostrings getSeq
+#' @export
+Biostrings::getSeq
+
+#' @importFrom Seqinfo seqinfo
+#' @export
+Seqinfo::seqinfo
+
 #' @importClassesFrom RiboseQC FaFile_Circ
-#' @exportClass FaFile_Circ
-#' @exportMethod getSeq
-#' @exportMethod seqinfo
 #' @name FaFile_Circ-class
 #' @rdname reexports
 NULL

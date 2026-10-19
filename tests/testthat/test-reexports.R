@@ -17,6 +17,20 @@ test_that("ORFquant exports the P-site functions of RiboseQC for spliced reads",
                     getNamespaceExports("ORFquant")))
 })
 
+# run_ORFquant() needs this method (R/helpers.R). It is in RiboseQC.
+test_that("unlist() of a GRanges gives the GRanges back", {
+  gr <- GenomicRanges::GRanges(c("chr1:1-10:+", "chr1:20-30:-"))
+  expect_identical(unlist(gr), gr)
+  expect_identical(unlist(GenomicRanges::GRanges()), GenomicRanges::GRanges())
+})
+
+# The tests run in the namespace of ORFquant, so they find getSeq() and seqinfo() also
+# when ORFquant doesn't export them. The vignette needs the exports.
+test_that("ORFquant exports getSeq() and seqinfo()", {
+  expect_identical(ORFquant::getSeq, Biostrings::getSeq)
+  expect_identical(ORFquant::seqinfo, Seqinfo::seqinfo)
+})
+
 test_that("a FaFile_Circ gives its sequence and its circular chromosomes", {
   genome <- FaFile_Circ(Rsamtools::FaFile(example_file("chr22_example.fa.gz")), circularRanges = "chr22")
   expect_true(isCircular(seqinfo(genome))[["chr22"]])
