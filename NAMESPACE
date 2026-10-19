@@ -64,15 +64,16 @@ importFrom(IRanges,
 )
 importFrom(RiboseQC,
   FaFile_Circ,
+  check_n_cores,
+  check_output_dir,
   get_ps_fromsplicemin,
   get_ps_fromspliceplus,
   load_annotation,
-  prepare_annotation_files
-)
-importFrom(Rsamtools,
-  BamFile,
-  ScanBamParam,
-  scanBamFlag
+  mc_job,
+  mc_lapply,
+  mc_value,
+  prepare_annotation_files,
+  prepare_for_ORFquant
 )
 importFrom(S4Vectors,
   "mcols<-",
@@ -113,7 +114,4 @@ importFrom(stats,
   pf,
   setNames
 )
-importFrom(utils,
-  read.table,
-  write.table
-)
+importFrom(utils,write.table)

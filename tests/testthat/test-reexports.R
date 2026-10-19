@@ -1,6 +1,6 @@
 # The annotation step (prepare_annotation_files(), load_annotation() and the class
 # FaFile_Circ) is in RiboseQC, and its tests are there. ORFquant exports it again.
-# The same for get_ps_fromspliceplus() and get_ps_fromsplicemin().
+# The same for get_ps_fromspliceplus(), get_ps_fromsplicemin() and prepare_for_ORFquant().
 
 test_that("ORFquant exports the annotation step of RiboseQC", {
   expect_identical(ORFquant::prepare_annotation_files, RiboseQC::prepare_annotation_files)
@@ -15,6 +15,11 @@ test_that("ORFquant exports the P-site functions of RiboseQC for spliced reads",
   expect_identical(ORFquant::get_ps_fromsplicemin, RiboseQC::get_ps_fromsplicemin)
   expect_true(all(c("get_ps_fromspliceplus", "get_ps_fromsplicemin") %in%
                     getNamespaceExports("ORFquant")))
+})
+
+test_that("ORFquant exports prepare_for_ORFquant() of RiboseQC", {
+  expect_identical(ORFquant::prepare_for_ORFquant, RiboseQC::prepare_for_ORFquant)
+  expect_true("prepare_for_ORFquant" %in% getNamespaceExports("ORFquant"))
 })
 
 # run_ORFquant() needs this method (R/helpers.R). It is in RiboseQC.

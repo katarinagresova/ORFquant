@@ -2,7 +2,7 @@
 # prepare_annotation_files(), load_annotation() or FaFile_Circ() after library(ORFquant)
 # don't change. The methods of getSeq() and seqinfo() for FaFile_Circ are in RiboseQC.
 # The same for the P-sites of spliced reads: get_ps_fromspliceplus() and
-# get_ps_fromsplicemin(), which prepare_for_ORFquant() uses.
+# get_ps_fromsplicemin(), and for prepare_for_ORFquant(), which uses them.
 
 #' @importFrom RiboseQC prepare_annotation_files
 #' @export
@@ -23,6 +23,10 @@ RiboseQC::get_ps_fromspliceplus
 #' @importFrom RiboseQC get_ps_fromsplicemin
 #' @export
 RiboseQC::get_ps_fromsplicemin
+
+#' @importFrom RiboseQC prepare_for_ORFquant
+#' @export
+RiboseQC::prepare_for_ORFquant
 
 # ORFquant has no S4 classes or methods of its own, so R ignores exportClasses() and
 # exportMethods() in its NAMESPACE. It exports the generics getSeq() and seqinfo() as

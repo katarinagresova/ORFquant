@@ -8,6 +8,7 @@
 \alias{FaFile_Circ}
 \alias{get_ps_fromspliceplus}
 \alias{get_ps_fromsplicemin}
+\alias{prepare_for_ORFquant}
 \alias{getSeq}
 \alias{seqinfo}
 \alias{FaFile_Circ-class}
@@ -20,7 +21,7 @@ below to see their documentation.
 \describe{
   \item{Biostrings}{\code{\link[Biostrings:getSeq]{getSeq()}}}
 
-  \item{RiboseQC}{\code{\link[RiboseQC:FaFile_Circ]{FaFile_Circ()}}, \code{\link[RiboseQC:get_ps_fromsplicemin]{get_ps_fromsplicemin()}}, \code{\link[RiboseQC:get_ps_fromspliceplus]{get_ps_fromspliceplus()}}, \code{\link[RiboseQC:load_annotation]{load_annotation()}}, \code{\link[RiboseQC:prepare_annotation_files]{prepare_annotation_files()}}}
+  \item{RiboseQC}{\code{\link[RiboseQC:FaFile_Circ]{FaFile_Circ()}}, \code{\link[RiboseQC:get_ps_fromsplicemin]{get_ps_fromsplicemin()}}, \code{\link[RiboseQC:get_ps_fromspliceplus]{get_ps_fromspliceplus()}}, \code{\link[RiboseQC:load_annotation]{load_annotation()}}, \code{\link[RiboseQC:prepare_annotation_files]{prepare_annotation_files()}}, \code{\link[RiboseQC:prepare_for_ORFquant]{prepare_for_ORFquant()}}}
 
   \item{Seqinfo}{\code{\link[Seqinfo:seqinfo]{seqinfo()}}}
 }}

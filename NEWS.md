@@ -47,11 +47,11 @@
   the repository's version 1.02.0, which still called `disjointExons()`, no
   longer in GenomicFeatures.
 
-- ORFquant now needs RiboseQC (1.2.1 or later), which it imports for the
-  annotation step (see "New features"). RiboseQC is not on Bioconductor:
-  `BiocManager::install("katarinagresova/ORFquant")` and
-  `remotes::install_github()` install it from GitHub (the `Remotes` field of
-  `DESCRIPTION`), and `environment.yml` has its dependencies. Through
+- ORFquant now needs RiboseQC (1.3.0 or later), which it imports for the
+  annotation step and `prepare_for_ORFquant()` (see "New features").
+  RiboseQC is not on Bioconductor: `BiocManager::install("katarinagresova/ORFquant")`
+  and `remotes::install_github()` install it from GitHub (the `Remotes` field
+  of `DESCRIPTION`), and `environment.yml` has its dependencies. Through
   RiboseQC, ORFquant needs DT, ggpubr, scales, viridis and withr, and knitr
   and rmarkdown again. ORFquant itself no longer imports AnnotationDbi and
   txdbmaker, but RiboseQC does. `library(ORFquant)` attaches no new package.
@@ -182,6 +182,10 @@ deprecation warnings.
   P-sites of spliced reads, now come from RiboseQC too, and ORFquant exports
   them again. The two packages had the same code, so the P-sites don't
   change. Their help pages are now those of RiboseQC.
+- `prepare_for_ORFquant()` now comes from RiboseQC (1.3.0), and ORFquant
+  exports it again, so scripts that call it after `library(ORFquant)` still
+  work. Its code went to RiboseQC unchanged, so the `for_ORFquant` files
+  don't change. Its help page is now that of RiboseQC.
 
 ## Changes in results
 

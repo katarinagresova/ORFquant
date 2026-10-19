@@ -19,8 +19,8 @@
 # along with this software. If not, see
 # <http://www.gnu.org/licenses/>.
 
-# Helpers used by several steps: faster versions of Bioconductor functions, the parallel
-# helpers (mc_*) and from_tx_togen().
+# Helpers used by several steps: faster versions of Bioconductor functions and from_tx_togen().
+# The parallel helpers (mc_*) and the checks of the input are in RiboseQC (ORFquant-package.R).
 # unlist(x) gives x back when x is a GRanges. run_ORFquant() needs this when it joins the
 # results of the regions. The method is in RiboseQC, which ORFquant imports, so it is in
 # place whenever ORFquant runs.
@@ -135,55 +135,6 @@ bind_GRanges<-function(x){
   mcs@nrows<-sum(len)
   ans@elementMetadata<-mcs
   ans
-}
-
-# Forked processes for steps that only read their data. mc_job(expr,n_cores) evaluates expr in a
-# forked process (parallel::mcparallel) when n_cores>1, here otherwise; mc_value(job) waits for
-# it and gives the value of expr, or NULL with wait=FALSE if it isn't done yet. mc_lapply(fs,n_cores)
-# is lapply(fs,function(f){f()}), with each f() in a forked process, at most n_cores at a time
-# (parallel::mclapply). The warnings of a forked process are given again here (they would be
-# lost), and its error stops here.
-mc_job<-function(expr,n_cores){
-  if(n_cores>1){
-    return(parallel::mcparallel(mc_capture(function(){expr})))
-  }
-  list(value=expr)
-}
-mc_value<-function(job,wait=TRUE){
-  if(!inherits(job,"parallelJob")){
-    return(job$value)
-  }
-  res<-parallel::mccollect(job,wait=wait)
-  if(is.null(res)){
-    return(NULL)
-  }
-  mc_release(res[[1]])
-}
-mc_lapply<-function(fs,n_cores){
-  if(n_cores>1){
-    return(lapply(parallel::mclapply(fs,mc_capture,mc.cores=n_cores,mc.preschedule=FALSE),mc_release))
-  }
-  lapply(fs,function(f){f()})
-}
-mc_capture<-function(f){
-  warns<-list()
-  value<-withCallingHandlers(f(),warning=function(w){
-    warns[[length(warns)+1]]<<-w
-    invokeRestart("muffleWarning")
-  })
-  list(value=value,warnings=warns)
-}
-mc_release<-function(res){
-  if(inherits(res,"try-error")){
-    stop(attr(res,"condition"))
-  }
-  if(is.null(res)){
-    stop("A forked process ended without a result (out of memory?)")
-  }
-  for(w in res$warnings){
-    warning(w)
-  }
-  res$value
 }
 
 

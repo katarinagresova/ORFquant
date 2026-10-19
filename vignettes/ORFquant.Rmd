@@ -118,11 +118,12 @@ Biostrings::translate(unlist(getSeq(genome_seq, cds)))
 
 ## Prepare the P-sites
 
-`prepare_for_ORFquant()` needs the Ribo-seq reads, aligned to the genome with
-a spliced aligner, sorted by coordinate and indexed, and a table of the
-P-site offset (`cutoff`, the distance of the P-site from the read's 5' end)
-for each read length. The `compartment` column is `nucl` for all chromosomes
-that are not circular, or the name of a circular one, such as `chrM`.
+`prepare_for_ORFquant()` (from *RiboseQC*, which *ORFquant* exports again)
+needs the Ribo-seq reads, aligned to the genome with a spliced aligner, sorted
+by coordinate and indexed, and a table of the P-site offset (`cutoff`, the
+distance of the P-site from the read's 5' end) for each read length. The
+`compartment` column is `nucl` for all chromosomes that are not circular, or
+the name of a circular one, such as `chrM`.
 
 ```{r cutoffs}
 read.delim(file.path(extdata, "chr22_example_cutoffs.tsv"))
