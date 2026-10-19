@@ -20,97 +20,9 @@
 # <http://www.gnu.org/licenses/>.
 
 # Step 2: the P-sites and the junction reads of a sample.
+# The P-sites of spliced reads come from get_ps_fromspliceplus() and
+# get_ps_fromsplicemin() of RiboseQC (reexports.R).
 
-
-#' Offset spliced reads on plus strand
-#'
-#' This function calculates P-sites positions for spliced reads on the plus strand
-#' @keywords Ribo-seQC, ORFquant
-#' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
-#' @param x a \code{GAlignments} object with a cigar string
-#' @param cutoff number representing the offset value
-#' @return a \code{GRanges} object with offset reads
-#' @seealso \code{\link{prepare_for_ORFquant}}
-#' @export
-
-get_ps_fromspliceplus<-function(x,cutoff){
-  rang<-cigarillo::cigars_as_ranges_along_ref(cigar(x), lmmpos=start(x),ops="M")
-  cs<-lapply(rang,function(x){cumsum(x@width)})
-  rangok<-lapply(which(IntegerList(cs)>cutoff),"[[",1)
-  rangok<-unlist(rangok)
-  gr<-as(x,"GRanges")
-  
-  ones<-rangok==1
-  mores<-rangok>1
-  psmores<-GRanges()
-  psones<-GRanges()
-  
-  if(sum(ones)>0){
-    psones<-shift(resize(gr[ones],width=1,fix="start"),shift=cutoff)
-  }
-  
-  if(sum(mores)>0){
-    rangmore<-rang[mores]
-    rangok<-rangok[mores]
-    cms<-cumsum(width(rangmore))
-    shft<-c()
-    for(i in 1:length(rangok)){shft<-c(shft,cutoff-cms[[i]][rangok[i]-1])}
-    stt<-start(rangmore)
-    stok<-c()
-    for(i in 1:length(shft)){stok<-c(stok,stt[[i]][rangok[i]]+shft[i])}
-    psmores<-GRanges(IRanges(start=stok,width = 1),seqnames = seqnames(x[mores]),strand=strand(x[mores]),seqlengths=seqlengths(x[mores]))
-    
-  }
-  ps<-sort(c(psones,psmores))
-  return(ps)
-}
-
-#' Offset spliced reads on minus strand
-#'
-#' This function calculates P-sites positions for spliced reads on the minus strand
-#' @keywords Ribo-seQC, ORFquant
-#' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
-#' @param x a \code{GAlignments} object with a cigar string
-#' @param cutoff number representing the offset value
-#' @return a \code{GRanges} object with offset reads
-#' @seealso \code{\link{prepare_for_ORFquant}}
-#' @export
-
-get_ps_fromsplicemin<-function(x,cutoff){
-  rang<-cigarillo::cigars_as_ranges_along_ref(cigar(x), lmmpos=start(x),ops="M")
-  rang<-endoapply(rang,rev)
-  cs<-lapply(rang,function(x){cumsum(x@width)})
-  rangok<-lapply(which(IntegerList(cs)>cutoff),"[[",1)
-  rangok<-unlist(rangok)
-  gr<-as(x,"GRanges")
-  
-  ones<-rangok==1
-  mores<-rangok>1
-  psmores<-GRanges()
-  psones<-GRanges()
-  
-  
-  if(sum(ones)>0){
-    psones<-shift(resize(gr[ones],width=1,fix="start"),shift=-cutoff)
-  }
-  
-  
-  if(sum(mores)>0){
-    rangmore<-rang[mores]
-    rangok<-rangok[mores]
-    cms<-cumsum(width(rangmore))
-    shft<-c()
-    for(i in 1:length(rangok)){shft<-c(shft,cutoff-cms[[i]][rangok[i]-1])}
-    #start?
-    stt<-end(rangmore)
-    stok<-c()
-    for(i in 1:length(shft)){stok<-c(stok,stt[[i]][rangok[i]]-shft[i])}
-    psmores<-GRanges(IRanges(start=stok,width = 1),seqnames = seqnames(x[mores]),strand=strand(x[mores]),seqlengths=seqlengths(x[mores]))
-    
-  }
-  ps<-sort(c(psones,psmores))
-  return(ps)
-}
 
 #' Prepare the "for_ORFquant" file
 #'

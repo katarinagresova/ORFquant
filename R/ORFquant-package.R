@@ -19,7 +19,7 @@
 #' @importFrom Rsamtools BamFile ScanBamParam scanBamFlag
 #' @importFrom S4Vectors mcols<- DataFrame Rle aggregate cbind.DataFrame
 #' @importFrom S4Vectors endoapply na.omit queryHits runLength runValue
-#' @importFrom S4Vectors setMethods splitAsList subjectHits
+#' @importFrom S4Vectors splitAsList subjectHits
 #' @importFrom Seqinfo Seqinfo isCircular seqlengths<- seqlengths seqlevels
 #' @importFrom SummarizedExperiment assay
 #' @importFrom grDevices colorRampPalette dev.off pdf rgb

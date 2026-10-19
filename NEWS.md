@@ -178,6 +178,10 @@ deprecation warnings.
     some transcripts (the message with 3 examples).
   - When `genome_seq` is a `FaFile_Circ`, the TxDb also marks the chromosomes
     of `circ_chroms` as circular. For a FASTA file, nothing changes.
+- `get_ps_fromspliceplus()` and `get_ps_fromsplicemin()`, which give the
+  P-sites of spliced reads, now come from RiboseQC too, and ORFquant exports
+  them again. The two packages had the same code, so the P-sites don't
+  change. Their help pages are now those of RiboseQC.
 
 ## Changes in results
 
