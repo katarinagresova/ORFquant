@@ -178,6 +178,15 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   for (n in setdiff(names(plots), "Meta_splicing_coverage")) {
     expect_no_error(suppressWarnings(ggplot_build(plots[[n]])))
   }
+  # Before, the log axes had no labels above 1000, and the y label of ORFs_pM was P-sites_pNpM
+  expect_identical(plots$ORFs_found_ORFs_pM$labels$y, "ORFs_pM")
+  y_columns <- c(ORFs_found_ORFs_pM = "ORFs_tx.ORFs_pM", ORFs_genes_tpm = "tpms",
+                 ORFs_maxiso_tpm = "tpms_mult", Sel_txs_genes_tpm = "tpm")
+  for (n in names(y_columns)) {
+    y <- suppressWarnings(ggplot_build(plots[[n]]))$layout$panel_params[[1]]$y
+    top <- max(as.numeric(y$get_labels()[!is.na(y$get_breaks())]))
+    expect_gt(top * 10, max(plots[[n]]$data[[y_columns[[n]]]]), label = n)
+  }
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {

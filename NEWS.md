@@ -520,6 +520,12 @@ deprecation warnings.
   181 MB. `create_ORFquant_html_report()` loads one such file for each
   sample. On the example data, the file is now 3.5 MB, not 6.6 MB. The plots
   do not change.
+- The log axes of the plots of `plot_ORFquant_results()` now have labels up
+  to 1,000,000 (`ORFs_pM` and gene TPM) and 100,000 (ORF length). Before,
+  they had none above 1000 and 10,000, so the upper part of the axis had no
+  labels when the values were higher, for example on the example data. The
+  y axis of `ORFs_found_ORFs_pM` now has the label `ORFs_pM`, not
+  `P-sites_pNpM`.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
