@@ -370,3 +370,114 @@ test_that("ORFquant() takes the annotation that load_annotation() returns, witho
   expect_true(length(with_globals$ORFs_tx_position) > 0)
   expect_equal(without_globals, with_globals)
 })
+
+test_that("run_ORFquant() with genomic_region analyzes the regions it overlaps whole", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  # One nucleotide of the first ORF. In the example, each region has one gene
+  one_nt <- GenomicRanges::resize(res$ORFs_gen[names(res$ORFs_gen) == res$ORFs_tx$ORF_id_tr[1]][1], 1)
+  dir.create(file.path(work, "genomic_region"))
+  prefix <- file.path(work, "genomic_region", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     genomic_region = one_nt, interactive = FALSE))
+  orfs <- orfs_table(prefix)
+  all_orfs <- orfs_table(runs$one_core)
+  all_orfs <- all_orfs[all_orfs$gene_id == res$ORFs_tx$gene_id[1], ]
+  expect_gt(nrow(all_orfs), 1)
+  # The ORFs of the gene, with the values of the run on all genes, except ORFs_pM,
+  # which sums to a million over the ORFs of a run
+  columns <- setdiff(colnames(all_orfs), "ORFs_pM")
+  expect_equal(orfs[columns], all_orfs[columns], ignore_attr = TRUE)
+})
+
+test_that("run_ORFquant() with unique_reads_only = TRUE finds ORFs by the P-sites of unique reads, with 1 core and with 2 cores", {
+  skip_if(is.null(runs$one_core))
+  # In the example, 3 of the 5 ORFs of DDT and RANBP1 have pval_uniq of 0.05 or more
+  genes <- c("DDT", "RANBP1")
+  all_orfs <- read_tsv(result_files(runs$one_core)$tsv)
+  expect_true(any(all_orfs$pval_uniq[all_orfs$gene_name %in% genes] >= 0.05))
+  dir.create(file.path(work, "unique_reads"))
+  prefixes <- file.path(work, "unique_reads", c("one_core", "two_cores"))
+  for (n_cores in 1:2) {
+    quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                       annotation_file = runs$annotation, n_cores = n_cores, prefix = prefixes[n_cores],
+                       gene_name = genes, unique_reads_only = TRUE, interactive = FALSE))
+  }
+  orfs <- read_tsv(result_files(prefixes[1])$tsv)
+  expect_gt(nrow(orfs), 0)
+  expect_true(all(orfs$pval_uniq < 0.05))
+  expect_same_results(result_files(prefixes[2]), result_files(prefixes[1]))
+  expect_same_tables(write_result_tables(prefixes[2]), write_result_tables(prefixes[1]))
+})
+
+test_that("ORFquant() with unique_reads = TRUE analyzes a region only with more than 4 positions of unique P-sites", {
+  skip_if(is.null(runs$one_core))
+  # Before, it analyzed a region with fewer too, if it had more than 4 positions of
+  # P-sites of all reads. The region of DDT has 43 positions, 12 of unique P-sites
+  loaded <- NULL
+  quiet(loaded <- load_annotation(runs$annotation, envir = globalenv()))
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  region <- GenomicRanges::reduce(unlist(loaded$GTF_annotation$txs_gene["ENSG00000099977.16"]))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  # ORFquant() with the n positions of unique P-sites of the region that have the most reads
+  with_unique <- function(n) {
+    uniq <- for_ORFquant$P_sites_uniq
+    in_region <- which(IRanges::overlapsAny(uniq, region))
+    drop <- in_region[order(uniq$score[in_region], decreasing = TRUE)][-seq_len(n)]
+    for_ORFquant$P_sites_uniq <- uniq[!seq_along(uniq) %in% drop]
+    res <- NULL
+    quiet(res <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
+                          unique_reads = TRUE, annotation = loaded$GTF_annotation,
+                          genome_sequence = loaded$genome_seq))
+    res
+  }
+  expect_length(with_unique(4), 0)
+  expect_gt(length(with_unique(5)$genomic_features), 0)
+})
+
+test_that("run_ORFquant() with canonical_start_only = TRUE leaves only the start codons of M, with 1 core and with 2 cores", {
+  skip_if(is.null(runs$one_core))
+  # Before, with 1 core, the alternative start codons of the genetic code stayed
+  # start codons. The example gives the same results without them, so here
+  # ORFquant() stops with the alternative start codons of the genetic code it gets
+  local_mocked_bindings(ORFquant = function(region, for_ORFquant, genetic_code_region, ...) {
+    stop("start codons: ", paste(attr(genetic_code_region, "alt_init_codons"), collapse = " "))
+  })
+  start_codons <- function(n_cores, canonical_start_only) {
+    refusal(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                         annotation_file = runs$annotation, n_cores = n_cores,
+                         prefix = file.path(work, "start_codons"), interactive = FALSE,
+                         canonical_start_only = canonical_start_only))$message
+  }
+  for (n_cores in 1:2) {
+    expect_match(start_codons(n_cores, TRUE), "start codons: ATG$", info = n_cores)
+    expect_match(start_codons(n_cores, FALSE), "start codons: TTG CTG$", info = n_cores)
+  }
+})
+
+test_that("with canonical_start_only = FALSE, run_ORFquant() compares the C-terminus of an ORF with that of the CDS without a start codon", {
+  skip_if(is.null(runs$one_core))
+  # Before, NC_protein_isoform read an alternative start codon at the start of the
+  # last 10 codons of the CDS as M. Genetic code 11 has the amino acids of the
+  # standard code and more alternative start codons, among them ATC, which starts
+  # the last 10 codons of the CDS that the ORFs of PISD are compared with
+  ann <- get(load(runs$annotation))
+  ann$genetic_codes$genetic_code <- "11"
+  annotation <- tempfile("code_11_Rannot_", work)
+  save(ann, file = annotation)
+  dir.create(file.path(work, "code_11"))
+  prefix <- file.path(work, "code_11", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = annotation, n_cores = 1, prefix = prefix, gene_name = "PISD",
+                     canonical_start_only = FALSE, interactive = FALSE))
+  orfs <- orfs_table(prefix)
+  all_orfs <- orfs_table(runs$one_core)
+  all_orfs <- all_orfs[all_orfs$gene_name == "PISD", ]
+  expect_identical(all_orfs$NC_protein_isoform, c("N", "N"))
+  # The ORFs and values of the run with the standard code, except ORFs_pM, which sums
+  # to a million over the ORFs of a run
+  columns <- setdiff(colnames(all_orfs), "ORFs_pM")
+  expect_equal(orfs[columns], all_orfs[columns], ignore_attr = TRUE)
+})

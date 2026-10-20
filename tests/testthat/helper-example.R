@@ -43,6 +43,12 @@ expect_same_results <- function(new, old) {
   expect_identical(gtf_lines(new$gtf), gtf_lines(old$gtf))
 }
 
+# The ORFs_tx table of the results of `prefix`, as run_ORFquant() writes it in the
+# TSV file, with the column types of the R object
+orfs_table <- function(prefix) {
+  ORFs_tx_as_table(get(load(paste0(prefix, "_final_ORFquant_results")))$ORFs_tx)
+}
+
 # The tables of the results that the three files don't have
 result_tables <- c("ORFs_feat", "ORFs_spl_feat_longest", "ORFs_spl_feat_maxORF",
                    "ORFs_txs_feats", "ORFs_readthroughs")
