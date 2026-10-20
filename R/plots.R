@@ -325,7 +325,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   
   df<-data.frame(tpms_mult,maxiso)
-  df$maxiso<-factor(df$maxiso,levels = rev(levels(df$maxiso)))
+  #maxiso is text, not a factor: take the levels from its values, as for ORFs_maxiso
+  df$maxiso<-factor(df$maxiso,levels = rev(sort(unique(df$maxiso))))
   rownames(df)<-NULL
   d<-ggplot(df,aes(x=maxiso,y=tpms_mult+1,fill="dark grey"))
   d<-d + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)

@@ -162,6 +162,10 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
                      "The `draw_quantiles` argument of `geom_violin()` is deprecated",
                      "Using `size` aesthetic for lines was deprecated"))
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
+  plots <- get(load(file.path(work, "plots", "example_ORFquant_plots_RData")))
+  # Before, all genes of ORFs_maxiso_tpm were in the bin NA
+  expect_false(anyNA(plots$ORFs_maxiso_tpm$data$maxiso))
+  expect_identical(levels(plots$ORFs_maxiso_tpm$data$maxiso), levels(plots$ORFs_maxiso$data$maxiso))
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {

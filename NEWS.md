@@ -501,6 +501,10 @@ deprecation warnings.
   in the downstream panel. Before, when there were more of them than of
   `same_3ss` regions, some were in the upstream panel; when there were fewer,
   the function failed with `attempt to set too many names`.
+- In the `ORFs_maxiso_tpm` plot of `plot_ORFquant_results()` (section 3.4
+  of the HTML report), each bin of `ORF_pct_P_sites` of the major ORF now
+  has its violin of gene TPMs, with the bins of the `ORFs_maxiso` plot.
+  Before, since R 4.0, all genes were in one violin labelled `NA`.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
