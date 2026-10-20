@@ -164,6 +164,34 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
 })
 
+test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
+  plots <- file.path(work, "plots", "example_ORFquant_plots_RData")
+  skip_if_not(file.exists(plots))
+  skip_if_not_installed("rmarkdown")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc is not installed")
+  template <- system.file("rmd", package = "ORFquant")
+  template_files <- list.files(template, all.files = TRUE, recursive = TRUE)
+  sinks <- sink.number()
+  withr::defer(while (sink.number() > sinks) sink())
+  report <- file.path(work, "example_report.html")
+  quiet(create_ORFquant_html_report(input_files = plots, input_sample_names = "example",
+                                    output_file = report))
+  html <- paste(readLines(report, warn = FALSE), collapse = "\n")
+  # The input file of the sample, the sections of the template and their plots
+  expect_match(html, normalizePath(plots), fixed = TRUE)
+  for (section in c("Transcript selection", "Summary of detected ORFs", "ORFs per gene")) {
+    expect_match(html, section, fixed = TRUE)
+  }
+  expect_match(html, "data:image/png;base64,", fixed = TRUE)
+  # Before, it rendered the template in the installed package, and it did not end
+  # its sink() when rendering failed
+  expect_identical(list.files(template, all.files = TRUE, recursive = TRUE), template_files)
+  expect_error(suppressMessages(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"),
+                                                            input_sample_names = "none",
+                                                            output_file = file.path(work, "no_report.html"))))
+  expect_identical(sink.number(), sinks)
+})
+
 # Input that cannot work stops run_ORFquant() before the regions are quantified;
 # these use the annotation and P-sites made above. The tests of
 # prepare_for_ORFquant() are in RiboseQC, which has its code now.
