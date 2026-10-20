@@ -452,8 +452,8 @@ test_that("run_ORFquant() with canonical_start_only = TRUE leaves only the start
                          canonical_start_only = canonical_start_only))$message
   }
   for (n_cores in 1:2) {
-    expect_match(start_codons(n_cores, TRUE), "start codons: ATG$", info = paste(n_cores, "cores"))
-    expect_match(start_codons(n_cores, FALSE), "start codons: TTG CTG$", info = paste(n_cores, "cores"))
+    expect_match(start_codons(n_cores, TRUE), "start codons: ATG$", info = paste("n_cores =", n_cores))
+    expect_match(start_codons(n_cores, FALSE), "start codons: TTG CTG$", info = paste("n_cores =", n_cores))
   }
 })
 
