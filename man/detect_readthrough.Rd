@@ -23,7 +23,7 @@ detect_readthrough(
 
 \item{P_sites_uniq}{GRanges object with uniquely mapping P_sites positions}
 
-\item{P_sites_uniq_mm}{Rle signal of uniquely mapping P_sites with mismatches along the transcript}
+\item{P_sites_uniq_mm}{GRanges object with uniquely mapping P_sites positions with mismatches}
 
 \item{genome_sequence}{the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}}
 

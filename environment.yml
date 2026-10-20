@@ -19,12 +19,11 @@ dependencies:
   # Depends and Imports
   - bioconductor-biocgenerics
   - bioconductor-biostrings
-  - bioconductor-bsgenome
   - r-cowplot
   - bioconductor-genomicalignments
   - bioconductor-genomicfeatures
   - bioconductor-genomicranges
-  - r-ggplot2
+  - r-ggplot2>=4.0.0
   - r-gridextra
   - bioconductor-iranges
   - r-multitaper
@@ -39,6 +38,7 @@ dependencies:
   # and bioconductor-rsamtools for prepare_for_ORFquant(); knitr, rmarkdown and
   # bioconductor-rsamtools are also in the Suggests of ORFquant)
   - bioconductor-annotationdbi
+  - bioconductor-bsgenome
   - bioconductor-txdbmaker
   - bioconductor-cigarillo
   - bioconductor-rsamtools

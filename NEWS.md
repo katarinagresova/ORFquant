@@ -55,6 +55,15 @@
   RiboseQC, ORFquant needs DT, ggpubr, scales, viridis and withr, and knitr
   and rmarkdown again. ORFquant itself no longer imports AnnotationDbi and
   txdbmaker, but RiboseQC does. `library(ORFquant)` attaches no new package.
+- ORFquant now needs ggplot2 4.0.0 or later. `plot_ORFquant_results()` with
+  coverage files no longer warns that the `size` aesthetic for lines is
+  deprecated (ggplot2 3.4.0). Its violin plots use the arguments of ggplot2
+  4.0.0 for the line at the median, not `draw_quantiles`, which is
+  deprecated. With ggplot2 4.0.0 or later, the plots do not change.
+- ORFquant no longer imports BSgenome: it used none of its functions.
+  RiboseQC imports it, so it is still installed with ORFquant.
+  `elementNROWS()` came into ORFquant through BSgenome; ORFquant now imports
+  it from S4Vectors.
 
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
@@ -501,6 +510,31 @@ deprecation warnings.
   in the downstream panel. Before, when there were more of them than of
   `same_3ss` regions, some were in the upstream panel; when there were fewer,
   the function failed with `attempt to set too many names`.
+- In the `ORFs_maxiso_tpm` plot of `plot_ORFquant_results()` (section 3.4
+  of the HTML report), each bin of `ORF_pct_P_sites` of the major ORF now
+  has its violin of gene TPMs, with the bins of the `ORFs_maxiso` plot.
+  Before, since R 4.0, all genes were in one violin labelled `NA`.
+- The `Sel_txs_genes`, `Sel_txs_genes_tpm` and `Sel_txs_genes_pct` plots of
+  `plot_ORFquant_results()` (sections 1.1 to 1.3 of the HTML report) now put
+  the genes in the bins `1-3`, `4-6`, `7-9` and `>9` of their numbers of
+  selected transcripts, in this order. Before, the labels of the bins were
+  right only when the largest number of a gene was 49 (the last bin was
+  `10-49`). For example, when it was 4, the genes with 4 selected
+  transcripts had the bin `3-4`, and when it was 10, the bin `9-10`. The bars
+  were in the order of their numbers of genes.
+- The file `<prefix>_ORFquant_plots_RData` of `plot_ORFquant_results()` no
+  longer holds the annotation, the results and the P-sites. Before, they
+  were in the environment of each plot, which `save()` writes with it: in
+  the file of a human sample (SRR15513199, GENCODE 47), they were 180 of its
+  181 MB. `create_ORFquant_html_report()` loads one such file for each
+  sample. On the example data, the file is now 3.5 MB, not 6.6 MB. The plots
+  do not change.
+- The log axes of the plots of `plot_ORFquant_results()` now have labels up
+  to 1,000,000 (`ORFs_pM` and gene TPM) and 100,000 (ORF length). Before,
+  they had none above 1000 and 10,000, so the upper part of the axis had no
+  labels when the values were higher, for example on the example data. The
+  y axis of `ORFs_found_ORFs_pM` now has the label `ORFs_pM`, not
+  `P-sites_pNpM`.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
@@ -525,7 +559,10 @@ deprecation warnings.
   - no longer fails with `object 'selgene' not found` on Bioconductor 3.23.
     S4Vectors 0.50 evaluates the condition of `subset()` in another
     environment when the call is in a `%>%` pipe, so the condition did not
-    find the variables of the function.
+    find the variables of the function;
+  - sets the option `ucscChromosomeNames` back to its value before the call
+    when it ends. Before, it left it at `FALSE`, so Gviz no longer checked the
+    chromosome names of the later plots of the session.
 
   In our test data, 17 of 63 genes failed; all 63 plot now.
 - `create_ORFquant_html_report()` now renders the report from a copy of the
@@ -537,6 +574,15 @@ deprecation warnings.
 - `create_ORFquant_html_report()` now ends its `sink()` when rendering fails.
   Before, the rest of the session's console output went to
   `<output>_ORFquant_report_output.txt`.
+- `create_ORFquant_html_report()` now stops at once when an input file does
+  not exist, or when `input_files` and `input_sample_names` have different
+  lengths. Before, a missing file stopped the rendering with `error in
+  evaluating the argument 'x' in selecting a method for function 'get'`. In
+  section 3.5 of the report, a sample without the plot of the splice sites
+  (`plot_ORFquant_results()` without coverage files) now has a note, not an
+  empty tab. `?create_ORFquant_html_report` now says that the function needs
+  pandoc, and that it writes the console output of the rendering to
+  `<output_file>_ORFquant_report_output.txt`.
 - The `getSeq()` error for ranges that wrap twice around a circular
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.
@@ -714,6 +760,20 @@ deprecation warnings.
     described as that of `select_start()`.
   - `?get_orfs` said that the function loads the annotation. It finds the
     ORFs of a transcript sequence.
+  - `?plot_orfquant_locus` said that `locus` is a gene name, but it is a
+    `gene_id`. The page now also says that the function takes the annotation
+    from the global variable `GTF_annotation`.
+  - `?detect_readthrough` said that `P_sites_uniq_mm` is an `Rle`, but it
+    is a `GRanges`, as `P_sites`.
+  - `?select_txs` said that the function returns a `GRanges`, but a region
+    with fewer than 4 P-sites and junction reads on its exonic bins and
+    junctions gives an empty `GRangesList()`.
+  - `?select_quantify_ORFs` described `optimiz`, but did not say that
+    `run_ORFquant()` never sets it.
+- The HTML report of `create_ORFquant_html_report()` said that the category
+  "other" holds the overlapping uORFs, but the plots have them in the
+  category "uORF". The report now says this, and names all categories in
+  "other".
 - `?select_start` and `?ORFquant_output` now describe the first filter of
   `select_start()`. Before it chooses the start codon of each stop codon, it
   removes the candidate ORFs below `cutoff_ave`

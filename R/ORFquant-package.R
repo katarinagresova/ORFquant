@@ -2,7 +2,6 @@
 #' @rawNamespace import(Biostrings, except = pattern)
 #' @import GenomicAlignments
 #' @import rtracklayer
-#' @import BSgenome
 #' @rawNamespace import(BiocGenerics, except = c(combine, Position))
 #' @import multitaper
 #' @import reshape2
@@ -19,7 +18,7 @@
 #' @importFrom RiboseQC check_n_cores check_output_dir mc_job mc_lapply mc_value
 #' @importFrom S4Vectors mcols<- DataFrame Rle aggregate cbind.DataFrame
 #' @importFrom S4Vectors endoapply na.omit queryHits runLength runValue
-#' @importFrom S4Vectors splitAsList subjectHits
+#' @importFrom S4Vectors elementNROWS splitAsList subjectHits
 #' @importFrom Seqinfo Seqinfo isCircular seqlengths<- seqlengths seqlevels
 #' @importFrom SummarizedExperiment assay
 #' @importFrom grDevices colorRampPalette dev.off pdf rgb
@@ -31,7 +30,7 @@ NULL
 # Column names used in aes() and subset(), which R CMD check takes for globals.
 utils::globalVariables(c("Freq", "ORFs_tx.ORF_pct_P_sites", "ORFs_tx.ORFs_pM",
   "Position_from_splice_site", "Var1", "coll", "feature", "gene_id", "group",
-  "n_tx", "pval", "pval_uniq", "ref", "transcript", "value", "width.ORFs_tx.",
+  "n_tx", "pval", "pval_uniq", "ref", "tpm", "transcript", "value", "width.ORFs_tx.",
   "x1", "x2", "y1", "y2"))
 # Globals: load_annotation() (of RiboseQC) assigns GTF_annotation and genome_seq in
 # its argument envir; run_ORFquant() and prepare_for_ORFquant() give envir = globalenv(),

@@ -134,11 +134,15 @@ test_that("plot_orfquant_locus() plots a gene of the example without warnings", 
   for (pkg in c("Gviz", "lemon", "dplyr", "GenomeInfoDb")) skip_if_not_installed(pkg)
   res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
   plotfile <- file.path(work, "locus.pdf")
+  # Before, it left the option ucscChromosomeNames of Gviz at FALSE. A test of
+  # test-input-checks.R sets it to FALSE with the code before the fix, so set it here
+  withr::local_options(ucscChromosomeNames = TRUE)
   # before, ggplot2 warned that qplot() is deprecated, and the pdf device that
   # the font width of the tabs in the title of the P-site track is unknown
   expect_no_warning(utils::capture.output(suppressMessages(
     plot_orfquant_locus(locus = res$ORFs_tx$gene_id[1], orfquant_results = res, plotfile = plotfile))))
   expect_true(file.exists(plotfile))
+  expect_true(getOption("ucscChromosomeNames"))
 })
 
 test_that("plot_ORFquant_results() plots the splice sites of the example with coverage files", {
@@ -149,8 +153,7 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
   # before, it stopped when a type of splice site had no regions, or regions on
   # one strand only, as a type of the example has (S24). Some groups of ORFs of the
-  # example are too small for the distributions of the plots, and ggplot2 warns.
-  # In tests only, ggplot2 also warns that two arguments of the plots are deprecated
+  # example are too small for the distributions of the plots, and ggplot2 warns
   quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
                               ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
                               annotation_file = runs$annotation,
@@ -158,10 +161,33 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
                               output_plots_path = file.path(work, "plots"), prefix = "example"),
         expected = c("Groups with fewer than two datapoints have been dropped",
                      "Computation failed in `stat_ydensity()`",
-                     "no non-missing arguments to min", "no non-missing arguments to max",
-                     "The `draw_quantiles` argument of `geom_violin()` is deprecated",
-                     "Using `size` aesthetic for lines was deprecated"))
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
+  plots <- get(load(file.path(work, "plots", "example_ORFquant_plots_RData")))
+  # Before, all genes of ORFs_maxiso_tpm were in the bin NA
+  expect_false(anyNA(plots$ORFs_maxiso_tpm$data$maxiso))
+  expect_identical(levels(plots$ORFs_maxiso_tpm$data$maxiso), levels(plots$ORFs_maxiso$data$maxiso))
+  # Before, a gene with 4 selected transcripts was in the bin "3-4", and the bins
+  # were in the order of their numbers of genes
+  sel <- plots$Sel_txs_genes_tpm$data
+  bins <- c("1-3", "4-6", "7-9", ">9")
+  expect_identical(as.character(sel$qnt), bins[findInterval(sel$elementNROWS.ch_txs_sel., c(1, 4, 7, 10))])
+  expect_identical(levels(plots$Sel_txs_genes$data$qnt), intersect(bins, as.character(sel$qnt)))
+  # Before, the file also held the annotation, the results and the P-sites, in the
+  # environment of the plots. The plots do not need them
+  expect_false(any(c("GTF_annotation", "ORFquant_results", "for_ORFquant") %in% ls(plots$ORFs_found$plot_env)))
+  for (n in setdiff(names(plots), "Meta_splicing_coverage")) {
+    expect_no_error(suppressWarnings(ggplot_build(plots[[n]])))
+  }
+  # Before, the log axes had no labels above 1000, and the y label of ORFs_pM was P-sites_pNpM
+  expect_identical(plots$ORFs_found_ORFs_pM$labels$y, "ORFs_pM")
+  y_columns <- c(ORFs_found_ORFs_pM = "ORFs_tx.ORFs_pM", ORFs_genes_tpm = "tpms",
+                 ORFs_maxiso_tpm = "tpms_mult", Sel_txs_genes_tpm = "tpm")
+  for (n in names(y_columns)) {
+    y <- suppressWarnings(ggplot_build(plots[[n]]))$layout$panel_params[[1]]$y
+    top <- max(as.numeric(y$get_labels()[!is.na(y$get_breaks())]))
+    expect_gt(top * 10, max(plots[[n]]$data[[y_columns[[n]]]]), label = n)
+  }
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
@@ -173,8 +199,14 @@ test_that("create_ORFquant_html_report() makes the HTML report of the plots of t
   template_files <- list.files(template, all.files = TRUE, recursive = TRUE)
   sinks <- sink.number()
   withr::defer(while (sink.number() > sinks) sink())
+  # A sample without coverage files has no plot of the splice sites
+  no_coverage <- file.path(work, "no_coverage_ORFquant_plots_RData")
+  list_ORFquant_plots <- get(load(plots))
+  list_ORFquant_plots$Meta_splicing_coverage <- NULL
+  save(list_ORFquant_plots, file = no_coverage)
   report <- file.path(work, "example_report.html")
-  quiet(create_ORFquant_html_report(input_files = plots, input_sample_names = "example",
+  quiet(create_ORFquant_html_report(input_files = c(plots, no_coverage),
+                                    input_sample_names = c("example", "no_coverage"),
                                     output_file = report))
   html <- paste(readLines(report, warn = FALSE), collapse = "\n")
   # The input file of the sample, the sections of the template and their plots
@@ -183,13 +215,26 @@ test_that("create_ORFquant_html_report() makes the HTML report of the plots of t
     expect_match(html, section, fixed = TRUE)
   }
   expect_match(html, "data:image/png;base64,", fixed = TRUE)
+  # Before, section 3.5 was empty for a sample without coverage files. pandoc wraps
+  # the lines of the HTML text
+  expect_match(gsub("\\s+", " ", html), "made the plots of this sample without coverage files",
+               fixed = TRUE)
   # Before, it rendered the template in the installed package, and it did not end
   # its sink() when rendering failed
   expect_identical(list.files(template, all.files = TRUE, recursive = TRUE), template_files)
-  expect_error(suppressMessages(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"),
+  not_rdata <- file.path(work, "not_an_RData_file")
+  writeLines("text", not_rdata)
+  expect_error(suppressMessages(create_ORFquant_html_report(input_files = not_rdata,
                                                             input_sample_names = "none",
                                                             output_file = file.path(work, "no_report.html"))))
   expect_identical(sink.number(), sinks)
+  # Before, a missing file stopped inside knitr, with an error about get()
+  expect_error(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"), input_sample_names = "none",
+                                           output_file = file.path(work, "no_report.html")),
+               "don't exist")
+  expect_error(create_ORFquant_html_report(input_files = plots, input_sample_names = c("one", "two"),
+                                           output_file = file.path(work, "no_report.html")),
+               "same length")
 })
 
 # Input that cannot work stops run_ORFquant() before the regions are quantified;

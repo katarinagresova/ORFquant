@@ -25,7 +25,6 @@ export(select_start)
 export(select_txs)
 export(seqinfo)
 export(take_Fvals_spect)
-import(BSgenome)
 import(BiocGenerics, except = c(combine, Position))
 import(Biostrings, except = pattern)
 import(GenomicAlignments)
@@ -81,6 +80,7 @@ importFrom(S4Vectors,
   Rle,
   aggregate,
   cbind.DataFrame,
+  elementNROWS,
   endoapply,
   na.omit,
   queryHits,

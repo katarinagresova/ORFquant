@@ -5,7 +5,6 @@ date: '`r format(Sys.time(), "%d %B, %Y")`'
 params:
   input_files: ""
   input_sample_names: ""
-  output_fig_path: ""
 output:
   html_document: 
     toc: true
@@ -116,9 +115,9 @@ ORF categories:\
 
 **N_truncation**: downstream start codon but same stop codon as annotated.\  
 
-**uORF**: start and stop codons upstream of annotated start codon.\  
+**uORF**: start codon upstream of annotated start codon, and stop codon upstream of it (uORF) or in the CDS (overlapping uORF).\  
 
-**other**: overlapping uORF, nested ORFs, C- and N-extensions, dORF etc..\  
+**other**: N-, C- and NC-extensions, C-truncations, nested ORFs, overlapping dORFs and dORFs.\  
 
 **not_annotated**: ORF in transcript with no CDS annotation.\  
 
@@ -250,6 +249,8 @@ for (i in c(1:length(rdata_list))){
     aaa<-rdata_list[[i]][["Meta_splicing_coverage"]]
     if(length(aaa)>0){
         print(aaa)
+    }else{
+        cat("No plot: `plot_ORFquant_results()` made the plots of this sample without coverage files.\n\n")
     }
     cat("\n\n")
 }

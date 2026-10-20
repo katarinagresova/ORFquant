@@ -28,7 +28,8 @@ select_txs(
 }
 \value{
 GRanges object with the set of counts on each exonic bin and junctions, together with the list
-of selected transcripts
+of selected transcripts. An empty \code{GRangesList()} when the exonic bins and junctions of the region have
+fewer than 4 P_sites and junction reads together (unique ones with \code{uniq_signal = TRUE}).
 }
 \description{
 This function flattens all annotated transcript structures and uses Ribo-seq to select a subset of transcripts.

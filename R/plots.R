@@ -157,7 +157,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   rownames(dfiso)<-NULL
   b<-ggplot(dfiso,aes(x=cat_biot,y=ORFs_tx.ORF_pct_P_sites,fill=cat_biot))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   b<-b + theme_bw()
   b<-b + ylab("ORF_pct_P-sites")
   b<-b + xlab("")
@@ -173,14 +173,14 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   
   c<-ggplot(dfpnpm,aes(x=cat_biot,y=ORFs_tx.ORFs_pM+1,fill=cat_biot))
-  c<-c + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  c<-c + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #c<-c + geom_jitter(aes(x=cat_tx,y=ORFs_tx.ORFs_pM),position = position_jitterdodge(jitter.width = .5), alpha = 0.2)
-  c<-c + scale_y_log10(breaks=c(1,11,101,1001),limits=c(1,max(dfpnpm$ORFs_tx.ORFs_pM)*1.1),labels=c(1,11,101,1001)-1)
+  c<-c + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(dfpnpm$ORFs_tx.ORFs_pM)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #c<-c + geom_text(aes(x=cat_tx, y=ORFs_tx.ORFs_pM, hjust="top",label=ORFs_tx.ORFs_pM),colour="black",position = position_dodge(width = 1),size=5)
   c<-c + facet_grid(. ~ cat_tx ,drop = T,scales = "free_x")
   c<-c + theme_bw()
   c<-c + xlab("")
-  c<-c + ylab("P-sites_pNpM")
+  c<-c + ylab("ORFs_pM")
   c<-c + theme(axis.title.x = element_blank(),axis.text.x = element_blank())
   #c<-c + theme(legend.position="none")
   c<-c + scale_fill_manual(values = colli,"biotype")
@@ -193,9 +193,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   list_ORFquant_plots[["ORFs_found_ORFs_pM"]][["pars"]]<-c(14,4)
   
   d<-ggplot(dfwid,aes(x=cat_biot,y=width.ORFs_tx.,fill=cat_biot))
-  d<-d + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  d<-d + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #c<-c + geom_jitter(aes(x=cat_tx,y=ORFs_tx.ORFs_pM),position = position_jitterdodge(jitter.width = .5), alpha = 0.2)
-  d<-d + scale_y_log10(breaks=c(10,100,1000,10000),labels=c(10,100,1000,10000),limits=c(min(dfwid$width.ORFs_tx.),max(dfwid$width.ORFs_tx.)*1.1))
+  d<-d + scale_y_log10(breaks=c(10,100,1000,10000,100000),labels=c("10","100","1000","10000","100000"),limits=c(min(dfwid$width.ORFs_tx.),max(dfwid$width.ORFs_tx.)*1.1))
   #c<-c + geom_text(aes(x=cat_tx, y=ORFs_tx.ORFs_pM, hjust="top",label=ORFs_tx.ORFs_pM),colour="black",position = position_dodge(width = 1),size=5)
   d<-d + theme_bw()
   d<-d + facet_grid(. ~ cat_tx ,drop = T,scales = "free_x")
@@ -289,8 +289,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   rownames(df)<-NULL
   df$gids<-NULL
   b<-ggplot(df,aes(x=Freq,y=tpms+1,fill="dark grey"))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
-  b<-b + scale_y_log10(breaks=c(1,11,101,1001),limits=c(1,max(df$tpms+1)*1.1),labels=c(0,10,100,1000))
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
+  b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(df$tpms+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   b<-b + theme_bw()
   b<-b + xlab("n of ORFs")
@@ -325,11 +325,12 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   
   df<-data.frame(tpms_mult,maxiso)
-  df$maxiso<-factor(df$maxiso,levels = rev(levels(df$maxiso)))
+  #maxiso is text, not a factor: take the levels from its values, as for ORFs_maxiso
+  df$maxiso<-factor(df$maxiso,levels = rev(sort(unique(df$maxiso))))
   rownames(df)<-NULL
   d<-ggplot(df,aes(x=maxiso,y=tpms_mult+1,fill="dark grey"))
-  d<-d + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
-  d<-d + scale_y_log10(breaks=c(1,11,101,1001),limits=c(1,max(tpms_mult+1)*1.1),labels=c(0,10,100,1000))
+  d<-d + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
+  d<-d + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(tpms_mult+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   d<-d + theme_bw()
   d<-d + theme(legend.position="none")
@@ -358,16 +359,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   tpms<-cnts[match(names(ch_txs_sel),cnts$gene_id),"TPM"]
   pct_sel<-(elementNROWS(ch_txs_sel))/tot_n_tx*100
   nsels<-elementNROWS(ch_txs_sel)
-  qnt<-cut(nsels,breaks = unique(c(0,3,6,9,max(nsels))),include.lowest = T)
-  qnt<-gsub(qnt,pattern = ",",replacement = "-")
-  qnt<-gsub(qnt,pattern = "\\[",replacement = "")
-  qnt<-gsub(qnt,pattern = "]",replacement = "")
-  qnt<-gsub(qnt,pattern = "\\(",replacement = "")
-  qnt[qnt=="0-3"]<-"1-3"
-  qnt[qnt=="3-6"]<-"4-6"
-  qnt[qnt=="6-9"]<-"7-9"
-  qnt[qnt=="9-49"]<-"10-49"
-  qnt<-factor(qnt,levels = names(sort(table(qnt),decreasing = T)))
+  #the bins with genes, in the order of their numbers of selected transcripts
+  qnt<-droplevels(cut(nsels,breaks = c(0,3,6,9,Inf),labels = c("1-3","4-6","7-9",">9")))
   df<-melt(table(qnt))
   
   a<-ggplot(df,aes(x=qnt,y=value,fill="dark grey"))
@@ -389,9 +382,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df<-data.frame(tpm=tpms[names(ch_txs_sel)],elementNROWS(ch_txs_sel))
   df$qnt<-qnt
   rownames(df)<-NULL
-  b<-ggplot(df,aes(x=qnt,y=tpms+1,fill="dark grey"))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
-  b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001),limits=c(1,max(df$tpm+1)*1.1),labels=c(0,10,100,1000,10000))
+  b<-ggplot(df,aes(x=qnt,y=tpm+1,fill="dark grey"))
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
+  b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(df$tpm+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   b<-b + theme_bw()
   b<-b + xlab("selected Txs per gene")
@@ -409,7 +402,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df$qnt<-qnt
   rownames(df)<-NULL
   c<-ggplot(df,aes(x=qnt,y=pct_sel,fill="dark grey"))
-  c<-c + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  c<-c + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001),limits=c(1,10001),labels=c(0,10,100,1000,10000))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   c<-c + theme_bw()
@@ -988,7 +981,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       nm_titl<-topl_ok[i]
       
       a<-ggplot(means_ribo, aes(x = Position_from_splice_site,y =  value, group = group,color=group)) +
-        geom_line(size=1.8) +
+        geom_line(linewidth=1.8) +
         geom_vline(xintercept = 0,col="black",lty=2) +
         theme_classic() +
         #geom_ribbon(aes(ymin=value-sds, ymax=value+sds, x = Position_from_splice_site, fill = group), alpha = 0.01) +
@@ -999,7 +992,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         ggtitle(paste("Event =",nm_titl,"\nn =",length(ok)))
       
       b<-ggplot(means_Iso, aes(x = Position_from_splice_site,y =  value, group = group,color=group)) +
-        geom_line(size=1.8) +
+        geom_line(linewidth=1.8) +
         geom_vline(xintercept = 0,col="black",lty=2) +
         theme_classic() +
         #geom_ribbon(aes(ymin=value-sds, ymax=value+sds, x = Position_from_splice_site, fill = group), alpha = 0.01) +
@@ -1068,6 +1061,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     list_ORFquant_plots[["Meta_splicing_coverage"]][["pars"]]<-c(22,16)
   }
   
+  #each plot keeps the environment of this function, and save() writes it with the plots:
+  #remove the annotation, the results, the P-sites and the rest that the plots do not use
+  rm(list=setdiff(ls(),c("list_ORFquant_plots","output_plots_path","prefix","ORFquant_output_file")))
   save(list_ORFquant_plots,file = paste0(output_plots_path,"/",prefix,"_","ORFquant_plots_RData"))
   for(i in names(list_ORFquant_plots)){
     pdf(file = paste0(output_plots_path,"/",prefix,"_",i,".pdf"),width = list_ORFquant_plots[[i]][["pars"]][1] ,height = list_ORFquant_plots[[i]][["pars"]][2])
@@ -1082,11 +1078,13 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 #' Create a plot of the ORFquant results at a locus
 #'
 #' Create a plot of the ORFquant results at a locus. Uses the info form the orfquant results about where the psite data is located.
+#' The function takes the annotation from the global variable \code{GTF_annotation}: \code{run_ORFquant} leaves it there,
+#' and \code{load_annotation} called from the console puts it there.
 #' 
 #' @keywords ORFquant
 #' @author Dermot Harnett, \email{dermot.p.harnett@@gmail.com}
 #' 
-#' @param locus String; a gene name, must be present in names(orfquant_results$ORFs_gen)
+#' @param locus String; a gene_id, must be present in orfquant_results$ORFs_tx$gene_id
 #' @param orfquant_results A list containing processed output from ORFquant
 #' @param bam_files Not used: the P-sites and junction reads come from the psite data file of orfquant_results. A value gives a warning.
 #' @param plotfile the file into which the plot will be saved as a pdf
@@ -1101,7 +1099,8 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
     stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
          call. = FALSE)
   }
-  options(ucscChromosomeNames=FALSE)
+  old_options<-options(ucscChromosomeNames=FALSE)
+  on.exit(options(old_options),add=TRUE)
   `%>%` <- dplyr::`%>%`
   
   if(is.null(orfquant_results$psite_data_file)){stop("this object looks like it's form an old version of ORFquant, it doesn't list the psite data file")}
