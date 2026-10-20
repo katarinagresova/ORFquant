@@ -555,7 +555,10 @@ deprecation warnings.
   - no longer fails with `object 'selgene' not found` on Bioconductor 3.23.
     S4Vectors 0.50 evaluates the condition of `subset()` in another
     environment when the call is in a `%>%` pipe, so the condition did not
-    find the variables of the function.
+    find the variables of the function;
+  - sets the option `ucscChromosomeNames` back to its value before the call
+    when it ends. Before, it left it at `FALSE`, so Gviz no longer checked the
+    chromosome names of the later plots of the session.
 
   In our test data, 17 of 63 genes failed; all 63 plot now.
 - `create_ORFquant_html_report()` now renders the report from a copy of the

@@ -136,9 +136,12 @@ test_that("plot_orfquant_locus() plots a gene of the example without warnings", 
   plotfile <- file.path(work, "locus.pdf")
   # before, ggplot2 warned that qplot() is deprecated, and the pdf device that
   # the font width of the tabs in the title of the P-site track is unknown
+  option <- getOption("ucscChromosomeNames")
   expect_no_warning(utils::capture.output(suppressMessages(
     plot_orfquant_locus(locus = res$ORFs_tx$gene_id[1], orfquant_results = res, plotfile = plotfile))))
   expect_true(file.exists(plotfile))
+  # Before, it left the option ucscChromosomeNames of Gviz at FALSE
+  expect_identical(getOption("ucscChromosomeNames"), option)
 })
 
 test_that("plot_ORFquant_results() plots the splice sites of the example with coverage files", {

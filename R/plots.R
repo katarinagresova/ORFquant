@@ -1099,7 +1099,8 @@ plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='l
     stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
          call. = FALSE)
   }
-  options(ucscChromosomeNames=FALSE)
+  old_options<-options(ucscChromosomeNames=FALSE)
+  on.exit(options(old_options),add=TRUE)
   `%>%` <- dplyr::`%>%`
   
   if(is.null(orfquant_results$psite_data_file)){stop("this object looks like it's form an old version of ORFquant, it doesn't list the psite data file")}
