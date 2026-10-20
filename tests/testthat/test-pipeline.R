@@ -81,22 +81,28 @@ test_that("the command-line script runs, with 2 cores and the annotation", {
 
 test_that("1 core, 2 cores and the command-line script give the same results", {
   skip_if(is.null(runs$one_core) || is.null(runs$two_cores))
+  one_core <- write_result_tables(runs$one_core)
   expect_same_results(result_files(runs$two_cores), result_files(runs$one_core))
+  expect_same_tables(write_result_tables(runs$two_cores), one_core)
   skip_if(is.null(runs$cli), "the command-line script did not run")
   expect_same_results(result_files(runs$cli), result_files(runs$one_core))
+  expect_same_tables(write_result_tables(runs$cli), one_core)
 })
 
 test_that("the results are those of the golden files", {
   skip_if(is.null(runs$one_core))
   new <- result_files(runs$one_core)
+  tables <- write_result_tables(runs$one_core)
   if (nzchar(Sys.getenv("ORFQUANT_UPDATE_GOLDEN"))) {
     file.copy(new$tsv, test_path("golden", "expected_ORFs.tsv"), overwrite = TRUE)
     file.copy(new$fasta, test_path("golden", "expected_proteins.fasta"), overwrite = TRUE)
     gz <- gzfile(test_path("golden", "expected_ORFs.gtf.gz"), "w")
     writeLines(gtf_lines(new$gtf), gz)
     close(gz)
+    file.copy(tables, golden_tables(), overwrite = TRUE)
   }
   expect_same_results(new, golden_files())
+  expect_same_tables(tables, golden_tables())
   # Golden files made from an empty result would pass the comparison
   expect_gt(nrow(read_tsv(new$tsv)), 0)
 })
