@@ -140,7 +140,7 @@ deprecation warnings.
 
 - The annotation step is now the code of RiboseQC. `prepare_annotation_files()`,
   `load_annotation()` and the class `FaFile_Circ` (with its `getSeq()` and
-  `seqinfo()` methods) come from RiboseQC (1.2.0), and ORFquant exports them
+  `seqinfo()` methods) come from RiboseQC, and ORFquant exports them
   again, so scripts that call them after `library(ORFquant)` still work.
   Both packages had a copy of this code, and the copies had drifted apart;
   the copy of ORFquant, with its fixes, went to RiboseQC, so each fix is now
