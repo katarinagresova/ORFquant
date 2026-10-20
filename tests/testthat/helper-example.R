@@ -16,6 +16,18 @@ golden_files <- function() {
        gtf = test_path("golden", "expected_ORFs.gtf.gz"))
 }
 
+# Runs `expr` without its output and messages. A warning fails the test, unless it
+# contains one of the texts `expected`
+quiet <- function(expr, expected = character()) {
+  warned <- character()
+  utils::capture.output(suppressMessages(withCallingHandlers(expr, warning = function(w) {
+    warned <<- c(warned, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })))
+  for (e in expected) warned <- warned[!grepl(e, warned, fixed = TRUE)]
+  expect(length(warned) == 0, paste(c("unexpected warnings:", warned), collapse = "\n"))
+}
+
 read_tsv <- function(f) utils::read.delim(f, stringsAsFactors = FALSE)
 # The lines of a GTF file without its header, which has the date
 gtf_lines <- function(f) {

@@ -44,7 +44,6 @@ gtf_two_strands <- local({
 
 test_that("run_ORFquant() runs on a gene that genes() dropped", {
   skip_on_os("windows")   # run_ORFquant() forks its workers
-  quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
   annotation <- annotation_of(gtf_two_strands, "two_strands")
   prefix <- file.path(work, "two_strands", "example")
   quiet(prepare_for_ORFquant(annotation_file = annotation,
@@ -69,7 +68,6 @@ test_that("run_ORFquant() runs on a gene that genes() dropped", {
 # Without them, as in GTFs with CDS lines from factR, the codon after the CDS is the stop codon
 test_that("without stop_codon lines, the ORFs get the results of the example", {
   skip_on_os("windows")   # run_ORFquant() forks its workers
-  quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
   annotation <- annotation_of(gtf_example[line_type(gtf_example) != "stop_codon"], "no_stop_codons")
   expect_identical(ann_genc$stop_in_gtf, "*")
   expect_true(is.na(get(load(annotation))$stop_in_gtf))
@@ -127,7 +125,6 @@ intron_before_stop <- function(lines, tx) {
 # ORF_category_Gen compares the last nucleotide before the stop codon, also when an intron is before the stop codon
 test_that("an ORF with the annotated stop codon after an intron has the annotated stop", {
   skip_on_os("windows")   # run_ORFquant() forks its workers
-  quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
   # TOP3B (- strand) and TCN2 (+ strand): the transcripts of their ORFs and of their ref_id
   txs <- c("ENST00000357179.10", "ENST00000698268.1", "ENST00000698271.1")
   lines <- gtf_example
