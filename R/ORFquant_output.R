@@ -287,6 +287,39 @@
 #' \code{C_extension} and \code{Alt3_stop}, not \code{ORF_annotated} and
 #' \code{exact_start_stop}.
 #'
+#' @section P-site runs:
+#' The P-site tracks of \code{\link{prepare_for_ORFquant}}
+#' (\code{P_sites_all}, \code{P_sites_uniq} and \code{P_sites_uniq_mm}) join
+#' neighbouring positions with the same number of P-sites into one range, a
+#' run. The \code{score} of a run is the number of P-sites at each of its
+#' positions, so a run of 3 positions with score 1 has 3 P-sites. Most steps
+#' count the P-sites of each position, but three steps use a run as one unit:
+#' \itemize{
+#' \item \code{\link{detect_translated_orfs}} maps the P-sites to the
+#'   transcripts that \code{\link{select_txs}} selected, but it maps a run only
+#'   when the run is inside one exon. So a transcript loses the P-sites of a
+#'   run that crosses the edge of one of its exons. In some cases, which depend
+#'   on the other selected transcripts and their order, it gets them, but some
+#'   at shifted positions. This changes \code{P_sites_raw} and \code{pval}.
+#' \item \code{\link{select_txs}} and \code{\link{select_quantify_ORFs}} count
+#'   on each exonic bin all the P-sites of each run that overlaps it, so a run
+#'   on the border of two bins counts in full in both. This changes the
+#'   coverage of the features, and so \code{scaling_factors}, \code{P_sites}
+#'   and \code{ORF_pct_P_sites}.
+#' \item \code{\link{ORFquant}} analyses a region only when more than 4 ranges
+#'   of \code{P_sites_all} overlap it (of \code{P_sites_uniq}, with
+#'   \code{unique_reads_only = TRUE}): it counts the ranges, not the P-sites.
+#' }
+#' ORFquant has always worked this way, and it still does. In a human sample
+#' (SRR15513199), 5\% of the ranges of \code{P_sites_all} are runs, of 2 to 6
+#' positions. 14 of its 8,139 ORFs have a \code{P_sites_raw} 1 or 2 lower
+#' than with single positions, and 270 of its 939,002 exonic bins count more
+#' P-sites than are on them (0.038\% more P-sites in total). In 43 genes of
+#' this sample, single positions give one more ORF, of a third RPL19
+#' transcript, with an \code{ORF_pct_P_sites} of 2.04, just above
+#' \code{stn.orf_quant.cutoff_pct}. In the example data of the vignette,
+#' they change nothing.
+#'
 #' @seealso \code{\link{run_ORFquant}}, \code{\link{ORFquant}},
 #' \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}},
 #' \code{\link{annotate_ORFs}}

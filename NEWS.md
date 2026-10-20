@@ -949,6 +949,23 @@ deprecation warnings.
   does not find ORFs with a near-cognate start codon, such as N-terminal
   extensions that start at a CTG. ORFquant has always worked this way, and it
   still does.
+- `?ORFquant_output` now says how ORFquant counts the P-sites of runs. The
+  P-site tracks of `prepare_for_ORFquant()` join neighbouring positions with
+  the same number of P-sites into one range, and three steps use such a run
+  as one unit. `detect_translated_orfs()` maps a run to a transcript only
+  when the run is inside one exon, so a transcript loses the P-sites of a run
+  that crosses the edge of one of its exons, or, depending on the other
+  selected transcripts, gets them at shifted positions. `select_txs()` and
+  `select_quantify_ORFs()` count all the P-sites of a run on each exonic bin
+  that it overlaps. `ORFquant()` analyses a region only when more than 4
+  ranges overlap it. ORFquant has always worked this way, and it still does.
+  In a human sample (SRR15513199), 5% of the ranges are runs of 2 to 6
+  positions, 14 of 8,139 ORFs have a `P_sites_raw` 1 or 2 too low, and 270
+  of 939,002 exonic bins count too many P-sites (0.038% more in total). On
+  43 genes of this sample, single positions give one more ORF (RPL19, with
+  an `ORF_pct_P_sites` of 2.04), and lower the `ORF_pct_P_sites` of the two
+  other RPL19 ORFs (from 3.4 to 2.6 and from 96.6 to 95.3). The effect of
+  single positions on all ORFs of the sample is not known.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
