@@ -30,7 +30,7 @@ NULL
 # Column names used in aes() and subset(), which R CMD check takes for globals.
 utils::globalVariables(c("Freq", "ORFs_tx.ORF_pct_P_sites", "ORFs_tx.ORFs_pM",
   "Position_from_splice_site", "Var1", "coll", "feature", "gene_id", "group",
-  "n_tx", "pval", "pval_uniq", "ref", "transcript", "value", "width.ORFs_tx.",
+  "n_tx", "pval", "pval_uniq", "ref", "tpm", "transcript", "value", "width.ORFs_tx.",
   "x1", "x2", "y1", "y2"))
 # Globals: load_annotation() (of RiboseQC) assigns GTF_annotation and genome_seq in
 # its argument envir; run_ORFquant() and prepare_for_ORFquant() give envir = globalenv(),
