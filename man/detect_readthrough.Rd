@@ -25,7 +25,7 @@ detect_readthrough(
 
 \item{P_sites_uniq_mm}{Rle signal of uniquely mapping P_sites with mismatches along the transcript}
 
-\item{genome_sequence}{BSgenome object}
+\item{genome_sequence}{the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}}
 
 \item{annotation}{Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})}
 

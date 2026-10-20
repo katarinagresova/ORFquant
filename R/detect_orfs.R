@@ -397,7 +397,7 @@ calc_orf_pval<-function(ORFs,P_sites_rle,P_sites_uniq_rle,P_sites_uniq_mm_rle,cu
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param selected_txs set of selected transcripts, output from \code{select_txs}
-#' @param genome_sequence BSgenome object
+#' @param genome_sequence the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}
 #' @param annotation Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})
 #' @param P_sites GRanges object with P_sites positions
 #' @param P_sites_uniq GRanges object with uniquely mapping P_sites positions

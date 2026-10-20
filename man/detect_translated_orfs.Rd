@@ -24,7 +24,7 @@ detect_translated_orfs(
 \arguments{
 \item{selected_txs}{set of selected transcripts, output from \code{select_txs}}
 
-\item{genome_sequence}{BSgenome object}
+\item{genome_sequence}{the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}}
 
 \item{annotation}{Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})}
 
