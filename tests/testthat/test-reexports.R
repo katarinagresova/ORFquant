@@ -45,8 +45,8 @@ test_that("a FaFile_Circ gives its sequence and its circular chromosomes", {
 })
 
 # data/ORFquant_1.03.0_chr22_example.Rannot is the annotation of the example that
-# prepare_annotation_files() of ORFquant 1.03.0 made (dev/step6/make_fixture.R). Its
-# genome holds a FaFile_Circ of the class of ORFquant, not of RiboseQC.
+# prepare_annotation_files() of ORFquant 1.03.0 made, with its file paths reduced to the
+# file names. Its genome holds a FaFile_Circ of the class of ORFquant, not of RiboseQC.
 test_that("an annotation that ORFquant made before RiboseQC took over loads, with a genome that works", {
   where <- new.env()
   loaded <- NULL
