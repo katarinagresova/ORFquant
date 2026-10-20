@@ -361,6 +361,28 @@ deprecation warnings.
   (`stop_in_gtf` `NA`, see above) already got this rule and are not affected,
   so a GTF with and without its `stop_codon` lines now gives these ORFs the
   same category.
+- With the default `stn.orf_quant.scaling = "total_Psites"`, the final
+  scaling factor (`optim_feats`, the third value of `scaling_factors`) now
+  puts all ORFs that share exonic bins or splice junctions, directly or
+  through other ORFs, in one group. So the P-sites assigned to the ORFs of a
+  group add up to the P-sites on their exonic bins, as `?ORFquant_output`
+  says. Before, the groups were wrong: an ORF could be alone in its group, or
+  in two groups. An ORF alone in its group got the final factor 1, so its
+  `P_sites` was its `P_sites_raw`, and the P-sites that it shared with other
+  ORFs counted two times. On the example data, the TCN2 uORF
+  `ENST00000450638.5_250_336` had 22 P-sites (12.9 % of the gene), almost all
+  of them those of the annotated ORF. Now it has less than 2 % and is no
+  longer found. On a human sample (SRR15513199 with GENCODE 47), 8 of the
+  8,139 ORFs are no longer found (3 `ORF_annotated`, 3 `novel` and 2 `uORF`,
+  all ending before the annotated stop codon, such as `Alt5_stop`), 3 ORFs
+  are found that were not before, and 131 ORFs in 51 genes get other
+  `P_sites` (128 of them lower, 90 by more than 10 %). `ORFs_pM`, which is
+  scaled over all ORFs, changes for all ORFs. In results of earlier
+  versions, an ORF that was alone in a wrong group has a final factor of 1
+  and a second factor (`adj_feats`) below 1, and the other ORFs of its gene
+  can be wrong too: on this sample, 57 ORFs have this sign, and the fix
+  removes or changes 44 of them. With `stn.orf_quant.scaling =
+  "average_coverage"`, results don't change.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start
