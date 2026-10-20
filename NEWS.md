@@ -418,6 +418,18 @@ deprecation warnings.
   `same_lastCDS`. GTFs whose CDS lines end before the stop codon
   (`stop_in_gtf` `NA`, see above) are not affected. `ORFs_spl_feat_maxORF`,
   the plots and the other outputs don't change.
+- `NMD_candidate` is now `TRUE` only when the last exon-exon junction is
+  downstream of the ORF's stop codon: `Distance_to_lastExEx` more than 3.
+  Before, it was `TRUE` for each positive distance, but the distance is
+  measured from the ORF's end, without its stop codon. So it was also `TRUE`
+  when the stop codon was the first codon of the last exon (distance 1) or
+  went across the last junction (distances 2 and 3). The same for
+  `NMD_candidate_compatible_txs`. `Distance_to_lastExEx` doesn't change, so
+  a filter on it for the usual minimum distance (often 50 nucleotides) gives
+  the same ORFs. On a human sample (SRR15513199 with GENCODE 47), 16 of the
+  946 ORFs with `NMD_candidate` `TRUE` had a distance of 1 to 3, and 19 of
+  the 15,207 values of `NMD_candidate_compatible_txs`. On the example data,
+  nothing changes.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start

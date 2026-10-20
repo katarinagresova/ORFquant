@@ -39,7 +39,7 @@ the ORF, this is set to protein_coding.\cr
 \code{ORF_category_Gen}: ORF annotation with respect to its genomic position .\cr
 \code{NMD_candidate}: TRUE or FALSE, depending on the presence of an additional exon-exon junction downstream the stop codon.\cr
 \code{NMD_candidate_compatible_txs}: same as NMD_candidate, but for all transcripts compatible with the ORF structure.\cr
-\code{Distance_to_lastExEx}: Distance (in nt) between the last exon-exon junction and the stop codon.\cr
+\code{Distance_to_lastExEx}: Distance (in nt) from the ORF's end, without the stop codon, to the start of the last exon (see \code{\link{ORFquant_output}}).\cr
 \code{Distance_to_lastExEx_compatible_txs}: same as  Distance_to_lastExEx, but for all transcripts compatible with the ORF structure.
 }
 \description{

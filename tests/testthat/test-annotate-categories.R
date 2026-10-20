@@ -69,3 +69,13 @@ test_that("compatible_choice() gives the id of the ORF on the transcript that it
   trann$transcript_biotype[1:2] <- "retained_intron"
   expect_identical(compatible_choice(x, trann), c("MSTRG.1.10_25_115", "MSTRG.1.10", "retained_intron"))
 })
+
+test_that("nmd_candidate() is TRUE only when the last exon-exon junction is after the whole stop codon", {
+  # The distance is the start of the last exon minus the ORF's end, without the stop codon.
+  # Before, each positive distance was TRUE: also 1 (the stop codon is the first codon of the
+  # last exon), and 2 and 3 (the stop codon is across the last junction)
+  expect_identical(nmd_candidate(c(-94, 0, 1, 2, 3, 4, 25)), c(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE))
+  # The distances on the compatible transcripts are text, compared as numbers ("25" > "3" is FALSE)
+  d <- IRanges::CharacterList(list(c("-94", "3", "4", "25", "100")))
+  expect_identical(as.list(nmd_candidate(d)), list(c(FALSE, FALSE, TRUE, TRUE, TRUE)))
+})

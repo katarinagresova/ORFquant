@@ -514,6 +514,15 @@ cds_without_stop<-function(cds,stop_len){
   cds[width(cds)>0]
 }
 
+# NMD_candidate from Distance_to_lastExEx (the start of the last exon minus the ORF end, which excludes the stop codon):
+# TRUE when the last exon-exon junction is after the whole stop codon. 1 is a stop codon at the start of the last exon,
+# 2 and 3 a stop codon across the last junction. The distances of the compatible transcripts are a CharacterList, which
+# compares as text ("25">"3" is FALSE)
+nmd_candidate<-function(distance){
+  if(is(distance,"CharacterList")){distance<-as(distance,"IntegerList")}
+  distance>3
+}
+
 #' Annotate detected ORFs in transcript and genome space
 #'
 #' This function annotates quantified ORFs with respect to other detected ORFs and annotated ones, in both genome and transcript space.
@@ -583,7 +592,7 @@ cds_without_stop<-function(cds,stop_len){
 #' \code{ORF_category_Gen}: ORF annotation with respect to its genomic position .\cr
 #' \code{NMD_candidate}: TRUE or FALSE, depending on the presence of an additional exon-exon junction downstream the stop codon.\cr
 #' \code{NMD_candidate_compatible_txs}: same as NMD_candidate, but for all transcripts compatible with the ORF structure.\cr
-#' \code{Distance_to_lastExEx}: Distance (in nt) between the last exon-exon junction and the stop codon.\cr
+#' \code{Distance_to_lastExEx}: Distance (in nt) from the ORF's end, without the stop codon, to the start of the last exon (see \code{\link{ORFquant_output}}).\cr
 #' \code{Distance_to_lastExEx_compatible_txs}: same as  Distance_to_lastExEx, but for all transcripts compatible with the ORF structure.
 #' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 #' @export
@@ -778,13 +787,13 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   for(i in 1:length(ORFs_tx)){
     cols<-mcols(ORFs_tx[[i]])
     nmd<-FALSE
-    if(Distance_EJCs[i]>0){
+    if(nmd_candidate(Distance_EJCs[i])){
       nmd<-TRUE
     }
     cols$NMD_candidate<-nmd
     cols$Distance_to_lastExEx<-Distance_EJCs[i]
     
-    nmd<-Distance_EJCs_compat[i]>0
+    nmd<-nmd_candidate(Distance_EJCs_compat[i])
     cols$NMD_candidate_compatible_txs<-nmd
     cols$Distance_to_lastExEx_compatible_txs<-Distance_EJCs_compat[i]
     mcols(ORFs_tx[[i]])<-cols

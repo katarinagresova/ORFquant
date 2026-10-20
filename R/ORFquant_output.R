@@ -172,14 +172,16 @@
 #' \item{\code{ORF_category_Gen}}{The ORF's position relative to the annotated
 #'   CDS in genomic coordinates (see Genomic categories below).}
 #' \item{\code{NMD_candidate}}{Is \code{TRUE} when
-#'   \code{Distance_to_lastExEx} is positive: the transcript's last exon-exon
-#'   junction is downstream of the ORF's end, which can make the transcript a
-#'   target of nonsense-mediated decay. ORFquant doesn't apply the usual
-#'   minimum distance (often 50 nucleotides); filter on
+#'   \code{Distance_to_lastExEx} is more than 3: the transcript's last
+#'   exon-exon junction is downstream of the ORF's stop codon, which can make
+#'   the transcript a target of nonsense-mediated decay. ORFquant doesn't
+#'   apply the usual minimum distance (often 50 nucleotides); filter on
 #'   \code{Distance_to_lastExEx} for it.}
 #' \item{\code{Distance_to_lastExEx}}{The start of the transcript's last exon
 #'   minus the ORF's end, in nucleotides along the transcript: 0 or negative
-#'   when the ORF ends in the last exon.}
+#'   when the ORF ends in the last exon. As the ORF ends before its stop
+#'   codon, 1 is a stop codon at the start of the last exon, 2 and 3 a stop
+#'   codon across the last junction, and 4 a stop codon just before it.}
 #' \item{\code{NMD_candidate_compatible_txs},
 #'   \code{Distance_to_lastExEx_compatible_txs}}{The same for the ORF on each
 #'   transcript of \code{compatible_with}, in that order. In R, the distances

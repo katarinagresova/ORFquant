@@ -480,6 +480,17 @@ test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without 
   }
 })
 
+test_that("NMD_candidate is TRUE when Distance_to_lastExEx is more than 3, also on the compatible transcripts", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  orfs <- res$ORFs_tx
+  expect_identical(unname(orfs$NMD_candidate), unname(orfs$Distance_to_lastExEx > 3))
+  d <- as.integer(unlist(orfs$Distance_to_lastExEx_compatible_txs, use.names = FALSE))
+  # Distances of 10 or more: as text, "10" > "3" is FALSE
+  expect_true(any(d >= 10))
+  expect_identical(unlist(orfs$NMD_candidate_compatible_txs, use.names = FALSE), d > 3)
+})
+
 test_that("ORFquant() takes the annotation that load_annotation() returns, without the global variables", {
   skip_if(is.null(runs$one_core))
   loaded <- NULL
