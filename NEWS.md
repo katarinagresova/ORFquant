@@ -62,6 +62,8 @@
   deprecated. With ggplot2 4.0.0 or later, the plots do not change.
 - ORFquant no longer imports BSgenome: it used none of its functions.
   RiboseQC imports it, so it is still installed with ORFquant.
+  `elementNROWS()` came into ORFquant through BSgenome; ORFquant now imports
+  it from S4Vectors.
 
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two

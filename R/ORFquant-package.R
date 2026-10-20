@@ -18,7 +18,7 @@
 #' @importFrom RiboseQC check_n_cores check_output_dir mc_job mc_lapply mc_value
 #' @importFrom S4Vectors mcols<- DataFrame Rle aggregate cbind.DataFrame
 #' @importFrom S4Vectors endoapply na.omit queryHits runLength runValue
-#' @importFrom S4Vectors splitAsList subjectHits
+#' @importFrom S4Vectors elementNROWS splitAsList subjectHits
 #' @importFrom Seqinfo Seqinfo isCircular seqlengths<- seqlengths seqlevels
 #' @importFrom SummarizedExperiment assay
 #' @importFrom grDevices colorRampPalette dev.off pdf rgb
