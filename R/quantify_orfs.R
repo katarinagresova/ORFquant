@@ -38,7 +38,8 @@
 #' @param junction_counts GRanges object containing Ribo-seq counts on the set of annotated junctions
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @return GRanges object with the set of counts on each exonic bin and junctions, together with the list
-#' of selected transcripts
+#' of selected transcripts. An empty \code{GRangesList()} when the exonic bins and junctions of the region have
+#' fewer than 4 P_sites and junction reads together (unique ones with \code{uniq_signal = TRUE}).
 #' @seealso \code{\link{prepare_annotation_files}}
 #' @export
 
@@ -392,7 +393,7 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
 #' @param annotation Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})
 #' @param P_sites GRanges object with P_sites positions
 #' @param P_sites_uniq GRanges object with uniquely mapping P_sites positions
-#' @param P_sites_uniq_mm Rle signal of uniquely mapping P_sites with mismatches along the transcript
+#' @param P_sites_uniq_mm GRanges object with uniquely mapping P_sites positions with mismatches
 #' @param cutoff_fr_ave \code{cutoff} parameter for the  \code{calc_orf_pval} functions
 #' @param genetic_code_table GENETIC_CODE table to use
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
@@ -571,7 +572,7 @@ detect_readthrough<-function(results_orf,P_sites,P_sites_uniq,P_sites_uniq_mm,ge
 #' @param cutoff_pct minimum percentage of total gene translation for an ORF to be selected. Defaults to 2
 #' @param cutoff_P_sites minimum number of P_sites assigned to the ORF to be selected. Defaults to NA (not applied)
 #' @param optimiz (Beta) should numerical optimization (minimizing distance between observed coverage and expected coverage) 
-#' be used to quantify ORF translation? Defaults to FALSE
+#' be used to quantify ORF translation? Defaults to FALSE. \code{run_ORFquant} does not set it, so it never uses it.
 #' @param scaling Additional scaling value taking into account average or total signal on the detected ORFs to adjust quantification estimates. 
 #' Can be average_coverage or total_Psites. Defaults to total_Psites for consistency.
 #' @param uniq_signal Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.

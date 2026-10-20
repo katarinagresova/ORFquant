@@ -30,7 +30,7 @@ select_quantify_ORFs(
 \item{cutoff_P_sites}{minimum number of P_sites assigned to the ORF to be selected. Defaults to NA (not applied)}
 
 \item{optimiz}{(Beta) should numerical optimization (minimizing distance between observed coverage and expected coverage) 
-be used to quantify ORF translation? Defaults to FALSE}
+be used to quantify ORF translation? Defaults to FALSE. \code{run_ORFquant} does not set it, so it never uses it.}
 
 \item{scaling}{Additional scaling value taking into account average or total signal on the detected ORFs to adjust quantification estimates. 
 Can be average_coverage or total_Psites. Defaults to total_Psites for consistency.}

@@ -761,6 +761,13 @@ deprecation warnings.
   - `?plot_orfquant_locus` said that `locus` is a gene name, but it is a
     `gene_id`. The page now also says that the function takes the annotation
     from the global variable `GTF_annotation`.
+  - `?detect_readthrough` said that `P_sites_uniq_mm` is an `Rle`, but it
+    is a `GRanges`, as `P_sites`.
+  - `?select_txs` said that the function returns a `GRanges`, but a region
+    with fewer than 4 P-sites and junction reads on its exonic bins and
+    junctions gives an empty `GRangesList()`.
+  - `?select_quantify_ORFs` described `optimiz`, but did not say that
+    `run_ORFquant()` never sets it.
 - The HTML report of `create_ORFquant_html_report()` said that the category
   "other" holds the overlapping uORFs, but the plots have them in the
   category "uORF". The report now says this, and names all categories in
