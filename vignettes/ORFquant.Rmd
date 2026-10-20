@@ -141,8 +141,8 @@ prepare_for_ORFquant(annotation_file = annotation_file,
 for_ORFquant_file <- file.path(out_dir, "SRR15513199_for_ORFquant")
 ```
 
-The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package [5] also
-writes such a file, together with statistics on the Ribo-seq data.
+`RiboseQC_analysis()` of *RiboseQC* [5] also writes such a file, together
+with statistics on the Ribo-seq data.
 
 ```{r psites}
 for_ORFquant <- get(load(for_ORFquant_file))

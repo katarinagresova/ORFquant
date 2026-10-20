@@ -32,7 +32,7 @@ install.packages(c("BiocManager", "remotes"))
 BiocManager::install("katarinagresova/ORFquant", dependencies = TRUE)
 ```
 
-This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the annotation step: `prepare_annotation_files()`, `load_annotation()` and `FaFile_Circ` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
+This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the first two steps: `prepare_annotation_files()`, `load_annotation()`, `FaFile_Circ` and `prepare_for_ORFquant()` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
 
 Or with conda, using [environment.yml](environment.yml) from this repository (R 4.5, Bioconductor 3.22, all dependencies and pandoc):
 
@@ -74,7 +74,7 @@ run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
              prefix = "sample")
 ```
 
-The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package can also create the input of step 3 from a Ribo-seq BAM file.
+`RiboseQC_analysis()` of *RiboseQC* can also create the input of step 3 from a Ribo-seq BAM file. It calculates the P-site offsets itself, and also gives statistics on the Ribo-seq data.
 
 `sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. `sample_Detected_ORFs.tsv` has the `ORFs_tx` table, one row per ORF, for use without R. `?ORFquant_output` describes each of its columns and the ORF categories; see also `?run_ORFquant` and `?ORFquant`.
 
