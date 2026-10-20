@@ -166,6 +166,12 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   # Before, all genes of ORFs_maxiso_tpm were in the bin NA
   expect_false(anyNA(plots$ORFs_maxiso_tpm$data$maxiso))
   expect_identical(levels(plots$ORFs_maxiso_tpm$data$maxiso), levels(plots$ORFs_maxiso$data$maxiso))
+  # Before, a gene with 4 selected transcripts was in the bin "3-4", and the bins
+  # were in the order of their numbers of genes
+  sel <- plots$Sel_txs_genes_tpm$data
+  bins <- c("1-3", "4-6", "7-9", ">9")
+  expect_identical(as.character(sel$qnt), bins[findInterval(sel$elementNROWS.ch_txs_sel., c(1, 4, 7, 10))])
+  expect_identical(levels(plots$Sel_txs_genes$data$qnt), intersect(bins, as.character(sel$qnt)))
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {

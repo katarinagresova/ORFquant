@@ -359,16 +359,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   tpms<-cnts[match(names(ch_txs_sel),cnts$gene_id),"TPM"]
   pct_sel<-(elementNROWS(ch_txs_sel))/tot_n_tx*100
   nsels<-elementNROWS(ch_txs_sel)
-  qnt<-cut(nsels,breaks = unique(c(0,3,6,9,max(nsels))),include.lowest = T)
-  qnt<-gsub(qnt,pattern = ",",replacement = "-")
-  qnt<-gsub(qnt,pattern = "\\[",replacement = "")
-  qnt<-gsub(qnt,pattern = "]",replacement = "")
-  qnt<-gsub(qnt,pattern = "\\(",replacement = "")
-  qnt[qnt=="0-3"]<-"1-3"
-  qnt[qnt=="3-6"]<-"4-6"
-  qnt[qnt=="6-9"]<-"7-9"
-  qnt[qnt=="9-49"]<-"10-49"
-  qnt<-factor(qnt,levels = names(sort(table(qnt),decreasing = T)))
+  #the bins with genes, in the order of their numbers of selected transcripts
+  qnt<-droplevels(cut(nsels,breaks = c(0,3,6,9,Inf),labels = c("1-3","4-6","7-9",">9")))
   df<-melt(table(qnt))
   
   a<-ggplot(df,aes(x=qnt,y=value,fill="dark grey"))

@@ -505,6 +505,14 @@ deprecation warnings.
   of the HTML report), each bin of `ORF_pct_P_sites` of the major ORF now
   has its violin of gene TPMs, with the bins of the `ORFs_maxiso` plot.
   Before, since R 4.0, all genes were in one violin labelled `NA`.
+- The `Sel_txs_genes`, `Sel_txs_genes_tpm` and `Sel_txs_genes_pct` plots of
+  `plot_ORFquant_results()` (sections 1.1 to 1.3 of the HTML report) now put
+  the genes in the bins `1-3`, `4-6`, `7-9` and `>9` of their numbers of
+  selected transcripts, in this order. Before, the labels of the bins were
+  right only when the largest number of a gene was 49 (the last bin was
+  `10-49`). For example, when it was 4, the genes with 4 selected
+  transcripts had the bin `3-4`, and when it was 10, the bin `9-10`. The bars
+  were in the order of their numbers of genes.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;
