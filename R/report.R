@@ -37,13 +37,15 @@
 #' Must be of same length as \code{input_files}.
 #' 
 #' @param output_file String; full path to html report file.
-#' @return The function saves the html report file with the file path \code{output_file}.
+#' @return The function saves the html report file with the file path \code{output_file}, and the console output
+#' of the rendering in the file \code{<output_file>_ORFquant_report_output.txt}.
 #' @details This function creates the html report visualizing final ORFquant results. \cr \cr
 #' Input are two lists of the same length: \cr \cr
 #' a) \code{input_files}: list of full paths to one or multiple input files 
 #' (*ORFquant_plots_RData files generated with \code{plot_ORFquant_results}) and \cr \cr
 #' b) \code{input_sample_names}: list of corresponding names describing the file content (these are used as names in the report). \cr \cr
 #' For the report, a RMarkdown file is rendered as html document, saved as \code{output_file}. \cr \cr
+#' This needs pandoc (\code{rmarkdown::pandoc_available()} tells if it is installed). \cr \cr
 #' @seealso \code{\link{plot_ORFquant_results}}, \code{\link{run_ORFquant}}
 #' @export
 
@@ -51,6 +53,13 @@ create_ORFquant_html_report <- function(input_files, input_sample_names, output_
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     stop("Package \"rmarkdown\" needed for this function to work. Please install it.",
          call. = FALSE)
+  }
+  if (length(input_files) != length(input_sample_names)) {
+    stop("input_files and input_sample_names must have the same length", call. = FALSE)
+  }
+  missing_files <- input_files[file.access(input_files, 0) == -1]
+  if (length(missing_files) > 0) {
+    stop("The following files don't exist:\n", paste(missing_files, collapse = "\n"), call. = FALSE)
   }
   
   # get input and output file paths

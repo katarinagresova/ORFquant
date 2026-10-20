@@ -570,6 +570,15 @@ deprecation warnings.
 - `create_ORFquant_html_report()` now ends its `sink()` when rendering fails.
   Before, the rest of the session's console output went to
   `<output>_ORFquant_report_output.txt`.
+- `create_ORFquant_html_report()` now stops at once when an input file does
+  not exist, or when `input_files` and `input_sample_names` have different
+  lengths. Before, a missing file stopped the rendering with `error in
+  evaluating the argument 'x' in selecting a method for function 'get'`. In
+  section 3.5 of the report, a sample without the plot of the splice sites
+  (`plot_ORFquant_results()` without coverage files) now has a note, not an
+  empty tab. `?create_ORFquant_html_report` now says that the function needs
+  pandoc, and that it writes the console output of the rendering to
+  `<output_file>_ORFquant_report_output.txt`.
 - The `getSeq()` error for ranges that wrap twice around a circular
   chromosome now reads "Ranges wrapping twice isn't implemented yet...",
   without the stray quote, line break and spaces it had.

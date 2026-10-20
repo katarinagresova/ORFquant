@@ -198,8 +198,14 @@ test_that("create_ORFquant_html_report() makes the HTML report of the plots of t
   template_files <- list.files(template, all.files = TRUE, recursive = TRUE)
   sinks <- sink.number()
   withr::defer(while (sink.number() > sinks) sink())
+  # A sample without coverage files has no plot of the splice sites
+  no_coverage <- file.path(work, "no_coverage_ORFquant_plots_RData")
+  list_ORFquant_plots <- get(load(plots))
+  list_ORFquant_plots$Meta_splicing_coverage <- NULL
+  save(list_ORFquant_plots, file = no_coverage)
   report <- file.path(work, "example_report.html")
-  quiet(create_ORFquant_html_report(input_files = plots, input_sample_names = "example",
+  quiet(create_ORFquant_html_report(input_files = c(plots, no_coverage),
+                                    input_sample_names = c("example", "no_coverage"),
                                     output_file = report))
   html <- paste(readLines(report, warn = FALSE), collapse = "\n")
   # The input file of the sample, the sections of the template and their plots
@@ -208,13 +214,24 @@ test_that("create_ORFquant_html_report() makes the HTML report of the plots of t
     expect_match(html, section, fixed = TRUE)
   }
   expect_match(html, "data:image/png;base64,", fixed = TRUE)
+  # Before, section 3.5 was empty for a sample without coverage files
+  expect_match(html, "made the plots of this sample without coverage files", fixed = TRUE)
   # Before, it rendered the template in the installed package, and it did not end
   # its sink() when rendering failed
   expect_identical(list.files(template, all.files = TRUE, recursive = TRUE), template_files)
-  expect_error(suppressMessages(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"),
+  not_rdata <- file.path(work, "not_an_RData_file")
+  writeLines("text", not_rdata)
+  expect_error(suppressMessages(create_ORFquant_html_report(input_files = not_rdata,
                                                             input_sample_names = "none",
                                                             output_file = file.path(work, "no_report.html"))))
   expect_identical(sink.number(), sinks)
+  # Before, a missing file stopped inside knitr, with an error about get()
+  expect_error(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"), input_sample_names = "none",
+                                           output_file = file.path(work, "no_report.html")),
+               "don't exist")
+  expect_error(create_ORFquant_html_report(input_files = plots, input_sample_names = c("one", "two"),
+                                           output_file = file.path(work, "no_report.html")),
+               "same length")
 })
 
 # Input that cannot work stops run_ORFquant() before the regions are quantified;

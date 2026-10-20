@@ -17,7 +17,8 @@ Must be of same length as \code{input_files}.}
 \item{output_file}{String; full path to html report file.}
 }
 \value{
-The function saves the html report file with the file path \code{output_file}.
+The function saves the html report file with the file path \code{output_file}, and the console output
+of the rendering in the file \code{<output_file>_ORFquant_report_output.txt}.
 }
 \description{
 This function creates an html report showing summary statistics for ORFquant-detected ORFs.
@@ -29,6 +30,7 @@ a) \code{input_files}: list of full paths to one or multiple input files
 (*ORFquant_plots_RData files generated with \code{plot_ORFquant_results}) and \cr \cr
 b) \code{input_sample_names}: list of corresponding names describing the file content (these are used as names in the report). \cr \cr
 For the report, a RMarkdown file is rendered as html document, saved as \code{output_file}. \cr \cr
+This needs pandoc (\code{rmarkdown::pandoc_available()} tells if it is installed). \cr \cr
 }
 \seealso{
 \code{\link{plot_ORFquant_results}}, \code{\link{run_ORFquant}}
