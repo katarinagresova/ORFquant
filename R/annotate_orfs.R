@@ -486,6 +486,21 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
   }
 }
 
+# The compatible ORF of an ORF, from the ids x of the ORF on its compatible transcripts (<transcript_id>_<start>_<end>):
+# its id, its transcript and the biotype of the transcript. The first protein-coding transcript in sorted order, else
+# the first transcript. The id and the transcript come from one order() of the transcripts: before, two sort() calls
+# could give two transcripts, when a transcript id is the start of another (MSTRG.1.1 and MSTRG.1.10 in the C locale)
+compatible_choice<-function(x,trann){
+  txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
+  btps<-trann$transcript_biotype[match(txs,trann$transcript_id)]
+  btps[is.na(btps)]<-"Not_found"
+  pcd<-btps=="protein_coding"
+  if(sum(pcd,na.rm = T)>0){
+    f<-which(pcd)[order(txs[pcd])[1]]
+    c(x[f],txs[f],"protein_coding")
+  }else{c(x[1],txs[1],btps[1])}
+}
+
 #' Annotate detected ORFs in transcript and genome space
 #'
 #' This function annotates quantified ORFs with respect to other detected ORFs and annotated ones, in both genome and transcript space.
@@ -625,13 +640,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     compats<-elementNROWS(cols$compatible_with)>1
     comp_txs<-cols$compatible_with[compats]
     if(length(comp_txs)>0){
-      compid<-sapply(comp_txs,function(x){
-        txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
-        btps<-Annotation$trann$transcript_biotype[match(txs,Annotation$trann$transcript_id)]
-        btps[is.na(btps)]<-"Not_found"
-        pcd<-btps=="protein_coding"
-        if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
-      })
+      compid<-sapply(comp_txs,compatible_choice,trann=Annotation$trann)
       cols$compatible_ORF_id_tr[compats]<-t(compid)[,1]
       cols$compatible_tx[compats]<-t(compid)[,2]
       cols$compatible_biotype[compats]<-t(compid)[,3]
@@ -661,13 +670,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       compats<-elementNROWS(cols$compatible_with_longest)>1
       comp_txs<-cols$compatible_with_longest[compats]
       if(length(comp_txs)>0){
-        compid<-sapply(comp_txs,function(x){
-          txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
-          btps<-Annotation$trann$transcript_biotype[match(txs,Annotation$trann$transcript_id)]
-          btps[is.na(btps)]<-"Not_found"
-          pcd<-btps=="protein_coding"
-          if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
-        })
+        compid<-sapply(comp_txs,compatible_choice,trann=Annotation$trann)
         cols$compatible_ORF_id_tr_longest[compats]<-t(compid)[,1]
         cols$compatible_tx_longest[compats]<-t(compid)[,2]
         cols$compatible_biotype_longest[compats]<-t(compid)[,3]

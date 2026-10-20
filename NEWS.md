@@ -383,6 +383,17 @@ deprecation warnings.
   can be wrong too: on this sample, 57 ORFs have this sign, and the fix
   removes or changes 44 of them. With `stn.orf_quant.scaling =
   "average_coverage"`, results don't change.
+- `compatible_ORF_id_tr` is now always the ORF on `compatible_tx`. When an
+  ORF is on more than one protein-coding transcript, ORFquant takes the
+  first of them in sorted order. Before, it sorted the ORF ids and the
+  transcript ids apart, so when a transcript id was the start of another
+  (for example `MSTRG.1.1` and `MSTRG.1.10` in the C locale), the two
+  columns could name two transcripts. A later step corrected the pair,
+  except when the ORF had a protein-coding compatible transcript and its
+  `longest_ORF` had none. Then `ORF_category_Tx_compatible` (also in the
+  FASTA headers) mixed the two transcripts. `compatible_ORF_id_tr_longest`
+  is chosen in the same way. Such ORFs are rare: GTFs from GENCODE, RefSeq,
+  StringTie, IsoQuant and factR gave none.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start

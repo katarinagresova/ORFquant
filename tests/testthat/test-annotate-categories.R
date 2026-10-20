@@ -56,3 +56,16 @@ test_that("tx_category() equals the old cascade for every order of the 4 values"
   # sta from compatible_ORF_id_tr is numeric, not integer
   expect_identical(tx_category(20, 79L, 101L, 200L), "uORF")
 })
+
+test_that("compatible_choice() gives the id of the ORF on the transcript that it gives", {
+  trann <- data.frame(transcript_id = c("MSTRG.1.1", "MSTRG.1.10", "MSTRG.1.2"),
+                      transcript_biotype = c("protein_coding", "protein_coding", "lncRNA"))
+  x <- c("MSTRG.1.10_25_115", "MSTRG.1.2_5_95", "MSTRG.1.1_10_100")
+  # Before, in the C locale, the id was the one on MSTRG.1.10 and the transcript
+  # MSTRG.1.1: the ids were sorted apart from the transcripts, and "0" sorts before "_"
+  withr::local_collate("C")
+  expect_identical(compatible_choice(x, trann), c("MSTRG.1.1_10_100", "MSTRG.1.1", "protein_coding"))
+  # Without a protein-coding transcript, the first one
+  trann$transcript_biotype[1:2] <- "retained_intron"
+  expect_identical(compatible_choice(x, trann), c("MSTRG.1.10_25_115", "MSTRG.1.10", "retained_intron"))
+})
