@@ -1326,37 +1326,16 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
     if(scaling=="total_Psites"){
       
       unqs_tott<-unqs_optim
+      #groups of ORFs that share features (connected components): the groups with an ORF of a feature
+      #become one group, with the ORFs of the feature
       orfgrps<-list()
       for(grpo in 1:length(featsall)){
         fezzo=featsall$ORF_id_tr_selected[[grpo]]
-        presalready<-fezzo%in%unlist(orfgrps)
-        if(sum(presalready)==0){orfgrps<-append(orfgrps,fezzo);next()}
-        if(sum(presalready)>0){
-          presalready<-which(orfgrps%in%fezzo)
-          for(pres in presalready){
-            orfgrps[[pres]]<-sort(unique(c(orfgrps[[pres]],fezzo)))
-          }
-        }
-        
+        if(length(fezzo)==0){next()}
+        presalready<-vapply(orfgrps,function(x){any(x%in%fezzo)},logical(1))
+        orfgrps<-c(orfgrps[!presalready],list(sort(unique(c(unlist(orfgrps[presalready]),fezzo)))))
       }
-      
-      orfgrps<-unique(orfgrps)
-      if(length(orfgrps)>1){
-        orfgrpsdello<-rep(FALSE,length(orfgrps))
-        for(grpo in 1:length(orfgrps)){
-          orfes<-orfgrps[[grpo]]
-          otherse<-orfgrps[-grpo]
-          remo<-FALSE
-          for(garpo in 1:length(otherse)){
-            contest<-otherse[[garpo]]
-            if(sum(orfes%in%contest)==length(orfes)){remo=T;break}
-          }
-          orfgrpsdello[grpo]=remo
-        }
-        
-        orfgrps<-orfgrps[!orfgrpsdello]
-      }
-      
+
       ps_feats_tott<-c()
       fetse<-featsall[featsall$type=="E"]
       rizz<-fetse$reads

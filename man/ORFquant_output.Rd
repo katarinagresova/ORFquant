@@ -125,10 +125,10 @@ In the order of the TSV file:
   \code{adj_feats}, the same, after ORFs without unique features get a
   factor from the coverage that the factors of the other ORFs leave them;
   \code{optim_feats}, the final factor: \code{adj_feats} rescaled so that
-  the P-sites assigned to a group of ORFs that share features add up to the
-  P-sites on their exonic bins (\code{stn.orf_quant.scaling =
-  "total_Psites"}; with \code{"average_coverage"}, their coverage), at most
-  1.}
+  the P-sites assigned to a group of ORFs that share features (directly or
+  through other ORFs of the group) add up to the P-sites on their exonic
+  bins (\code{stn.orf_quant.scaling = "total_Psites"}; with
+  \code{"average_coverage"}, their coverage), at most 1.}
 \item{\code{compatible_with}}{The ORF on each annotated transcript of the
   region that contains all of it, with the same exons and junctions, as
   \code{<transcript_id>_<start>_<end>} in that transcript's coordinates.

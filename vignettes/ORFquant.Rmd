@@ -199,12 +199,15 @@ data.frame(gene = orfs$gene_name, category_tx = orfs$ORF_category_Tx,
            row.names = NULL)
 ```
 
-On *TCN2*, ORFquant finds the annotated ORF of ENST00000698268.1 and a short
-ORF on ENST00000450638.5. That transcript has an extra exon, and its annotated
-CDS starts after it. The short ORF starts at the same codon as the annotated
-ORF of ENST00000698268.1 but ends in the extra exon: it is a `uORF` on its
-transcript, and `Alt5_stop` in genomic space. `ORFs_gen` has the ORFs' genomic
-coordinates, one range per exon:
+On *TCN2*, ORFquant finds the annotated ORF of ENST00000698268.1.
+ENST00000450638.5 has an extra exon, and its annotated CDS starts after it. A
+short ORF on this transcript starts at the same codon as the annotated ORF of
+ENST00000698268.1 but ends in the extra exon. All its P-sites are on the exon
+that it shares with the annotated ORF, so ORFquant assigns almost all of them
+to the annotated ORF (`scaling_factors` in `?ORFquant_output`). The short ORF
+keeps less than 2 % of the P-sites of the gene (`stn.orf_quant.cutoff_pct`),
+so it is not in the results. `ORFs_gen` has the ORFs' genomic coordinates, one
+range per exon:
 
 ```{r orfs_gen}
 tcn2_orfs <- orfs$ORF_id_tr[orfs$gene_name == "TCN2"]

@@ -110,6 +110,28 @@ test_that("the results are those of the golden files", {
   expect_gt(nrow(read_tsv(new$tsv)), 0)
 })
 
+# Before, an ORF could be alone in its group, or in two groups, and keep the P-sites that it
+# shares with other ORFs: the TCN2 uORF ENST00000450638.5_250_336 had 22 P-sites, and the
+# group of TCN2 had 171 P-sites on bins with 149
+test_that("the P-sites of a group of ORFs that share features add up to the P-sites on their exonic bins", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  p_sites <- stats::setNames(res$ORFs_tx$P_sites, res$ORFs_tx$ORF_id_tr)
+  for (feats in as.list(res$ORFs_feat)) {
+    orfs <- lapply(as.list(feats$ORF_id_tr_selected), intersect, names(p_sites))
+    groups <- list()
+    for (x in orfs[lengths(orfs) > 0]) {
+      joined <- vapply(groups, function(g) any(g %in% x), logical(1))
+      groups <- c(groups[!joined], list(union(unlist(groups[joined]), x)))
+    }
+    for (g in groups) {
+      on_bins <- feats$type == "E" & vapply(orfs, function(x) any(x %in% g), logical(1))
+      expect_equal(sum(p_sites[g]), sum(feats$reads[on_bins]))
+    }
+  }
+  expect_false("ENST00000450638.5_250_336" %in% names(p_sites))
+})
+
 test_that("the output dictionary documents every column and category of the results", {
   skip_if(is.null(runs$one_core))
   rd <- tryCatch(tools::Rd_db("ORFquant")[["ORFquant_output.Rd"]], error = function(e) NULL)
