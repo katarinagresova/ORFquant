@@ -47,7 +47,7 @@
   the repository's version 1.02.0, which still called `disjointExons()`, no
   longer in GenomicFeatures.
 
-- ORFquant now needs RiboseQC (1.3.0 or later), which it imports for the
+- ORFquant now needs RiboseQC (1.4.0 or later), which it imports for the
   annotation step and `prepare_for_ORFquant()` (see "New features").
   RiboseQC is not on Bioconductor: `BiocManager::install("katarinagresova/ORFquant")`
   and `remotes::install_github()` install it from GitHub (the `Remotes` field
@@ -397,6 +397,16 @@ deprecation warnings.
   so the ORFs don't change. RiboseQC reads them for its metagene, so with a
   new annotation its results can change. Annotations that earlier versions
   made keep their values.
+- `prepare_for_ORFquant()` (RiboseQC 1.4.0) now finds the uniquely mapping
+  reads with mismatches (`P_sites_uniq_mm` in `<dest_name>_for_ORFquant`) by
+  the mismatches in their MD tag: a number and then a base. Before, a read
+  had mismatches when its MD tag had more than 3 characters. So a read
+  shorter than 20 nt with 1 mismatch (for example `5A9`) did not count, and
+  a read of 1,000 nt or more without mismatches did. Only these reads
+  change, and they get a P-site only when the cutoff file has their read
+  length. In ORFquant, these P-sites give only the column
+  `P_sites_raw_uniq_mm`. The cutoff files of our test data have read lengths
+  from 20 to 51 nt, so nothing changes there.
 
 ## Bug fixes
 
@@ -631,6 +641,11 @@ deprecation warnings.
 - `load_annotation()` also reads `_Rannot` files that early versions of
   RiboseQC made, with the name of a BSgenome package in `genome`. Before, it
   stopped with `'package' must be of length 1`.
+- `prepare_annotation_files()` (RiboseQC 1.4.0) now stores the path of the
+  FASTA file (`genome_seq`) as an absolute path. Before, it stored the path
+  as given, so with a relative path, `load_annotation()` and
+  `run_ORFquant()` failed in another working directory: the FASTA file did
+  not exist. Annotations made before keep the path that they have.
 
 ## Performance
 
