@@ -10,7 +10,7 @@ Authors@R:
              family = "Ohler",
              role = c("rev", "fnd"),
              email = "Uwe.Ohler@mdc-berlin.de"),
-      person(given = "Dermott",
+      person(given = "Dermot",
              family = "Harnett",
              role = "ctb",
              email = "Dermot.Harnett@mdc-berlin.de"))
