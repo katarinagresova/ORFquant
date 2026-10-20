@@ -983,6 +983,18 @@ deprecation warnings.
   an `ORF_pct_P_sites` of 2.04), and lower the `ORF_pct_P_sites` of the two
   other RPL19 ORFs (from 3.4 to 2.6 and from 96.6 to 95.3). The effect of
   single positions on all ORFs of the sample is not known.
+- `?select_txs` now says how it removes nested transcripts when transcripts
+  have the same features (exonic bins and junctions), such as transcripts
+  with the same exons. Of 2 such transcripts it keeps one, but of 3 it keeps
+  2, of 2 that are nested in a third transcript it keeps one with the third,
+  and of 2 that have all features of the region it keeps both. The selection
+  can then take all of them, so `selected_txs` and the transcripts of
+  `<prefix>_Detected_ORFs.gtf` can have more than one transcript with the
+  same exons. An ORF on them is in the results once, with each of them in
+  `compatible_with`. ORFquant has always worked this way, and it still does.
+  In a human sample (SRR15513199, GENCODE 47), 5 of the 156 groups of
+  transcripts with the same exons have 2 selected transcripts, each a gene
+  with only these 2 transcripts and one ORF.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

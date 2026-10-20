@@ -62,7 +62,7 @@ The description for each list object is as follows:\cr\cr
 \code{ORFs_txs_feats}: list of transcript features present in the genomic region, together with mapping reads and uniqueness.\cr
 \code{ORFs_spl_feat_longest}: splicing annotation for each ORF exon, with respect to the longest annotated coding transcript for each gene.\cr
 \code{ORFs_spl_feat_maxORF}: splicing annotation for each ORF exon, with respect to the most translated ORF in each gene.\cr
-\code{selected_txs}: character vector containing the transcript ids of the selected transcripts.\cr
+\code{selected_txs}: character vector containing the transcript ids of the selected transcripts. It can have more than one transcript with the same exons (see \code{\link{select_txs}}).\cr
 \code{ORFs_readthroughs}: (Beta) transcript coordinates of the detected ORFs readthroughs.\cr
 }
 \description{

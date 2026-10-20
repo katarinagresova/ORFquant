@@ -29,6 +29,22 @@
 #' @details Features (bins and junctions) are divided into shared and unique features, and into with support and without
 #' support (with  or without reads mapping). A set of logical rules filters out transcripts with internal features with no support
 #' and no unique features with reads. More specific details can be found in the ORFquant manuscript.
+#'
+#' Before these rules, the function removes each nested transcript: a transcript whose features are all features of
+#' another transcript. Transcripts with the same features, such as transcripts with the same exons, are an exception:
+#' \itemize{
+#' \item Of 2 such transcripts, it keeps the first in alphabetical order.
+#' \item Of 3 or more, it keeps all but the last in alphabetical order.
+#' \item Of 2 such transcripts that are nested in a third transcript, it keeps the third and the first of the two.
+#' \item It never removes a transcript that has all features of the region, so of 2 such transcripts that have all
+#'   features of the region, it keeps both.
+#' }
+#' The rules after it can select all the transcripts with the same features that are left, so \code{selected_txs} of
+#' \code{\link{ORFquant}} and the transcripts of \code{Detected_ORFs.gtf} (see \code{\link{run_ORFquant}}) can have
+#' more than one transcript with the same exons. An ORF on them is in the results once, and its \code{compatible_with}
+#' has the ORF on each of them (see \code{\link{ORFquant_output}}). ORFquant has always worked this way, and it still
+#' does. In a human sample (SRR15513199, GENCODE 47), 5 of the 156 groups of transcripts with the same exons have 2
+#' selected transcripts. Each is a gene with only these 2 transcripts and one ORF.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param region genomic region being analyzed
