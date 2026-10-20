@@ -24,7 +24,7 @@ dependencies:
   - bioconductor-genomicalignments
   - bioconductor-genomicfeatures
   - bioconductor-genomicranges
-  - r-ggplot2
+  - r-ggplot2>=4.0.0
   - r-gridextra
   - bioconductor-iranges
   - r-multitaper

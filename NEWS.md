@@ -55,6 +55,11 @@
   RiboseQC, ORFquant needs DT, ggpubr, scales, viridis and withr, and knitr
   and rmarkdown again. ORFquant itself no longer imports AnnotationDbi and
   txdbmaker, but RiboseQC does. `library(ORFquant)` attaches no new package.
+- ORFquant now needs ggplot2 4.0.0 or later. `plot_ORFquant_results()` with
+  coverage files no longer warns that the `size` aesthetic for lines is
+  deprecated (ggplot2 3.4.0). Its violin plots use the arguments of ggplot2
+  4.0.0 for the line at the median, not `draw_quantiles`, which is
+  deprecated. With ggplot2 4.0.0 or later, the plots do not change.
 
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two

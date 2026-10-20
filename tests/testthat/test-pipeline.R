@@ -149,8 +149,7 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
   # before, it stopped when a type of splice site had no regions, or regions on
   # one strand only, as a type of the example has (S24). Some groups of ORFs of the
-  # example are too small for the distributions of the plots, and ggplot2 warns.
-  # In tests only, ggplot2 also warns that two arguments of the plots are deprecated
+  # example are too small for the distributions of the plots, and ggplot2 warns
   quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
                               ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
                               annotation_file = runs$annotation,
@@ -158,9 +157,7 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
                               output_plots_path = file.path(work, "plots"), prefix = "example"),
         expected = c("Groups with fewer than two datapoints have been dropped",
                      "Computation failed in `stat_ydensity()`",
-                     "no non-missing arguments to min", "no non-missing arguments to max",
-                     "The `draw_quantiles` argument of `geom_violin()` is deprecated",
-                     "Using `size` aesthetic for lines was deprecated"))
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
   plots <- get(load(file.path(work, "plots", "example_ORFquant_plots_RData")))
   # Before, all genes of ORFs_maxiso_tpm were in the bin NA

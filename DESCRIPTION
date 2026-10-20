@@ -29,7 +29,7 @@ Imports:
     cowplot,
     GenomicAlignments,
     GenomicFeatures,
-    ggplot2,
+    ggplot2 (>= 4.0.0),
     grDevices,
     grid,
     gridExtra,

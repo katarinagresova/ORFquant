@@ -157,7 +157,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   rownames(dfiso)<-NULL
   b<-ggplot(dfiso,aes(x=cat_biot,y=ORFs_tx.ORF_pct_P_sites,fill=cat_biot))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   b<-b + theme_bw()
   b<-b + ylab("ORF_pct_P-sites")
   b<-b + xlab("")
@@ -173,7 +173,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   
   
   c<-ggplot(dfpnpm,aes(x=cat_biot,y=ORFs_tx.ORFs_pM+1,fill=cat_biot))
-  c<-c + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  c<-c + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #c<-c + geom_jitter(aes(x=cat_tx,y=ORFs_tx.ORFs_pM),position = position_jitterdodge(jitter.width = .5), alpha = 0.2)
   c<-c + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(dfpnpm$ORFs_tx.ORFs_pM)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #c<-c + geom_text(aes(x=cat_tx, y=ORFs_tx.ORFs_pM, hjust="top",label=ORFs_tx.ORFs_pM),colour="black",position = position_dodge(width = 1),size=5)
@@ -193,7 +193,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   list_ORFquant_plots[["ORFs_found_ORFs_pM"]][["pars"]]<-c(14,4)
   
   d<-ggplot(dfwid,aes(x=cat_biot,y=width.ORFs_tx.,fill=cat_biot))
-  d<-d + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  d<-d + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #c<-c + geom_jitter(aes(x=cat_tx,y=ORFs_tx.ORFs_pM),position = position_jitterdodge(jitter.width = .5), alpha = 0.2)
   d<-d + scale_y_log10(breaks=c(10,100,1000,10000,100000),labels=c("10","100","1000","10000","100000"),limits=c(min(dfwid$width.ORFs_tx.),max(dfwid$width.ORFs_tx.)*1.1))
   #c<-c + geom_text(aes(x=cat_tx, y=ORFs_tx.ORFs_pM, hjust="top",label=ORFs_tx.ORFs_pM),colour="black",position = position_dodge(width = 1),size=5)
@@ -289,7 +289,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   rownames(df)<-NULL
   df$gids<-NULL
   b<-ggplot(df,aes(x=Freq,y=tpms+1,fill="dark grey"))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(df$tpms+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   b<-b + theme_bw()
@@ -329,7 +329,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df$maxiso<-factor(df$maxiso,levels = rev(sort(unique(df$maxiso))))
   rownames(df)<-NULL
   d<-ggplot(df,aes(x=maxiso,y=tpms_mult+1,fill="dark grey"))
-  d<-d + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  d<-d + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   d<-d + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(tpms_mult+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   d<-d + theme_bw()
@@ -383,7 +383,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df$qnt<-qnt
   rownames(df)<-NULL
   b<-ggplot(df,aes(x=qnt,y=tpm+1,fill="dark grey"))
-  b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  b<-b + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001,100001,1000001),limits=c(1,max(df$tpm+1)*1.1),labels=c("0","10","100","1000","10000","100000","1000000"))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   b<-b + theme_bw()
@@ -402,7 +402,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df$qnt<-qnt
   rownames(df)<-NULL
   c<-ggplot(df,aes(x=qnt,y=pct_sel,fill="dark grey"))
-  c<-c + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
+  c<-c + geom_violin(scale="width",quantiles=.5,quantile.linetype=1,adjust = 1)
   #b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001),limits=c(1,10001),labels=c(0,10,100,1000,10000))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
   c<-c + theme_bw()
@@ -981,7 +981,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
       nm_titl<-topl_ok[i]
       
       a<-ggplot(means_ribo, aes(x = Position_from_splice_site,y =  value, group = group,color=group)) +
-        geom_line(size=1.8) +
+        geom_line(linewidth=1.8) +
         geom_vline(xintercept = 0,col="black",lty=2) +
         theme_classic() +
         #geom_ribbon(aes(ymin=value-sds, ymax=value+sds, x = Position_from_splice_site, fill = group), alpha = 0.01) +
@@ -992,7 +992,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         ggtitle(paste("Event =",nm_titl,"\nn =",length(ok)))
       
       b<-ggplot(means_Iso, aes(x = Position_from_splice_site,y =  value, group = group,color=group)) +
-        geom_line(size=1.8) +
+        geom_line(linewidth=1.8) +
         geom_vline(xintercept = 0,col="black",lty=2) +
         theme_classic() +
         #geom_ribbon(aes(ymin=value-sds, ymax=value+sds, x = Position_from_splice_site, fill = group), alpha = 0.01) +
