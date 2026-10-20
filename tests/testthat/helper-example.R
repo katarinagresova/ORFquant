@@ -16,6 +16,18 @@ golden_files <- function() {
        gtf = test_path("golden", "expected_ORFs.gtf.gz"))
 }
 
+# Runs `expr` without its output and messages. A warning fails the test, unless it
+# contains one of the texts `expected`
+quiet <- function(expr, expected = character()) {
+  warned <- character()
+  utils::capture.output(suppressMessages(withCallingHandlers(expr, warning = function(w) {
+    warned <<- c(warned, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })))
+  for (e in expected) warned <- warned[!grepl(e, warned, fixed = TRUE)]
+  expect(length(warned) == 0, paste(c("unexpected warnings:", warned), collapse = "\n"))
+}
+
 read_tsv <- function(f) utils::read.delim(f, stringsAsFactors = FALSE)
 # The lines of a GTF file without its header, which has the date
 gtf_lines <- function(f) {
@@ -29,4 +41,43 @@ expect_same_results <- function(new, old) {
   expect_equal(read_tsv(new$tsv), read_tsv(old$tsv), tolerance = 1e-6)
   expect_identical(readLines(new$fasta), readLines(old$fasta))
   expect_identical(gtf_lines(new$gtf), gtf_lines(old$gtf))
+}
+
+# The ORFs_tx table of the results of `prefix`, as run_ORFquant() writes it in the
+# TSV file, with the column types of the R object
+orfs_table <- function(prefix) {
+  ORFs_tx_as_table(get(load(paste0(prefix, "_final_ORFquant_results")))$ORFs_tx)
+}
+
+# The tables of the results that the three files don't have
+result_tables <- c("ORFs_feat", "ORFs_spl_feat_longest", "ORFs_spl_feat_maxORF",
+                   "ORFs_txs_feats", "ORFs_readthroughs")
+# Writes these tables of the results of `prefix` as TSV files, as run_ORFquant() writes
+# ORFs_tx, with the name of each range and, for ORFs_feat, the number of its list
+# element; the paths of the files
+write_result_tables <- function(prefix) {
+  res <- get(load(paste0(prefix, "_final_ORFquant_results")))
+  files <- stats::setNames(paste0(prefix, "_", result_tables, ".tsv"), result_tables)
+  for (t in result_tables) {
+    x <- res[[t]]
+    element <- NULL
+    if (is(x, "GRangesList")) {
+      element <- rep(seq_along(x), lengths(x))
+      x <- unlist(x, use.names = FALSE)
+    }
+    df <- ORFs_tx_as_table(x)
+    if (!is.null(names(x))) df <- cbind(name = names(x), df)
+    if (!is.null(element)) df <- cbind(element = element, df)
+    utils::write.table(df, files[[t]], sep = "\t", quote = FALSE, row.names = FALSE)
+  }
+  files
+}
+golden_tables <- function() {
+  stats::setNames(test_path("golden", paste0("expected_", result_tables, ".tsv")), result_tables)
+}
+# Checks that the tables of `new` have the content of those of `old`, the numbers to 6 digits
+expect_same_tables <- function(new, old) {
+  for (t in names(old)) {
+    expect_equal(read_tsv(new[[t]]), read_tsv(old[[t]]), tolerance = 1e-6, info = t)
+  }
 }

@@ -13,7 +13,6 @@ skip_on_os("windows")   # run_ORFquant() forks its workers
 work <- tempfile("orfquant_pipeline_")
 dir.create(work)
 runs <- new.env()   # the prefix of the files of each run
-quiet <- function(expr) invisible(utils::capture.output(suppressMessages(suppressWarnings(expr))))
 # run_ORFquant() leaves its annotation in two global variables
 withr::defer(rm(list = intersect(c("GTF_annotation", "genome_seq"), ls(globalenv())),
                 envir = globalenv()), teardown_env())
@@ -33,10 +32,14 @@ run_example <- function(name, n_cores, chunk_size) {
 }
 
 test_that("the annotation of the example is prepared", {
+  # txdbmaker warns that it ignores the phase of the stop_codon lines, and that the
+  # TxDb has no genome version
   quiet(prepare_annotation_files(annotation_directory = work,
                                  gtf_file = example_file("chr22_example.gtf.gz"),
                                  genome_seq = example_file("chr22_example.fa.gz"),
-                                 forge_BSgenome = FALSE))
+                                 forge_BSgenome = FALSE),
+        expected = c('The "phase" metadata column contains non-NA values',
+                     "genome version information is not available"))
   runs$annotation <- file.path(work, "chr22_example.gtf.gz_Rannot")
   expect_true(file.exists(runs$annotation))
 })
@@ -81,22 +84,28 @@ test_that("the command-line script runs, with 2 cores and the annotation", {
 
 test_that("1 core, 2 cores and the command-line script give the same results", {
   skip_if(is.null(runs$one_core) || is.null(runs$two_cores))
+  one_core <- write_result_tables(runs$one_core)
   expect_same_results(result_files(runs$two_cores), result_files(runs$one_core))
+  expect_same_tables(write_result_tables(runs$two_cores), one_core)
   skip_if(is.null(runs$cli), "the command-line script did not run")
   expect_same_results(result_files(runs$cli), result_files(runs$one_core))
+  expect_same_tables(write_result_tables(runs$cli), one_core)
 })
 
 test_that("the results are those of the golden files", {
   skip_if(is.null(runs$one_core))
   new <- result_files(runs$one_core)
+  tables <- write_result_tables(runs$one_core)
   if (nzchar(Sys.getenv("ORFQUANT_UPDATE_GOLDEN"))) {
     file.copy(new$tsv, test_path("golden", "expected_ORFs.tsv"), overwrite = TRUE)
     file.copy(new$fasta, test_path("golden", "expected_proteins.fasta"), overwrite = TRUE)
     gz <- gzfile(test_path("golden", "expected_ORFs.gtf.gz"), "w")
     writeLines(gtf_lines(new$gtf), gz)
     close(gz)
+    file.copy(tables, golden_tables(), overwrite = TRUE)
   }
   expect_same_results(new, golden_files())
+  expect_same_tables(tables, golden_tables())
   # Golden files made from an empty result would pass the comparison
   expect_gt(nrow(read_tsv(new$tsv)), 0)
 })
@@ -139,13 +148,48 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   rtracklayer::export(ps[strand(ps) == "+"], cov[1], format = "bigWig")
   rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
   # before, it stopped when a type of splice site had no regions, or regions on
-  # one strand only, as a type of the example has (S24)
+  # one strand only, as a type of the example has (S24). Some groups of ORFs of the
+  # example are too small for the distributions of the plots, and ggplot2 warns.
+  # In tests only, ggplot2 also warns that two arguments of the plots are deprecated
   quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
                               ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
                               annotation_file = runs$annotation,
                               coverage_file_plus = cov[1], coverage_file_minus = cov[2],
-                              output_plots_path = file.path(work, "plots"), prefix = "example"))
+                              output_plots_path = file.path(work, "plots"), prefix = "example"),
+        expected = c("Groups with fewer than two datapoints have been dropped",
+                     "Computation failed in `stat_ydensity()`",
+                     "no non-missing arguments to min", "no non-missing arguments to max",
+                     "The `draw_quantiles` argument of `geom_violin()` is deprecated",
+                     "Using `size` aesthetic for lines was deprecated"))
   expect_true(file.exists(file.path(work, "plots", "example_Meta_splicing_coverage.pdf")))
+})
+
+test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
+  plots <- file.path(work, "plots", "example_ORFquant_plots_RData")
+  skip_if_not(file.exists(plots))
+  skip_if_not_installed("rmarkdown")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc is not installed")
+  template <- system.file("rmd", package = "ORFquant")
+  template_files <- list.files(template, all.files = TRUE, recursive = TRUE)
+  sinks <- sink.number()
+  withr::defer(while (sink.number() > sinks) sink())
+  report <- file.path(work, "example_report.html")
+  quiet(create_ORFquant_html_report(input_files = plots, input_sample_names = "example",
+                                    output_file = report))
+  html <- paste(readLines(report, warn = FALSE), collapse = "\n")
+  # The input file of the sample, the sections of the template and their plots
+  expect_match(html, normalizePath(plots), fixed = TRUE)
+  for (section in c("Transcript selection", "Summary of detected ORFs", "ORFs per gene")) {
+    expect_match(html, section, fixed = TRUE)
+  }
+  expect_match(html, "data:image/png;base64,", fixed = TRUE)
+  # Before, it rendered the template in the installed package, and it did not end
+  # its sink() when rendering failed
+  expect_identical(list.files(template, all.files = TRUE, recursive = TRUE), template_files)
+  expect_error(suppressMessages(create_ORFquant_html_report(input_files = file.path(work, "no_such_file"),
+                                                            input_sample_names = "none",
+                                                            output_file = file.path(work, "no_report.html"))))
+  expect_identical(sink.number(), sinks)
 })
 
 # Input that cannot work stops run_ORFquant() before the regions are quantified;
@@ -325,4 +369,115 @@ test_that("ORFquant() takes the annotation that load_annotation() returns, witho
                                     annotation = loaded$GTF_annotation, genome_sequence = loaded$genome_seq))
   expect_true(length(with_globals$ORFs_tx_position) > 0)
   expect_equal(without_globals, with_globals)
+})
+
+test_that("run_ORFquant() with genomic_region analyzes the regions it overlaps whole", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  # One nucleotide of the first ORF. In the example, each region has one gene
+  one_nt <- GenomicRanges::resize(res$ORFs_gen[names(res$ORFs_gen) == res$ORFs_tx$ORF_id_tr[1]][1], 1)
+  dir.create(file.path(work, "genomic_region"))
+  prefix <- file.path(work, "genomic_region", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     genomic_region = one_nt, interactive = FALSE))
+  orfs <- orfs_table(prefix)
+  all_orfs <- orfs_table(runs$one_core)
+  all_orfs <- all_orfs[all_orfs$gene_id == res$ORFs_tx$gene_id[1], ]
+  expect_gt(nrow(all_orfs), 1)
+  # The ORFs of the gene, with the values of the run on all genes, except ORFs_pM,
+  # which sums to a million over the ORFs of a run
+  columns <- setdiff(colnames(all_orfs), "ORFs_pM")
+  expect_equal(orfs[columns], all_orfs[columns], ignore_attr = TRUE)
+})
+
+test_that("run_ORFquant() with unique_reads_only = TRUE finds ORFs by the P-sites of unique reads, with 1 core and with 2 cores", {
+  skip_if(is.null(runs$one_core))
+  # In the example, 3 of the 5 ORFs of DDT and RANBP1 have pval_uniq of 0.05 or more
+  genes <- c("DDT", "RANBP1")
+  all_orfs <- read_tsv(result_files(runs$one_core)$tsv)
+  expect_true(any(all_orfs$pval_uniq[all_orfs$gene_name %in% genes] >= 0.05))
+  dir.create(file.path(work, "unique_reads"))
+  prefixes <- file.path(work, "unique_reads", c("one_core", "two_cores"))
+  for (n_cores in 1:2) {
+    quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                       annotation_file = runs$annotation, n_cores = n_cores, prefix = prefixes[n_cores],
+                       gene_name = genes, unique_reads_only = TRUE, interactive = FALSE))
+  }
+  orfs <- read_tsv(result_files(prefixes[1])$tsv)
+  expect_gt(nrow(orfs), 0)
+  expect_true(all(orfs$pval_uniq < 0.05))
+  expect_same_results(result_files(prefixes[2]), result_files(prefixes[1]))
+  expect_same_tables(write_result_tables(prefixes[2]), write_result_tables(prefixes[1]))
+})
+
+test_that("ORFquant() with unique_reads = TRUE analyzes a region only with more than 4 positions of unique P-sites", {
+  skip_if(is.null(runs$one_core))
+  # Before, it analyzed a region with fewer too, if it had more than 4 positions of
+  # P-sites of all reads. The region of DDT has 43 positions, 12 of unique P-sites
+  loaded <- NULL
+  quiet(loaded <- load_annotation(runs$annotation, envir = globalenv()))
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  region <- GenomicRanges::reduce(unlist(loaded$GTF_annotation$txs_gene["ENSG00000099977.16"]))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  # ORFquant() with the n positions of unique P-sites of the region that have the most reads
+  with_unique <- function(n) {
+    uniq <- for_ORFquant$P_sites_uniq
+    in_region <- which(IRanges::overlapsAny(uniq, region))
+    drop <- in_region[order(uniq$score[in_region], decreasing = TRUE)][-seq_len(n)]
+    for_ORFquant$P_sites_uniq <- uniq[!seq_along(uniq) %in% drop]
+    res <- NULL
+    quiet(res <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
+                          unique_reads = TRUE, annotation = loaded$GTF_annotation,
+                          genome_sequence = loaded$genome_seq))
+    res
+  }
+  expect_length(with_unique(4), 0)
+  expect_gt(length(with_unique(5)$genomic_features), 0)
+})
+
+test_that("run_ORFquant() with canonical_start_only = TRUE leaves only the start codons of M, with 1 core and with 2 cores", {
+  skip_if(is.null(runs$one_core))
+  # Before, with 1 core, the alternative start codons of the genetic code stayed
+  # start codons. The example gives the same results without them, so here
+  # ORFquant() stops with the alternative start codons of the genetic code it gets
+  local_mocked_bindings(ORFquant = function(region, for_ORFquant, genetic_code_region, ...) {
+    stop("start codons: ", paste(attr(genetic_code_region, "alt_init_codons"), collapse = " "))
+  })
+  start_codons <- function(n_cores, canonical_start_only) {
+    refusal(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                         annotation_file = runs$annotation, n_cores = n_cores,
+                         prefix = file.path(work, "start_codons"), interactive = FALSE,
+                         canonical_start_only = canonical_start_only))$message
+  }
+  for (n_cores in 1:2) {
+    expect_match(start_codons(n_cores, TRUE), "start codons: ATG$", info = paste("n_cores =", n_cores))
+    expect_match(start_codons(n_cores, FALSE), "start codons: TTG CTG$", info = paste("n_cores =", n_cores))
+  }
+})
+
+test_that("with canonical_start_only = FALSE, run_ORFquant() compares the C-terminus of an ORF with that of the CDS without a start codon", {
+  skip_if(is.null(runs$one_core))
+  # Before, NC_protein_isoform read an alternative start codon at the start of the
+  # last 10 codons of the CDS as M. Genetic code 11 has the amino acids of the
+  # standard code and more alternative start codons, among them ATC, which starts
+  # the last 10 codons of the CDS that the ORFs of PISD are compared with
+  ann <- get(load(runs$annotation))
+  ann$genetic_codes$genetic_code <- "11"
+  annotation <- tempfile("code_11_Rannot_", work)
+  save(ann, file = annotation)
+  dir.create(file.path(work, "code_11"))
+  prefix <- file.path(work, "code_11", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = annotation, n_cores = 1, prefix = prefix, gene_name = "PISD",
+                     canonical_start_only = FALSE, interactive = FALSE))
+  orfs <- orfs_table(prefix)
+  all_orfs <- orfs_table(runs$one_core)
+  all_orfs <- all_orfs[all_orfs$gene_name == "PISD", ]
+  expect_identical(all_orfs$NC_protein_isoform, c("N", "N"))
+  # The ORFs and values of the run with the standard code, except ORFs_pM, which sums
+  # to a million over the ORFs of a run
+  columns <- setdiff(colnames(all_orfs), "ORFs_pM")
+  expect_equal(orfs[columns], all_orfs[columns], ignore_attr = TRUE)
 })

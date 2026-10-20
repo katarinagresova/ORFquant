@@ -53,7 +53,7 @@ Suggests:
     lemon,
     rmarkdown,
     Rsamtools,
-    testthat (>= 3.1.5),
+    testthat (>= 3.1.7),
     withr
 VignetteBuilder: knitr
 Remotes: katarinagresova/RiboseQC@v1.3.0
