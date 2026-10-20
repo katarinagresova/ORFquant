@@ -405,6 +405,19 @@ deprecation warnings.
   factor is the same for all ORFs of a region. `?ORFquant_output` now
   describes this factor. With the default `"total_Psites"`, results don't
   change.
+- `ORFs_spl_feat_longest` now compares the ORF's exons with the CDS without
+  its stop codon, as the ORF ends before its stop codon. Before, with a GTF
+  that has `stop_codon` lines (GENCODE, Ensembl and RefSeq GTFs do), the
+  CDS included its stop codon. So the last exon of an ORF with the
+  annotated stop codon was `up_lastCDS`, not `same_lastCDS`, and when an
+  intron split the stop codon or came before it, the ORF also had a
+  `missing_CDS_3prime` row of 1 to 3 nt. On a human sample (SRR15513199
+  with GENCODE 47), 3,924 of the 4,125 `exact_start_stop` ORFs had
+  `up_lastCDS`, and only 11 of the 8,134 ORFs had `same_lastCDS`. On the
+  example data, the last exons of the annotated TCN2 and TOP3B ORFs are now
+  `same_lastCDS`. GTFs whose CDS lines end before the stop codon
+  (`stop_in_gtf` `NA`, see above) are not affected. `ORFs_spl_feat_maxORF`,
+  the plots and the other outputs don't change.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start

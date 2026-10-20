@@ -268,11 +268,13 @@
 #' that overlaps no annotated CDS, such as a uORF, it uses the longest
 #' annotated CDS of the ORF's gene: all its exons are then rows with a
 #' \code{spl_type} that starts with \code{missing_CDS}. When the gene has no
-#' CDS, it uses none, and the rows are the ORF's exons only.
+#' CDS, it uses none, and the rows are the ORF's exons only. The CDS is
+#' without its stop codon, as the ORF ends before its stop codon.
 #'
 #' @section Stop codons in the annotation:
-#' Both kinds of categories, and \code{NC_protein_isoform}, compare the ORF's
-#' stop codon with the annotated one. The annotated CDS includes its stop
+#' Both kinds of categories, \code{NC_protein_isoform} and
+#' \code{ORFs_spl_feat_longest} compare the ORF's stop codon with the
+#' annotated one. The annotated CDS includes its stop
 #' codon when the GTF has \code{stop_codon} lines (GENCODE, Ensembl and
 #' RefSeq GTFs do): \code{\link{prepare_annotation_files}} adds them to the
 #' CDS. When most CDS end before their stop codon (CDS lines made by factR, or

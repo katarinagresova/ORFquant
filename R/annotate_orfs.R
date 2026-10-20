@@ -501,6 +501,19 @@ compatible_choice<-function(x,trann){
   }else{c(x[1],txs[1],btps[1])}
 }
 
+# The CDS exons cds without their last stop_len nt (the stop codon, which can be split by an intron or be the first
+# codon of an exon), in the order of cds: the reference of ORFs_spl_feat_longest, as its ORFs end before their stop codon
+cds_without_stop<-function(cds,stop_len){
+  if(length(cds)==0 | stop_len==0){return(cds)}
+  #the nt of the stop codon in each exon: the exons from the 3' end
+  o<-order(start(cds),decreasing=as.vector(strand(cds[1]))=="+")
+  after<-cumsum(width(cds)[o])-width(cds)[o]
+  cut<-integer(length(cds))
+  cut[o]<-pmin(width(cds)[o],pmax(stop_len-after,0))
+  cds<-resize(cds,width(cds)-cut,fix="start")
+  cds[width(cds)>0]
+}
+
 #' Annotate detected ORFs in transcript and genome space
 #'
 #' This function annotates quantified ORFs with respect to other detected ORFs and annotated ones, in both genome and transcript space.
@@ -980,7 +993,8 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
     }     
     
-    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = max_cdsok)
+    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS)
+    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,stop_len))
     #to maxORF
     max_pct<-ORFs_gen[[maxORF_orf[cols$gene_id]]]
     cols$ref_id_maxORF<-maxORF_orf[cols$gene_id]

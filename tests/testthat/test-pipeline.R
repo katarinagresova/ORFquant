@@ -465,6 +465,21 @@ test_that("the splice annotation of an ORF outside the CDS does not depend on th
   expect_true(any(grepl("missing_CDS", first)))
 })
 
+test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without its stop codon", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  # The ORFs with the start and the stop of the CDS of ref_id: TCN2 (+ strand) and TOP3B (- strand)
+  exact <- res$ORFs_tx$ORF_id_tr[res$ORFs_tx$ORF_category_Gen == "exact_start_stop"]
+  expect_setequal(exact, c("ENST00000698268.1_172_1479", "ENST00000357179.10_157_2742"))
+  spl <- res$ORFs_spl_feat_longest
+  for (id in exact) {
+    types <- spl$spl_type[names(spl) == id]
+    # Before, the CDS had its stop codon, and the ORF not, so the last exon was up_lastCDS
+    expect_true(any(grepl("same_lastCDS", types)), info = id)
+    expect_false(any(grepl("up_lastCDS|missing_CDS_3prime", types)), info = id)
+  }
+})
+
 test_that("ORFquant() takes the annotation that load_annotation() returns, without the global variables", {
   skip_if(is.null(runs$one_core))
   loaded <- NULL
