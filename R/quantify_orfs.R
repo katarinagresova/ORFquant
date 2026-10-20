@@ -1305,14 +1305,17 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       #uniq_flag
       if(uniq_signal){
         covo<-featsall$unique_reads/width(featsall)
+        rdz<-featsall$unique_reads
       }
-      
+
       if(!uniq_signal){
         covo<-featsall$reads/width(featsall)
+        rdz<-featsall$reads
       }
       featsall$coverage<-covo
       jxs<-featsall$type=="J"
-      featsall$coverage[jxs]<-covo[jxs]/60
+      #a junction has its reads/60, as in the steps before (before, its reads/width were divided by 60)
+      featsall$coverage[jxs]<-rdz[jxs]/60
       
       cov_ps_unqs_adj<-cov_ps_unqs*unqs_optim
       cov_unpcts<-NumericList(lapply(featsall$ORF_id_tr_selected,function(x){cov_ps_unqs_adj[x]}))

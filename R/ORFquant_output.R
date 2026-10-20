@@ -118,11 +118,14 @@
 #'   \code{NA} without unique features;
 #'   \code{adj_feats}, the same, after ORFs without unique features get a
 #'   factor from the coverage that the factors of the other ORFs leave them;
-#'   \code{optim_feats}, the final factor: \code{adj_feats} rescaled so that
-#'   the P-sites assigned to a group of ORFs that share features (directly or
-#'   through other ORFs of the group) add up to the P-sites on their exonic
-#'   bins (\code{stn.orf_quant.scaling = "total_Psites"}; with
-#'   \code{"average_coverage"}, their coverage), at most 1.}
+#'   \code{optim_feats}, the final factor, at most 1. With
+#'   \code{stn.orf_quant.scaling = "total_Psites"}, \code{adj_feats} rescaled
+#'   so that the P-sites assigned to a group of ORFs that share features
+#'   (directly or through other ORFs of the group) add up to the P-sites on
+#'   their exonic bins. With \code{"average_coverage"}, \code{adj_feats} times
+#'   one factor for all ORFs of the region, at most 1, so that the coverage of
+#'   the ORFs on the features adds up to the coverage of the features (as for
+#'   \code{unq_feats}).}
 #' \item{\code{compatible_with}}{The ORF on each annotated transcript of the
 #'   region that contains all of it, with the same exons and junctions, as
 #'   \code{<transcript_id>_<start>_<end>} in that transcript's coordinates.

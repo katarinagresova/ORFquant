@@ -394,6 +394,17 @@ deprecation warnings.
   FASTA headers) mixed the two transcripts. `compatible_ORF_id_tr_longest`
   is chosen in the same way. Such ORFs are rare: GTFs from GENCODE, RefSeq,
   StringTie, IsoQuant and factR gave none.
+- With `stn.orf_quant.scaling = "average_coverage"` (not the default), the
+  coverage of a splice junction in the final scaling factor (`optim_feats`)
+  is now its reads divided by 60, as in the steps before it. Before, its
+  reads were divided by its width and then by 60, so the junctions added
+  almost nothing to the coverage of the region, and the factor was too low.
+  On the example data, `P_sites` of all 15 ORFs is now higher (for example
+  98.7, not 77.9, for the annotated TCN2 ORF), and so `ORFs_pM` changes too.
+  `ORF_pct_P_sites` and the ORFs that ORFquant finds don't change, as the
+  factor is the same for all ORFs of a region. `?ORFquant_output` now
+  describes this factor. With the default `"total_Psites"`, results don't
+  change.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start

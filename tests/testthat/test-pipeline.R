@@ -132,6 +132,29 @@ test_that("the P-sites of a group of ORFs that share features add up to the P-si
   expect_false("ENST00000450638.5_250_336" %in% names(p_sites))
 })
 
+test_that("with average_coverage, the coverage of the ORFs of a gene adds up to the coverage of its features", {
+  skip_if(is.null(runs$one_core))
+  dir.create(file.path(work, "average_coverage"))
+  prefix <- file.path(work, "average_coverage", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     stn.orf_quant.scaling = "average_coverage", interactive = FALSE))
+  res <- get(load(paste0(prefix, "_final_ORFquant_results")))
+  coverage <- stats::setNames(res$ORFs_tx$P_sites / width(res$ORFs_tx), res$ORFs_tx$ORF_id_tr)
+  n <- 0
+  for (feats in as.list(res$ORFs_feat)) {
+    # an ORF below stn.orf_quant.cutoff_pct is not in the results
+    if (!all(unlist(feats$ORF_id_tr_selected) %in% names(coverage))) next
+    n <- n + 1
+    # One factor for the ORFs of a region makes their coverage that of the features,
+    # at most 1 (in the example, each such gene has a factor below 1). Before, the
+    # reads of a junction were divided by its width and then by 60
+    on_feats <- vapply(as.list(feats$ORF_id_tr_selected), function(x) sum(coverage[x]), numeric(1))
+    expect_equal(sum(on_feats), sum(ifelse(feats$type == "J", feats$reads / 60, feats$reads / width(feats))))
+  }
+  expect_gt(n, 0)
+})
+
 test_that("the output dictionary documents every column and category of the results", {
   skip_if(is.null(runs$one_core))
   rd <- tryCatch(tools::Rd_db("ORFquant")[["ORFquant_output.Rd"]], error = function(e) NULL)
