@@ -13,7 +13,7 @@ annotate_splicing(orf_gen, ref_cds)
 }
 \value{
 Exon structure of detected ORF including possible missing exons from reference, together with a \code{spl_type} column
-including the annotation for each exon (e.g. alternative acceptors or donor).
+including the annotation for each exon (e.g. alternative acceptors or donor), and a \code{ref} column (see Details).
 }
 \description{
 This function detects usage of different exons and exonic boundaries of one ORF with respect to a reference ORF.
@@ -26,6 +26,23 @@ each exon is aligned to the closest one to match acceptor and donor sites, or to
 \code{new} exons (exons of the ORF that overlap no exon of the reference) and \code{missing_CDS} exons before the first exon of the ORF
 that overlaps the reference get \code{_5prime}, those after the last one get \code{_3prime}, in 5' to 3' order on both strands.
 When no exon of the ORF overlaps the reference, all exons get \code{_notoverl}.
+
+An exon of the ORF that overlaps the reference gets two labels, separated by \code{;}: one for its 5' end and one for
+its 3' end, on the strand of the ORF. Each label is \code{same}, \code{up} or \code{down}, then \code{_5ss} or
+\code{_3ss}: \code{_firstCDS} for the 5' end of the first exon, \code{_lastCDS} for the 3' end of the last exon, and
+\code{_5monoCDS} and \code{_3monoCDS} for a single exon. \code{same} means that the end is at the same position as that
+end of the reference exon, \code{up} upstream (5') of it, and \code{down} downstream (3') of it. With \code{CDS_spanning}, the exon overlaps
+more than one exon of the reference, and its ends are compared with the outer ends of these exons. For example,
+\code{down_firstCDS;same_3ss} is a first exon that starts after the start of the reference exon, and
+\code{same_5ss;up_lastCDS} is a last exon that ends before the end of the reference exon.
+
+The column \code{ref} has the exons of the reference that each row is compared with: the exons that the exon of the
+ORF overlaps; for a \code{new} exon, the nearest exon of the reference (none when the reference has no exons); for a
+\code{missing_CDS} row, the exon of the reference itself.
+
+\code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon
+(\code{ORFs_spl_feat_longest}) or the ORF of \code{ref_id_maxORF} (\code{ORFs_spl_feat_maxORF}), as an ORF ends before
+its stop codon. So an ORF that ends at the stop codon of the reference has \code{same_lastCDS}.
 }
 \seealso{
 \code{\link{detect_translated_orfs}}, \code{\link{annotate_ORFs}}

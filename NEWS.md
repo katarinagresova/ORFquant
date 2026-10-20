@@ -1007,6 +1007,12 @@ deprecation warnings.
   In a human sample (SRR15513199, GENCODE 47), 5 of the 156 groups of
   transcripts with the same exons have 2 selected transcripts, each a gene
   with only these 2 transcripts and one ORF.
+- `?annotate_splicing` now explains the labels `same`, `up` and `down` of
+  `spl_type` in `ORFs_spl_feat_longest` and `ORFs_spl_feat_maxORF`: each
+  end of an ORF exon is at, upstream of or downstream of the same end of
+  the reference exon, on the strand of the ORF. It also describes the
+  column `ref`, and says that the reference is the CDS of `ref_id` without
+  its stop codon, or the ORF of `ref_id_maxORF`.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and
