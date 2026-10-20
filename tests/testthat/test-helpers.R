@@ -91,6 +91,21 @@ test_that("get_orfs() reports every start codon, or one ORF for each stop codon"
   expect_equal(IRanges::end(merged), 9)
 })
 
+test_that("get_orfs() reads an alternative start codon as a start only at the first codon of a frame", {
+  # Frame 0 has CTG GCC TAA GCC CTG GCC TAA. Biostrings' translate() reads the
+  # alternative initiation codons (TTG and CTG in the standard code) as M only
+  # at the first codon, so the second CTG is not a start
+  seq <- Biostrings::DNAString("CTGGCCTAAGCCCTGGCCTAA")
+  starts <- function(genetic_code) {
+    IRanges::start(get_orfs("tx", seq, genetic_code_table = genetic_code)$frame_0)
+  }
+  expect_equal(starts(Biostrings::GENETIC_CODE), 1)
+  # The genetic code that run_ORFquant() makes with canonical_start_only = TRUE
+  canonical <- Biostrings::GENETIC_CODE
+  attributes(canonical)$alt_init_codons <- names(which(canonical == "M"))
+  expect_length(starts(canonical), 0)
+})
+
 test_that("get_reathr_seq() gives no readthrough region for an ORF without a stop codon after it", {
   # The ORF ends at the end of the transcript, as an ORF without a start codon
   # (stn.orf_find.nostarts = TRUE) can; its frame has one stop codon, before it.

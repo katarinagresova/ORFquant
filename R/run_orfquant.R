@@ -150,7 +150,7 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' @param stn.orf_quant.cutoff_P_sites \code{orf_quant.cutoff_P_sites} parameter for the \code{ORFquant} function
 #' @param unique_reads_only Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @param stn.orf_quant.scaling \code{orf_quant.scaling} parameter for the \code{ORFquant} function. Defaults to total_Psites
-#' @param canonical_start_only Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}.
+#' @param canonical_start_only Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}. With \code{FALSE}, the alternative initiation codons of the genetic code (TTG and CTG in the standard code) are start codons only at the first codon of a frame, that is, at one of the first three bases of a transcript (see \code{\link{get_orfs}}). Inside a transcript, only the codons of M (ATG in the standard code) are start codons, so \code{FALSE} does not find ORFs with a near-cognate start codon, such as N-terminal extensions that start at a CTG.
 #' @param write_TSV_file write a tab-separated file with one row per ORF, the \code{ORFs_tx} table. Defaults to \code{TRUE}
 #' @return A set of output files containing transcript coordinates, exonic coordinates and annotation for each ORF, including optional GTF, TSV and protein fasta files.\cr\cr
 #' The description for each list object is as follows:\cr\cr
