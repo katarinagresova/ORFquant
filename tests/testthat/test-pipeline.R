@@ -214,8 +214,10 @@ test_that("create_ORFquant_html_report() makes the HTML report of the plots of t
     expect_match(html, section, fixed = TRUE)
   }
   expect_match(html, "data:image/png;base64,", fixed = TRUE)
-  # Before, section 3.5 was empty for a sample without coverage files
-  expect_match(html, "made the plots of this sample without coverage files", fixed = TRUE)
+  # Before, section 3.5 was empty for a sample without coverage files. pandoc wraps
+  # the lines of the HTML text
+  expect_match(gsub("\\s+", " ", html), "made the plots of this sample without coverage files",
+               fixed = TRUE)
   # Before, it rendered the template in the installed package, and it did not end
   # its sink() when rendering failed
   expect_identical(list.files(template, all.files = TRUE, recursive = TRUE), template_files)
