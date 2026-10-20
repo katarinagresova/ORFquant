@@ -800,6 +800,16 @@ deprecation warnings.
   2,470 readthroughs have their own id in `compatible_id`. A fix changes
   only these 66 values: 60 become empty, and 6 get the id of another
   readthrough.
+- `?run_ORFquant` and `?get_orfs` now say what `canonical_start_only = FALSE`
+  does. The alternative initiation codons of the genetic code (TTG and CTG in
+  the standard code) are then start codons only at the first codon of a
+  frame, that is, at one of the first three bases of a transcript: ORFquant
+  translates each frame from its first codon, and Biostrings' `translate()`
+  reads these codons as M only at the first codon. Inside a transcript, only
+  the codons of M (ATG in the standard code) are start codons. So `FALSE`
+  does not find ORFs with a near-cognate start codon, such as N-terminal
+  extensions that start at a CTG. ORFquant has always worked this way, and it
+  still does.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

@@ -25,7 +25,7 @@
 
 #' Find ATG-starting ORFs in a sequence
 #'
-#' Finds the ORFs in the three frames of a transcript sequence. Each ORF goes from a start codon, an \code{M} in the translation of the frame, to the last nucleotide before the next stop codon in the frame. A start codon without a stop codon after it in the transcript gives no ORF.
+#' Finds the ORFs in the three frames of a transcript sequence. Each ORF goes from a start codon, an \code{M} in the translation of the frame, to the last nucleotide before the next stop codon in the frame. A start codon without a stop codon after it in the transcript gives no ORF. Each frame is translated from its first codon, and Biostrings' \code{translate()} reads the alternative initiation codons of \code{genetic_code_table} (its attribute \code{alt_init_codons}) as \code{M} only at the first codon of the sequence. So these codons are start codons only at one of the first three bases of the transcript. Inside the transcript, only the codons of \code{M} are start codons.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param tx_name transcript_id
