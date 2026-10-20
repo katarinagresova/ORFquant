@@ -235,6 +235,32 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   }
 })
 
+test_that("plot_ORFquant_results() plots the splice sites with bedGraph coverage files that end before a splice site", {
+  skip_if(is.null(runs$one_core))
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  spl <- unlist(res$ORFs_spl_feat_maxORF)
+  cov <- file.path(work, c("coverage_plus.bedGraph", "coverage_minus.bedGraph"))
+  # The P-sites before the middle of the splice features of each strand. Before, the
+  # coverage of a bedGraph (it has no chromosome lengths) ended at its last P-site,
+  # and a window around a splice site after it stopped the plots with "subscript
+  # contains out-of-bounds ranges"
+  for (i in 1:2) {
+    p <- ps[strand(ps) == c("+", "-")[i]]
+    cut <- stats::median(start(spl[strand(spl) == c("+", "-")[i]]))
+    rtracklayer::export(p[end(p) < cut], cov[i], format = "bedGraph")
+  }
+  quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                              ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
+                              annotation_file = runs$annotation,
+                              coverage_file_plus = cov[1], coverage_file_minus = cov[2],
+                              output_plots_path = file.path(work, "plots_bedgraph"), prefix = "example"),
+        expected = c("Groups with fewer than two datapoints have been dropped",
+                     "Computation failed in `stat_ydensity()`",
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
+  expect_true(file.exists(file.path(work, "plots_bedgraph", "example_Meta_splicing_coverage.pdf")))
+})
+
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
   plots <- file.path(work, "plots", "example_ORFquant_plots_RData")
   skip_if_not(file.exists(plots))

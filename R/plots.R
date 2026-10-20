@@ -31,8 +31,8 @@
 #' @param for_ORFquant_file path to the "for_ORFquant" file containing P_sites positions and junction reads
 #' @param ORFquant_output_file Full path to the "_final_ORFquant_results" RData object output by ORFquant. See \code{run_ORFquant}
 #' @param annotation_file Full path to the *Rannot R file in the annotation directory used in the \code{prepare_annotation_files function}
-#' @param coverage_file_plus Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (plus strand), as the ones created by \code{RiboseQC}
-#' @param coverage_file_minus Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigwig file (minus strand), as the ones created by \code{RiboseQC}
+#' @param coverage_file_plus Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigWig or bedGraph file (plus strand), as the ones created by \code{RiboseQC}
+#' @param coverage_file_minus Optional. Full path to a Ribo-seq coverage (no P-sites but read coverage) bigWig or bedGraph file (minus strand), as the ones created by \code{RiboseQC}
 #' @param output_plots_path Full path to the directory where plots in .pdf format are stored.
 #' @param prefix prefix appended to output filenames
 #' @return the function exports a RData object (*ORFquant_plots_RData) containing data to produce all plots, and produces different QC plots in .pdf format.
@@ -582,11 +582,17 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     covisomn<-coverage(ORFs_gen[strand(ORFs_gen)=="-"],weight = ORFs_gen[strand(ORFs_gen)=="-"]$ORF_pct_P_sites_pN)
     
     
+    #the chromosomes and their lengths of ORFs_gen: a bedGraph has no lengths, so before, its coverage ended at its
+    #last covered base, and a window around a splice site after it stopped the plots
     covpspl<-import(coverage_file_plus)
     strand(covpspl)<-"+"
+    seqlevels(covpspl,pruning.mode="coarse")<-seqlevels(ORFs_gen)
+    seqlengths(covpspl)<-seqlengths(ORFs_gen)
     covpspl<-coverage(x = covpspl,weight = as.numeric(covpspl$score))
     covpsmn<-import(coverage_file_minus)
     strand(covpsmn)<-"-"
+    seqlevels(covpsmn,pruning.mode="coarse")<-seqlevels(ORFs_gen)
+    seqlengths(covpsmn)<-seqlengths(ORFs_gen)
     covpsmn<-coverage(x = covpsmn,weight = as.numeric(covpsmn$score))
     
     

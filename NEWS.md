@@ -559,6 +559,13 @@ deprecation warnings.
   object with no dimensions`). A type without regions gets the panel "Not
   enough distinct regions". On our 4 test data sets and on chromosome 21 of
   SRR15513199, the function failed; it now makes all plots.
+- `plot_ORFquant_results()` with bedGraph coverage files no longer fails
+  with `subscript contains out-of-bounds ranges` when a window around a
+  splice site goes past the last covered base of its chromosome and strand
+  (lcalviell/ORFquant#7). A bedGraph file has no chromosome lengths, so its
+  coverage ended at its last covered base. The coverage now gets the
+  chromosomes and their lengths of the P-sites file. BigWig files, and
+  bedGraph files that did not fail, give the same plots as before.
 - In the `CDS_spanning` plot of `plot_ORFquant_results()`, all `same_5ss`
   regions (the regions without a mixture of ORFs at 5' splice sites) are now
   in the downstream panel. Before, when there were more of them than of
