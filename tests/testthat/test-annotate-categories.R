@@ -56,3 +56,26 @@ test_that("tx_category() equals the old cascade for every order of the 4 values"
   # sta from compatible_ORF_id_tr is numeric, not integer
   expect_identical(tx_category(20, 79L, 101L, 200L), "uORF")
 })
+
+test_that("compatible_choice() gives the id of the ORF on the transcript that it gives", {
+  trann <- data.frame(transcript_id = c("MSTRG.1.1", "MSTRG.1.10", "MSTRG.1.2"),
+                      transcript_biotype = c("protein_coding", "protein_coding", "lncRNA"))
+  x <- c("MSTRG.1.10_25_115", "MSTRG.1.2_5_95", "MSTRG.1.1_10_100")
+  # Before, in the C locale, the id was the one on MSTRG.1.10 and the transcript
+  # MSTRG.1.1: the ids were sorted apart from the transcripts, and "0" sorts before "_"
+  withr::local_collate("C")
+  expect_identical(compatible_choice(x, trann), c("MSTRG.1.1_10_100", "MSTRG.1.1", "protein_coding"))
+  # Without a protein-coding transcript, the first one
+  trann$transcript_biotype[1:2] <- "retained_intron"
+  expect_identical(compatible_choice(x, trann), c("MSTRG.1.10_25_115", "MSTRG.1.10", "retained_intron"))
+})
+
+test_that("nmd_candidate() is TRUE only when the last exon-exon junction is after the whole stop codon", {
+  # The distance is the start of the last exon minus the ORF's end, without the stop codon.
+  # Before, each positive distance was TRUE: also 1 (the stop codon is the first codon of the
+  # last exon), and 2 and 3 (the stop codon is across the last junction)
+  expect_identical(nmd_candidate(c(-94, 0, 1, 2, 3, 4, 25)), c(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE))
+  # The distances on the compatible transcripts are text, compared as numbers ("25" > "3" is FALSE)
+  d <- IRanges::CharacterList(list(c("-94", "3", "4", "25", "100")))
+  expect_identical(as.list(nmd_candidate(d)), list(c(FALSE, FALSE, TRUE, TRUE, TRUE)))
+})

@@ -132,6 +132,29 @@ test_that("the P-sites of a group of ORFs that share features add up to the P-si
   expect_false("ENST00000450638.5_250_336" %in% names(p_sites))
 })
 
+test_that("with average_coverage, the coverage of the ORFs of a gene adds up to the coverage of its features", {
+  skip_if(is.null(runs$one_core))
+  dir.create(file.path(work, "average_coverage"))
+  prefix <- file.path(work, "average_coverage", "example")
+  quiet(run_ORFquant(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                     annotation_file = runs$annotation, n_cores = 1, prefix = prefix,
+                     stn.orf_quant.scaling = "average_coverage", interactive = FALSE))
+  res <- get(load(paste0(prefix, "_final_ORFquant_results")))
+  coverage <- stats::setNames(res$ORFs_tx$P_sites / width(res$ORFs_tx), res$ORFs_tx$ORF_id_tr)
+  n <- 0
+  for (feats in as.list(res$ORFs_feat)) {
+    # an ORF below stn.orf_quant.cutoff_pct is not in the results
+    if (!all(unlist(feats$ORF_id_tr_selected) %in% names(coverage))) next
+    n <- n + 1
+    # One factor for the ORFs of a region makes their coverage that of the features,
+    # at most 1 (in the example, each such gene has a factor below 1). Before, the
+    # reads of a junction were divided by its width and then by 60
+    on_feats <- vapply(as.list(feats$ORF_id_tr_selected), function(x) sum(coverage[x]), numeric(1))
+    expect_equal(sum(on_feats), sum(ifelse(feats$type == "J", feats$reads / 60, feats$reads / width(feats))))
+  }
+  expect_gt(n, 0)
+})
+
 test_that("the output dictionary documents every column and category of the results", {
   skip_if(is.null(runs$one_core))
   rd <- tryCatch(tools::Rd_db("ORFquant")[["ORFquant_output.Rd"]], error = function(e) NULL)
@@ -210,6 +233,32 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
     top <- max(as.numeric(y$get_labels()[!is.na(y$get_breaks())]))
     expect_gt(top * 10, max(plots[[n]]$data[[y_columns[[n]]]]), label = n)
   }
+})
+
+test_that("plot_ORFquant_results() plots the splice sites with bedGraph coverage files that end before a splice site", {
+  skip_if(is.null(runs$one_core))
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  spl <- unlist(res$ORFs_spl_feat_maxORF)
+  cov <- file.path(work, c("coverage_plus.bedGraph", "coverage_minus.bedGraph"))
+  # The P-sites before the middle of the splice features of each strand. Before, the
+  # coverage of a bedGraph (it has no chromosome lengths) ended at its last P-site,
+  # and a window around a splice site after it stopped the plots with "subscript
+  # contains out-of-bounds ranges"
+  for (i in 1:2) {
+    p <- ps[strand(ps) == c("+", "-")[i]]
+    cut <- stats::median(start(spl[strand(spl) == c("+", "-")[i]]))
+    rtracklayer::export(p[end(p) < cut], cov[i], format = "bedGraph")
+  }
+  quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                              ORFquant_output_file = paste0(runs$one_core, "_final_ORFquant_results"),
+                              annotation_file = runs$annotation,
+                              coverage_file_plus = cov[1], coverage_file_minus = cov[2],
+                              output_plots_path = file.path(work, "plots_bedgraph"), prefix = "example"),
+        expected = c("Groups with fewer than two datapoints have been dropped",
+                     "Computation failed in `stat_ydensity()`",
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
+  expect_true(file.exists(file.path(work, "plots_bedgraph", "example_Meta_splicing_coverage.pdf")))
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
@@ -414,6 +463,32 @@ test_that("the splice annotation of an ORF outside the CDS does not depend on th
   expect_identical(first, spl_type_of_orf(first = FALSE))
   # The reference is the CDS of the gene: its exons that the ORF does not overlap are missing
   expect_true(any(grepl("missing_CDS", first)))
+})
+
+test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without its stop codon", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  # The ORFs with the start and the stop of the CDS of ref_id: TCN2 (+ strand) and TOP3B (- strand)
+  exact <- res$ORFs_tx$ORF_id_tr[res$ORFs_tx$ORF_category_Gen == "exact_start_stop"]
+  expect_setequal(exact, c("ENST00000698268.1_172_1479", "ENST00000357179.10_157_2742"))
+  spl <- res$ORFs_spl_feat_longest
+  for (id in exact) {
+    types <- spl$spl_type[names(spl) == id]
+    # Before, the CDS had its stop codon, and the ORF not, so the last exon was up_lastCDS
+    expect_true(any(grepl("same_lastCDS", types)), info = id)
+    expect_false(any(grepl("up_lastCDS|missing_CDS_3prime", types)), info = id)
+  }
+})
+
+test_that("NMD_candidate is TRUE when Distance_to_lastExEx is more than 3, also on the compatible transcripts", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  orfs <- res$ORFs_tx
+  expect_identical(unname(orfs$NMD_candidate), unname(orfs$Distance_to_lastExEx > 3))
+  d <- as.integer(unlist(orfs$Distance_to_lastExEx_compatible_txs, use.names = FALSE))
+  # Distances of 10 or more: as text, "10" > "3" is FALSE
+  expect_true(any(d >= 10))
+  expect_identical(unlist(orfs$NMD_candidate_compatible_txs, use.names = FALSE), d > 3)
 })
 
 test_that("ORFquant() takes the annotation that load_annotation() returns, without the global variables", {

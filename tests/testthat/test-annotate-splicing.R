@@ -45,3 +45,30 @@ test_that("annotate_splicing() does not depend on the order of the ORF exons", {
     expect_identical(annotate_splicing(rev(m), mref), annotate_splicing(m, mref), info = paste("- strand, case", k))
   }
 })
+
+test_that("cds_without_stop() removes the stop codon from the CDS exons, also when an intron splits it", {
+  # The CDS exons with the stop codon, and without it, on the + strand
+  cases <- list(
+    list(cds = gr(c(100, 300), c(200, 350), "+"), out = gr(c(100, 300), c(200, 347), "+")),
+    # 1 nt of the stop codon before the intron, 2 nt after it
+    list(cds = gr(c(100, 300), c(200, 301), "+"), out = gr(100, 199, "+")),
+    # the stop codon is the last exon
+    list(cds = gr(c(100, 300), c(200, 302), "+"), out = gr(100, 200, "+")))
+  for (k in seq_along(cases)) {
+    p <- cases[[k]]
+    expect_identical(cds_without_stop(p$cds, 3), p$out, info = paste("+ strand, case", k))
+    expect_identical(cds_without_stop(mirror(p$cds), 3), mirror(p$out), info = paste("- strand, case", k))
+    # the exons keep their order
+    expect_identical(cds_without_stop(rev(p$cds), 3), rev(p$out), info = paste("+ strand, descending, case", k))
+  }
+  # A CDS without its stop codon (stop_in_gtf is NA) does not change
+  expect_identical(cds_without_stop(cases[[1]]$cds, 0), cases[[1]]$cds)
+  expect_identical(cds_without_stop(GenomicRanges::GRanges(), 3), GenomicRanges::GRanges())
+  # Before, the reference of ORFs_spl_feat_longest kept the stop codon, so the last
+  # exon of an ORF that ends at the annotated stop codon was up_lastCDS
+  orf <- gr(c(100, 300), c(200, 347), "+")
+  expect_identical(spl_5to3(annotate_splicing(orf, cds_without_stop(cases[[1]]$cds, 3))),
+                   c("same_firstCDS;same_3ss", "same_5ss;same_lastCDS"))
+  expect_identical(spl_5to3(annotate_splicing(gr(100, 199, "+"), cds_without_stop(cases[[2]]$cds, 3))),
+                   "same_5monoCDS;same_3monoCDS")
+})

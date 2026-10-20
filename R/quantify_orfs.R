@@ -29,6 +29,22 @@
 #' @details Features (bins and junctions) are divided into shared and unique features, and into with support and without
 #' support (with  or without reads mapping). A set of logical rules filters out transcripts with internal features with no support
 #' and no unique features with reads. More specific details can be found in the ORFquant manuscript.
+#'
+#' Before these rules, the function removes each nested transcript: a transcript whose features are all features of
+#' another transcript. Transcripts with the same features, such as transcripts with the same exons, are an exception:
+#' \itemize{
+#' \item Of 2 such transcripts, it keeps the first in alphabetical order.
+#' \item Of 3 or more, it keeps all but the last in alphabetical order.
+#' \item Of 2 such transcripts that are nested in a third transcript, it keeps the third and the first of the two.
+#' \item It never removes a transcript that has all features of the region, so of 2 such transcripts that have all
+#'   features of the region, it keeps both.
+#' }
+#' The rules after it can select all the transcripts with the same features that are left, so \code{selected_txs} of
+#' \code{\link{ORFquant}} and the transcripts of \code{Detected_ORFs.gtf} (see \code{\link{run_ORFquant}}) can have
+#' more than one transcript with the same exons. An ORF on them is in the results once, and its \code{compatible_with}
+#' has the ORF on each of them (see \code{\link{ORFquant_output}}). ORFquant has always worked this way, and it still
+#' does. In a human sample (SRR15513199, GENCODE 47), 5 of the 156 groups of transcripts with the same exons have 2
+#' selected transcripts. Each is a gene with only these 2 transcripts and one ORF.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param region genomic region being analyzed
@@ -303,8 +319,10 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
 #' @param sequence DNAString object containing the sequence of the transcript
 #' @param orf transcript-level ORF coordinates 
 #' @param genetic_code GENETIC_CODE table to use
-#' @return GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it
-#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}
+#' @return GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it.
+#' Each range starts at a stop codon in the frame of \code{orf}, the first at the stop codon of \code{orf}, and ends one codon before
+#' the next stop codon, or at the end of the transcript. So the last codon before each stop codon is in no range.
+#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{detect_readthrough}}
 #' @export
 
 get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
@@ -378,10 +396,22 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
 #'
 #' This function uses the multitaper method to look for readthrough translation
 #' @details The function looks for stop-stop pairs after the stop codon of the detected ORF.\cr
+#' Each region (see \code{\link{get_reathr_seq}}) starts at a stop codon, so \code{Protein} starts with \code{*} (the protein FASTA of
+#' \code{\link{run_ORFquant}} leaves it out). It ends one codon before the next stop codon in the frame, or at the end of the
+#' transcript. So the last codon before a stop codon is in no region: \code{Protein} lacks its amino acid, and its P-sites do not
+#' count in \code{P_sites_raw}, \code{pval} and \code{pct_fr}.\cr
+#' A test passes with a \code{pval} below 0.05 (\code{pval_uniq} with \code{uniq_signal = TRUE}) and a \code{pct_fr} of at least
+#' 0.5 (above 0.5 for a next region alone), also when \code{cutoff_fr_ave} is lower. The readthrough is found when the first region
+#' after the ORF passes. Then the function tests each next region alone, and extends the readthrough to the end of each region that
+#' passes, also over regions that fail. In each step it tests the readthrough as extended so far, and stops after the step when this
+#' test fails, but it can still add one region in that step. It does not test the readthrough after its last extension. So a
+#' readthrough over more than one stop codon (\code{n_stops_readth}) can have a \code{pval} above 0.05 or a \code{pct_fr} below 0.5:
+#' filter on these columns. ORFquant has always worked this way, and it still does.\cr
 #' The same readthrough can be found after the ORFs of several transcripts of the region. The function removes most of these
 #' duplicates: \code{compatible_id} has the \code{ORF_id_tr} of the other readthroughs of the region with the same \code{Protein},
 #' and \code{compatible_original_id} their \code{ORF_orig_tr} (the detected ORF before the readthrough), so these ids are usually
-#' not in the result.\cr
+#' not in the result. Then it also removes a readthrough when its \code{Protein} and its \code{P_sites_raw} each occur in an earlier
+#' readthrough of the region, also in two different ones.\cr
 #' Because of an indexing error, a readthrough found after a readthrough with another \code{Protein} in the same region has its own
 #' \code{ORF_id_tr} in \code{compatible_id} and its own \code{ORF_orig_tr} in \code{compatible_original_id}, and can lack the id of
 #' one other readthrough with the same \code{Protein}. ORFquant has always worked this way, and it still does. No other column or
@@ -1305,14 +1335,17 @@ select_quantify_ORFs<-function(results_ORFs,P_sites,P_sites_uniq,cutoff_cums=NA,
       #uniq_flag
       if(uniq_signal){
         covo<-featsall$unique_reads/width(featsall)
+        rdz<-featsall$unique_reads
       }
-      
+
       if(!uniq_signal){
         covo<-featsall$reads/width(featsall)
+        rdz<-featsall$reads
       }
       featsall$coverage<-covo
       jxs<-featsall$type=="J"
-      featsall$coverage[jxs]<-covo[jxs]/60
+      #a junction has its reads/60, as in the steps before (before, its reads/width were divided by 60)
+      featsall$coverage[jxs]<-rdz[jxs]/60
       
       cov_ps_unqs_adj<-cov_ps_unqs*unqs_optim
       cov_unpcts<-NumericList(lapply(featsall$ORF_id_tr_selected,function(x){cov_ps_unqs_adj[x]}))

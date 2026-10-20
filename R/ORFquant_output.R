@@ -118,11 +118,14 @@
 #'   \code{NA} without unique features;
 #'   \code{adj_feats}, the same, after ORFs without unique features get a
 #'   factor from the coverage that the factors of the other ORFs leave them;
-#'   \code{optim_feats}, the final factor: \code{adj_feats} rescaled so that
-#'   the P-sites assigned to a group of ORFs that share features (directly or
-#'   through other ORFs of the group) add up to the P-sites on their exonic
-#'   bins (\code{stn.orf_quant.scaling = "total_Psites"}; with
-#'   \code{"average_coverage"}, their coverage), at most 1.}
+#'   \code{optim_feats}, the final factor, at most 1. With
+#'   \code{stn.orf_quant.scaling = "total_Psites"}, \code{adj_feats} rescaled
+#'   so that the P-sites assigned to a group of ORFs that share features
+#'   (directly or through other ORFs of the group) add up to the P-sites on
+#'   their exonic bins. With \code{"average_coverage"}, \code{adj_feats} times
+#'   one factor for all ORFs of the region, at most 1, so that the coverage of
+#'   the ORFs on the features adds up to the coverage of the features (as for
+#'   \code{unq_feats}).}
 #' \item{\code{compatible_with}}{The ORF on each annotated transcript of the
 #'   region that contains all of it, with the same exons and junctions, as
 #'   \code{<transcript_id>_<start>_<end>} in that transcript's coordinates.
@@ -169,14 +172,16 @@
 #' \item{\code{ORF_category_Gen}}{The ORF's position relative to the annotated
 #'   CDS in genomic coordinates (see Genomic categories below).}
 #' \item{\code{NMD_candidate}}{Is \code{TRUE} when
-#'   \code{Distance_to_lastExEx} is positive: the transcript's last exon-exon
-#'   junction is downstream of the ORF's end, which can make the transcript a
-#'   target of nonsense-mediated decay. ORFquant doesn't apply the usual
-#'   minimum distance (often 50 nucleotides); filter on
+#'   \code{Distance_to_lastExEx} is more than 3: the transcript's last
+#'   exon-exon junction is downstream of the ORF's stop codon, which can make
+#'   the transcript a target of nonsense-mediated decay. ORFquant doesn't
+#'   apply the usual minimum distance (often 50 nucleotides); filter on
 #'   \code{Distance_to_lastExEx} for it.}
 #' \item{\code{Distance_to_lastExEx}}{The start of the transcript's last exon
 #'   minus the ORF's end, in nucleotides along the transcript: 0 or negative
-#'   when the ORF ends in the last exon.}
+#'   when the ORF ends in the last exon. As the ORF ends before its stop
+#'   codon, 1 is a stop codon at the start of the last exon, 2 and 3 a stop
+#'   codon across the last junction, and 4 a stop codon just before it.}
 #' \item{\code{NMD_candidate_compatible_txs},
 #'   \code{Distance_to_lastExEx_compatible_txs}}{The same for the ORF on each
 #'   transcript of \code{compatible_with}, in that order. In R, the distances
@@ -265,11 +270,13 @@
 #' that overlaps no annotated CDS, such as a uORF, it uses the longest
 #' annotated CDS of the ORF's gene: all its exons are then rows with a
 #' \code{spl_type} that starts with \code{missing_CDS}. When the gene has no
-#' CDS, it uses none, and the rows are the ORF's exons only.
+#' CDS, it uses none, and the rows are the ORF's exons only. The CDS is
+#' without its stop codon, as the ORF ends before its stop codon.
 #'
 #' @section Stop codons in the annotation:
-#' Both kinds of categories, and \code{NC_protein_isoform}, compare the ORF's
-#' stop codon with the annotated one. The annotated CDS includes its stop
+#' Both kinds of categories, \code{NC_protein_isoform} and
+#' \code{ORFs_spl_feat_longest} compare the ORF's stop codon with the
+#' annotated one. The annotated CDS includes its stop
 #' codon when the GTF has \code{stop_codon} lines (GENCODE, Ensembl and
 #' RefSeq GTFs do): \code{\link{prepare_annotation_files}} adds them to the
 #' CDS. When most CDS end before their stop codon (CDS lines made by factR, or
@@ -281,6 +288,39 @@
 #' nucleotides away. Such an annotated ORF itself becomes, for example,
 #' \code{C_extension} and \code{Alt3_stop}, not \code{ORF_annotated} and
 #' \code{exact_start_stop}.
+#'
+#' @section P-site runs:
+#' The P-site tracks of \code{\link{prepare_for_ORFquant}}
+#' (\code{P_sites_all}, \code{P_sites_uniq} and \code{P_sites_uniq_mm}) join
+#' neighbouring positions with the same number of P-sites into one range, a
+#' run. The \code{score} of a run is the number of P-sites at each of its
+#' positions, so a run of 3 positions with score 1 has 3 P-sites. Most steps
+#' count the P-sites of each position, but three steps use a run as one unit:
+#' \itemize{
+#' \item \code{\link{detect_translated_orfs}} maps the P-sites to the
+#'   transcripts that \code{\link{select_txs}} selected, but it maps a run only
+#'   when the run is inside one exon. So a transcript loses the P-sites of a
+#'   run that crosses the edge of one of its exons. In some cases, which depend
+#'   on the other selected transcripts and their order, it gets them, but some
+#'   at shifted positions. This changes \code{P_sites_raw} and \code{pval}.
+#' \item \code{\link{select_txs}} and \code{\link{select_quantify_ORFs}} count
+#'   on each exonic bin all the P-sites of each run that overlaps it, so a run
+#'   on the border of two bins counts in full in both. This changes the
+#'   coverage of the features, and so \code{scaling_factors}, \code{P_sites}
+#'   and \code{ORF_pct_P_sites}.
+#' \item \code{\link{ORFquant}} analyses a region only when more than 4 ranges
+#'   of \code{P_sites_all} overlap it (of \code{P_sites_uniq}, with
+#'   \code{unique_reads_only = TRUE}): it counts the ranges, not the P-sites.
+#' }
+#' ORFquant has always worked this way, and it still does. In a human sample
+#' (SRR15513199), 5\% of the ranges of \code{P_sites_all} are runs, of 2 to 6
+#' positions. 14 of its 8,139 ORFs have a \code{P_sites_raw} 1 or 2 lower
+#' than with single positions, and 270 of its 939,002 exonic bins count more
+#' P-sites than are on them (0.038\% more P-sites in total). In 43 genes of
+#' this sample, single positions give one more ORF, of a third RPL19
+#' transcript, with an \code{ORF_pct_P_sites} of 2.04, just above
+#' \code{stn.orf_quant.cutoff_pct}. In the example data of the vignette,
+#' they change nothing.
 #'
 #' @seealso \code{\link{run_ORFquant}}, \code{\link{ORFquant}},
 #' \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}},

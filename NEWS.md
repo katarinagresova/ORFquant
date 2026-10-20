@@ -383,6 +383,53 @@ deprecation warnings.
   can be wrong too: on this sample, 57 ORFs have this sign, and the fix
   removes or changes 44 of them. With `stn.orf_quant.scaling =
   "average_coverage"`, results don't change.
+- `compatible_ORF_id_tr` is now always the ORF on `compatible_tx`. When an
+  ORF is on more than one protein-coding transcript, ORFquant takes the
+  first of them in sorted order. Before, it sorted the ORF ids and the
+  transcript ids apart, so when a transcript id was the start of another
+  (for example `MSTRG.1.1` and `MSTRG.1.10` in the C locale), the two
+  columns could name two transcripts. A later step corrected the pair,
+  except when the ORF had a protein-coding compatible transcript and its
+  `longest_ORF` had none. Then `ORF_category_Tx_compatible` (also in the
+  FASTA headers) mixed the two transcripts. `compatible_ORF_id_tr_longest`
+  is chosen in the same way. Such ORFs are rare: GTFs from GENCODE, RefSeq,
+  StringTie, IsoQuant and factR gave none.
+- With `stn.orf_quant.scaling = "average_coverage"` (not the default), the
+  coverage of a splice junction in the final scaling factor (`optim_feats`)
+  is now its reads divided by 60, as in the steps before it. Before, its
+  reads were divided by its width and then by 60, so the junctions added
+  almost nothing to the coverage of the region, and the factor was too low.
+  On the example data, `P_sites` of all 15 ORFs is now higher (for example
+  98.7, not 77.9, for the annotated TCN2 ORF), and so `ORFs_pM` changes too.
+  `ORF_pct_P_sites` and the ORFs that ORFquant finds don't change, as the
+  factor is the same for all ORFs of a region. `?ORFquant_output` now
+  describes this factor. With the default `"total_Psites"`, results don't
+  change.
+- `ORFs_spl_feat_longest` now compares the ORF's exons with the CDS without
+  its stop codon, as the ORF ends before its stop codon. Before, with a GTF
+  that has `stop_codon` lines (GENCODE, Ensembl and RefSeq GTFs do), the
+  CDS included its stop codon. So the last exon of an ORF with the
+  annotated stop codon was `up_lastCDS`, not `same_lastCDS`, and when an
+  intron split the stop codon or came before it, the ORF also had a
+  `missing_CDS_3prime` row of 1 to 3 nt. On a human sample (SRR15513199
+  with GENCODE 47), 3,924 of the 4,125 `exact_start_stop` ORFs had
+  `up_lastCDS`, and only 11 of the 8,134 ORFs had `same_lastCDS`. On the
+  example data, the last exons of the annotated TCN2 and TOP3B ORFs are now
+  `same_lastCDS`. GTFs whose CDS lines end before the stop codon
+  (`stop_in_gtf` `NA`, see above) are not affected. `ORFs_spl_feat_maxORF`,
+  the plots and the other outputs don't change.
+- `NMD_candidate` is now `TRUE` only when the last exon-exon junction is
+  downstream of the ORF's stop codon: `Distance_to_lastExEx` more than 3.
+  Before, it was `TRUE` for each positive distance, but the distance is
+  measured from the ORF's end, without its stop codon. So it was also `TRUE`
+  when the stop codon was the first codon of the last exon (distance 1) or
+  went across the last junction (distances 2 and 3). The same for
+  `NMD_candidate_compatible_txs`. `Distance_to_lastExEx` doesn't change, so
+  a filter on it for the usual minimum distance (often 50 nucleotides) gives
+  the same ORFs. On a human sample (SRR15513199 with GENCODE 47), 16 of the
+  946 ORFs with `NMD_candidate` `TRUE` had a distance of 1 to 3, and 19 of
+  the 15,207 values of `NMD_candidate_compatible_txs`. On the example data,
+  nothing changes.
 
 - `prepare_annotation_files()` now chooses the representative start and stop
   codons of each gene from that gene's own codons. Before, when the start
@@ -537,6 +584,13 @@ deprecation warnings.
   object with no dimensions`). A type without regions gets the panel "Not
   enough distinct regions". On our 4 test data sets and on chromosome 21 of
   SRR15513199, the function failed; it now makes all plots.
+- `plot_ORFquant_results()` with bedGraph coverage files no longer fails
+  with `subscript contains out-of-bounds ranges` when a window around a
+  splice site goes past the last covered base of its chromosome and strand
+  (lcalviell/ORFquant#7). A bedGraph file has no chromosome lengths, so its
+  coverage ended at its last covered base. The coverage now gets the
+  chromosomes and their lengths of the P-sites file. BigWig files, and
+  bedGraph files that did not fail, give the same plots as before.
 - In the `CDS_spanning` plot of `plot_ORFquant_results()`, all `same_5ss`
   regions (the regions without a mixture of ORFs at 5' splice sites) are now
   in the downstream panel. Before, when there were more of them than of
@@ -897,6 +951,23 @@ deprecation warnings.
   2,470 readthroughs have their own id in `compatible_id`. A fix changes
   only these 66 values: 60 become empty, and 6 get the id of another
   readthrough.
+- `?detect_readthrough` and `?get_reathr_seq` now describe the regions and
+  the tests of `ORFs_readthroughs` (beta). A readthrough starts at the stop
+  codon of its ORF, so its `Protein` starts with `*`, and ends one codon
+  before the next stop codon: the amino acid of that codon is not in
+  `Protein`, and its P-sites do not count. After the first region,
+  `detect_readthrough()` extends a readthrough over each next region that
+  passes the test alone, also over regions that fail, and does not test the
+  readthrough after its last extension. So a readthrough over more than one
+  stop codon can have a `pval` above 0.05. The tests need a `pct_fr` of 0.5,
+  also when `stn.orf_find.cutoff_fr_ave` is lower. The last duplicate test
+  compares `Protein` and `P_sites_raw` each on its own, not as pairs.
+  ORFquant has always worked this way, and it still does. In 22 human samples
+  (GENCODE 47), all 2,415 readthroughs over one stop codon pass the test, and
+  16 of the 55 over more do not (one goes over 148 stop codons, with a `pval`
+  of 0.50). With this version, one of these samples (SRR15513199) has 11
+  readthroughs: 6 end one codon before a stop codon, and the other 5 at the
+  end of the transcript.
 - `?run_ORFquant` and `?get_orfs` now say what `canonical_start_only = FALSE`
   does. The alternative initiation codons of the genetic code (TTG and CTG in
   the standard code) are then start codons only at the first codon of a
@@ -907,6 +978,41 @@ deprecation warnings.
   does not find ORFs with a near-cognate start codon, such as N-terminal
   extensions that start at a CTG. ORFquant has always worked this way, and it
   still does.
+- `?ORFquant_output` now says how ORFquant counts the P-sites of runs. The
+  P-site tracks of `prepare_for_ORFquant()` join neighbouring positions with
+  the same number of P-sites into one range, and three steps use such a run
+  as one unit. `detect_translated_orfs()` maps a run to a transcript only
+  when the run is inside one exon, so a transcript loses the P-sites of a run
+  that crosses the edge of one of its exons, or, depending on the other
+  selected transcripts, gets them at shifted positions. `select_txs()` and
+  `select_quantify_ORFs()` count all the P-sites of a run on each exonic bin
+  that it overlaps. `ORFquant()` analyses a region only when more than 4
+  ranges overlap it. ORFquant has always worked this way, and it still does.
+  In a human sample (SRR15513199), 5% of the ranges are runs of 2 to 6
+  positions, 14 of 8,139 ORFs have a `P_sites_raw` 1 or 2 too low, and 270
+  of 939,002 exonic bins count too many P-sites (0.038% more in total). On
+  43 genes of this sample, single positions give one more ORF (RPL19, with
+  an `ORF_pct_P_sites` of 2.04), and lower the `ORF_pct_P_sites` of the two
+  other RPL19 ORFs (from 3.4 to 2.6 and from 96.6 to 95.3). The effect of
+  single positions on all ORFs of the sample is not known.
+- `?select_txs` now says how it removes nested transcripts when transcripts
+  have the same features (exonic bins and junctions), such as transcripts
+  with the same exons. Of 2 such transcripts it keeps one, but of 3 it keeps
+  2, of 2 that are nested in a third transcript it keeps one with the third,
+  and of 2 that have all features of the region it keeps both. The selection
+  can then take all of them, so `selected_txs` and the transcripts of
+  `<prefix>_Detected_ORFs.gtf` can have more than one transcript with the
+  same exons. An ORF on them is in the results once, with each of them in
+  `compatible_with`. ORFquant has always worked this way, and it still does.
+  In a human sample (SRR15513199, GENCODE 47), 5 of the 156 groups of
+  transcripts with the same exons have 2 selected transcripts, each a gene
+  with only these 2 transcripts and one ORF.
+- `?annotate_splicing` now explains the labels `same`, `up` and `down` of
+  `spl_type` in `ORFs_spl_feat_longest` and `ORFs_spl_feat_maxORF`: each
+  end of an ORF exon is at, upstream of or downstream of the same end of
+  the reference exon, on the strand of the ORF. It also describes the
+  column `ref`, and says that the reference is the CDS of `ref_id` without
+  its stop codon, or the ORF of `ref_id_maxORF`.
 - The vignette, `vignette("ORFquant")`, now runs the whole analysis on example
   data included in the package (`inst/extdata`): 7 genes of human chr22, with
   their GENCODE 47 annotation, Ribo-seq reads from SRA run SRR15513199 and

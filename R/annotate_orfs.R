@@ -32,12 +32,29 @@
 #' \code{new} exons (exons of the ORF that overlap no exon of the reference) and \code{missing_CDS} exons before the first exon of the ORF
 #' that overlaps the reference get \code{_5prime}, those after the last one get \code{_3prime}, in 5' to 3' order on both strands.
 #' When no exon of the ORF overlaps the reference, all exons get \code{_notoverl}.
+#'
+#' An exon of the ORF that overlaps the reference gets two labels, separated by \code{;}: one for its 5' end and one for
+#' its 3' end, on the strand of the ORF. Each label is \code{same}, \code{up} or \code{down}, then \code{_5ss} or
+#' \code{_3ss}: \code{_firstCDS} for the 5' end of the first exon, \code{_lastCDS} for the 3' end of the last exon, and
+#' \code{_5monoCDS} and \code{_3monoCDS} for a single exon. \code{same} means that the end is at the same position as that
+#' end of the reference exon, \code{up} upstream (5') of it, and \code{down} downstream (3') of it. With \code{CDS_spanning}, the exon overlaps
+#' more than one exon of the reference, and its ends are compared with the outer ends of these exons. For example,
+#' \code{down_firstCDS;same_3ss} is a first exon that starts after the start of the reference exon, and
+#' \code{same_5ss;up_lastCDS} is a last exon that ends before the end of the reference exon.
+#'
+#' The column \code{ref} has the exons of the reference that each row is compared with: the exons that the exon of the
+#' ORF overlaps; for a \code{new} exon, the nearest exon of the reference (none when the reference has no exons); for a
+#' \code{missing_CDS} row, the exon of the reference itself.
+#'
+#' \code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon
+#' (\code{ORFs_spl_feat_longest}) or the ORF of \code{ref_id_maxORF} (\code{ORFs_spl_feat_maxORF}), as an ORF ends before
+#' its stop codon. So an ORF that ends at the stop codon of the reference has \code{same_lastCDS}.
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param orf_gen Exon structure of a detected ORF
 #' @param ref_cds Exon structure of a reference ORF
 #' @return Exon structure of detected ORF including possible missing exons from reference, together with a \code{spl_type} column
-#' including the annotation for each exon (e.g. alternative acceptors or donor).
+#' including the annotation for each exon (e.g. alternative acceptors or donor), and a \code{ref} column (see Details).
 #' @seealso \code{\link{detect_translated_orfs}}, \code{\link{annotate_ORFs}}
 #' @export
 
@@ -486,6 +503,43 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
   }
 }
 
+# The compatible ORF of an ORF, from the ids x of the ORF on its compatible transcripts (<transcript_id>_<start>_<end>):
+# its id, its transcript and the biotype of the transcript. The first protein-coding transcript in sorted order, else
+# the first transcript. The id and the transcript come from one order() of the transcripts: before, two sort() calls
+# could give two transcripts, when a transcript id is the start of another (MSTRG.1.1 and MSTRG.1.10 in the C locale)
+compatible_choice<-function(x,trann){
+  txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
+  btps<-trann$transcript_biotype[match(txs,trann$transcript_id)]
+  btps[is.na(btps)]<-"Not_found"
+  pcd<-btps=="protein_coding"
+  if(sum(pcd,na.rm = T)>0){
+    f<-which(pcd)[order(txs[pcd])[1]]
+    c(x[f],txs[f],"protein_coding")
+  }else{c(x[1],txs[1],btps[1])}
+}
+
+# The CDS exons cds without their last stop_len nt (the stop codon, which can be split by an intron or be the first
+# codon of an exon), in the order of cds: the reference of ORFs_spl_feat_longest, as its ORFs end before their stop codon
+cds_without_stop<-function(cds,stop_len){
+  if(length(cds)==0 | stop_len==0){return(cds)}
+  #the nt of the stop codon in each exon: the exons from the 3' end
+  o<-order(start(cds),decreasing=as.vector(strand(cds[1]))=="+")
+  after<-cumsum(width(cds)[o])-width(cds)[o]
+  cut<-integer(length(cds))
+  cut[o]<-pmin(width(cds)[o],pmax(stop_len-after,0))
+  cds<-resize(cds,width(cds)-cut,fix="start")
+  cds[width(cds)>0]
+}
+
+# NMD_candidate from Distance_to_lastExEx (the start of the last exon minus the ORF end, which excludes the stop codon):
+# TRUE when the last exon-exon junction is after the whole stop codon. 1 is a stop codon at the start of the last exon,
+# 2 and 3 a stop codon across the last junction. The distances of the compatible transcripts are a CharacterList, which
+# compares as text ("25">"3" is FALSE)
+nmd_candidate<-function(distance){
+  if(is(distance,"CharacterList")){distance<-as(distance,"IntegerList")}
+  distance>3
+}
+
 #' Annotate detected ORFs in transcript and genome space
 #'
 #' This function annotates quantified ORFs with respect to other detected ORFs and annotated ones, in both genome and transcript space.
@@ -555,7 +609,7 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
 #' \code{ORF_category_Gen}: ORF annotation with respect to its genomic position .\cr
 #' \code{NMD_candidate}: TRUE or FALSE, depending on the presence of an additional exon-exon junction downstream the stop codon.\cr
 #' \code{NMD_candidate_compatible_txs}: same as NMD_candidate, but for all transcripts compatible with the ORF structure.\cr
-#' \code{Distance_to_lastExEx}: Distance (in nt) between the last exon-exon junction and the stop codon.\cr
+#' \code{Distance_to_lastExEx}: Distance (in nt) from the ORF's end, without the stop codon, to the start of the last exon (see \code{\link{ORFquant_output}}).\cr
 #' \code{Distance_to_lastExEx_compatible_txs}: same as  Distance_to_lastExEx, but for all transcripts compatible with the ORF structure.
 #' @seealso \code{\link{select_quantify_ORFs}}, \code{\link{annotate_splicing}}, \code{\link{ORFquant_output}}
 #' @export
@@ -625,13 +679,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     compats<-elementNROWS(cols$compatible_with)>1
     comp_txs<-cols$compatible_with[compats]
     if(length(comp_txs)>0){
-      compid<-sapply(comp_txs,function(x){
-        txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
-        btps<-Annotation$trann$transcript_biotype[match(txs,Annotation$trann$transcript_id)]
-        btps[is.na(btps)]<-"Not_found"
-        pcd<-btps=="protein_coding"
-        if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
-      })
+      compid<-sapply(comp_txs,compatible_choice,trann=Annotation$trann)
       cols$compatible_ORF_id_tr[compats]<-t(compid)[,1]
       cols$compatible_tx[compats]<-t(compid)[,2]
       cols$compatible_biotype[compats]<-t(compid)[,3]
@@ -661,13 +709,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       compats<-elementNROWS(cols$compatible_with_longest)>1
       comp_txs<-cols$compatible_with_longest[compats]
       if(length(comp_txs)>0){
-        compid<-sapply(comp_txs,function(x){
-          txs<-sapply(strsplit(x,split = "_"),function(x){paste(x[-((length(x)-1):length(x))],collapse="_")})
-          btps<-Annotation$trann$transcript_biotype[match(txs,Annotation$trann$transcript_id)]
-          btps[is.na(btps)]<-"Not_found"
-          pcd<-btps=="protein_coding"
-          if(sum(pcd,na.rm = T)>0){c(sort(x[pcd])[1],sort(txs[pcd])[1],"protein_coding")}else{c(x[1],txs[1],btps[1])}
-        })
+        compid<-sapply(comp_txs,compatible_choice,trann=Annotation$trann)
         cols$compatible_ORF_id_tr_longest[compats]<-t(compid)[,1]
         cols$compatible_tx_longest[compats]<-t(compid)[,2]
         cols$compatible_biotype_longest[compats]<-t(compid)[,3]
@@ -762,13 +804,13 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
   for(i in 1:length(ORFs_tx)){
     cols<-mcols(ORFs_tx[[i]])
     nmd<-FALSE
-    if(Distance_EJCs[i]>0){
+    if(nmd_candidate(Distance_EJCs[i])){
       nmd<-TRUE
     }
     cols$NMD_candidate<-nmd
     cols$Distance_to_lastExEx<-Distance_EJCs[i]
     
-    nmd<-Distance_EJCs_compat[i]>0
+    nmd<-nmd_candidate(Distance_EJCs_compat[i])
     cols$NMD_candidate_compatible_txs<-nmd
     cols$Distance_to_lastExEx_compatible_txs<-Distance_EJCs_compat[i]
     mcols(ORFs_tx[[i]])<-cols
@@ -977,7 +1019,8 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
     }     
     
-    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = max_cdsok)
+    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS)
+    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,stop_len))
     #to maxORF
     max_pct<-ORFs_gen[[maxORF_orf[cols$gene_id]]]
     cols$ref_id_maxORF<-maxORF_orf[cols$gene_id]
