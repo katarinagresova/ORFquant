@@ -388,7 +388,7 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param results_orf Full list of detected ORFs, from \code{select_quantify_ORFs} and \code{annotate_ORFs}
-#' @param genome_sequence BSgenome object
+#' @param genome_sequence the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}
 #' @param annotation Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})
 #' @param P_sites GRanges object with P_sites positions
 #' @param P_sites_uniq GRanges object with uniquely mapping P_sites positions

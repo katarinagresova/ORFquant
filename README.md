@@ -32,7 +32,7 @@ install.packages(c("BiocManager", "remotes"))
 BiocManager::install("katarinagresova/ORFquant", dependencies = TRUE)
 ```
 
-This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the annotation step: `prepare_annotation_files()`, `load_annotation()` and `FaFile_Circ` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
+This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the first two steps: `prepare_annotation_files()`, `load_annotation()`, `FaFile_Circ` and `prepare_for_ORFquant()` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
 
 Or with conda, using [environment.yml](environment.yml) from this repository (R 4.5, Bioconductor 3.22, all dependencies and pandoc):
 
@@ -74,7 +74,7 @@ run_ORFquant(for_ORFquant_file = "sample_for_ORFquant",
              prefix = "sample")
 ```
 
-The [Ribo-seQC](https://github.com/lcalviell/Ribo-seQC) package can also create the input of step 3 from a Ribo-seq BAM file.
+`RiboseQC_analysis()` of *RiboseQC* can also create the input of step 3 from a Ribo-seq BAM file. It calculates the P-site offsets itself, and also gives statistics on the Ribo-seq data.
 
 `sample_final_ORFquant_results` holds a list, which `get(load("sample_final_ORFquant_results"))` returns. Its `ORFs_tx` has one range per ORF, in transcript coordinates, with the ORF's P-sites, p-values, categories and `ORFs_pM` (P-sites per ORF length, scaled to sum to a million, akin to TPM); `ORFs_gen` has the ORFs' genomic coordinates; `selected_txs` lists the transcripts selected for quantification. `sample_Detected_ORFs.tsv` has the `ORFs_tx` table, one row per ORF, for use without R. `?ORFquant_output` describes each of its columns and the ORF categories; see also `?run_ORFquant` and `?ORFquant`.
 
@@ -107,7 +107,7 @@ sbatch $(Rscript -e 'cat(system.file("scripts", "run_orfquant.sbatch", package =
   --outdir results
 ```
 
-It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 3 h 11 min and 35 GB. With 64 CPUs (`sbatch -c 64 --mem=160G`, before the script's path) it took 57 min and 115 GB, so ask for more CPUs if your cluster has them. Its comments give more measurements and say how to change these resources.
+It asks for 16 CPUs, 64 GB of memory and 24 hours: a human sample with a 1.8 GB BAM took 3 h 11 min and 35 GB before the last speed-up, which cut the time by 17% with 64 CPUs. With 64 CPUs (`sbatch -c 64 --mem=160G`, before the script's path) it took 47 min and 116 GB, so ask for more CPUs if your cluster has them. Its comments give more measurements and say how to change these resources.
 
 The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data included in the package, 7 genes of human chr22, and shows the results. The example data come from GENCODE 47, the GRCh38 genome and the Ribo-seq sample SRR15513199 of [Chothani et al. (2022)](https://doi.org/10.1016/j.molcel.2022.06.023). [inst/extdata/README.md](inst/extdata/README.md) gives their sources, terms of use and the papers to cite.
 
@@ -115,7 +115,7 @@ The [vignette](vignettes/ORFquant.Rmd) runs all these steps on example data incl
 ### Input files
 
 - **GTF**: `exon` and `CDS` lines, each with `transcript_id` and `gene_id`. `gene_name`, `gene_biotype` (or `gene_type`) and `transcript_biotype` (or `transcript_type`) are used when present.
-- **Genome sequence**: a FASTA file indexed with `samtools faidx`, with the same chromosome names as the GTF and the BAM. The `_Rannot` file refers to it by its path, so keep it there. Chromosomes named as in `circ_chroms` (`chrM`, `MT` and other mitochondrial names by default) are treated as circular.
+- **Genome sequence**: a FASTA file indexed with `samtools faidx`, with the same chromosome names as the GTF and the BAM. The `_Rannot` file refers to it by its path, so keep it there. Chromosomes named as in `circ_chroms` (`chrM`, `MT` and other mitochondrial, plastid and 2-micron plasmid names by default) are treated as circular.
 - **BAM**: Ribo-seq reads aligned to the genome with a spliced aligner (e.g. STAR), sorted by coordinate and indexed with `samtools index`. Reads flagged as duplicates, secondary alignments and alignments with an insertion or a deletion (`I` or `D` in the CIGAR) are skipped. Reads with a mapping quality above 50 count as uniquely mapping (STAR gives them 255). Junction reads are counted only on the exon-exon junctions of the GTF; a read on another junction still gives a P-site. ORFquant uses only the transcripts of the GTF, so add the isoforms that you want to quantify, for example from long-read sequencing, to the GTF.
 - **Cutoff table**: the P-site offset for each read length, as a tab-separated table with the columns `read_length`, `cutoff` and `compartment`, in any order. `cutoff` is the distance of the P-site from the read's 5' end; `compartment` is `nucl` for all chromosomes that are not circular, or the name of a circular one. For example:
 

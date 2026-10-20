@@ -501,15 +501,15 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
 #' \code{N_extension}: N terminal extension.\cr
 #' \code{N_truncation}: N terminal truncation.\cr
 #' \code{uORF}: upstream ORF.\cr
-#' \code{overl_uORF}: upstream overlappin uORF.\cr
+#' \code{overl_uORF}: upstream overlapping uORF.\cr
 #' \code{NC_extension}: N and C termini extension.\cr
 #' \code{dORF}: downstream ORF.\cr
 #' \code{overl_dORF}: downstream overlapping ORF.\cr
 #' \code{nested_ORF}: nested ORF.\cr
 #' \code{C_truncation}: C terminal truncation.\cr
 #' \code{C_extension}: C terminal extension.\cr\cr
-#' As transcipt-specific annotation can be misleading due to a plethora of different transcripts, it is important to distinguish ORFs
-#' also on the basis of their overlap with know CDS regions.
+#' As transcript-specific annotation can be misleading due to a plethora of different transcripts, it is important to distinguish ORFs
+#' also on the basis of their overlap with known CDS regions.
 #' ORFs that overlap no CDS exon of the analyzed genomic region are annotated in genome space as follows:\cr\cr
 #' \code{novel}: No CDS region is annotated in the entire region.\cr
 #' \code{novel_Upstream}: ORF is upstream of annotated CDS regions (does not overlap).\cr
@@ -530,8 +530,8 @@ tx_category<-function(sta,sto,ann_sta,ann_sto){
 #' @keywords ORFquant
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param results_ORFs Full list of detected ORFs, from \code{select_quantify_ORFs}
-#' @param Annotation Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files}
-#' @param genome_sequence BSgenome object
+#' @param Annotation Rannot object containing annotation of CDS and transcript structures (see \code{prepare_annotation_files})
+#' @param genome_sequence the genome sequence, as \code{genome_seq} of \code{\link{load_annotation}}
 #' @param region genomic region being analyzed
 #' @param genetic_code GENETIC_CODE table to use
 #' @return \code{results_ORFs} with a new element \code{ORFs_splice_feats}: a list of two \code{GRangesList}, \code{annotation_wrt_longest} and \code{annotation_wrt_maxORF},

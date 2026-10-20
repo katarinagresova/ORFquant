@@ -140,7 +140,7 @@ deprecation warnings.
 
 - The annotation step is now the code of RiboseQC. `prepare_annotation_files()`,
   `load_annotation()` and the class `FaFile_Circ` (with its `getSeq()` and
-  `seqinfo()` methods) come from RiboseQC (1.2.0), and ORFquant exports them
+  `seqinfo()` methods) come from RiboseQC, and ORFquant exports them
   again, so scripts that call them after `library(ORFquant)` still work.
   Both packages had a copy of this code, and the copies had drifted apart;
   the copy of ORFquant, with its fixes, went to RiboseQC, so each fix is now
@@ -568,9 +568,9 @@ deprecation warnings.
 
 - On a human sample with a 1.8 GB BAM and GENCODE 47, the changes below
   together make a run take 3 h 11 min with 16 cores instead of 7 h 46 min
-  (59% less), and at most 35 GB of memory instead of 45 GB. With 64 cores, a
-  run takes 57 min and at most 115 GB. Each entry below gives what its change
-  saved when it was made.
+  (59% less; measured before the last change below), and at most 35 GB of
+  memory instead of 45 GB. With 64 cores, a run takes 47 min and at most
+  116 GB. Each entry below gives what its change saved when it was made.
 - `run_ORFquant()` is faster. On a human sample with a 1.8 GB BAM and
   GENCODE 47, with 16 cores, a run takes 4 h 3 min instead of 7 h 46 min
   (48% less) and at most 37 GB of memory instead of 45 GB. With one core, a

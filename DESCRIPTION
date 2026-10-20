@@ -10,13 +10,15 @@ Authors@R:
              family = "Ohler",
              role = c("rev", "fnd"),
              email = "Uwe.Ohler@mdc-berlin.de"),
-      person(given = "Dermott",
+      person(given = "Dermot",
              family = "Harnett",
              role = "ctb",
              email = "Dermot.Harnett@mdc-berlin.de"))
 Description: ORFquant is a method that annotates and quantifies
     translation at the single ORF level using Ribo-seq data.
 License: GPL (>= 3)
+URL: https://github.com/katarinagresova/ORFquant
+BugReports: https://github.com/katarinagresova/ORFquant/issues
 Depends: 
     R (>= 4.5.0),
     GenomicRanges

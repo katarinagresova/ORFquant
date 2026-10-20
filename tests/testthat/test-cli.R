@@ -1,4 +1,4 @@
-# The command-line script that the RiboVerse skill runs: what it checks before
+# The command-line script inst/scripts/run_orfquant.R: what it checks before
 # it starts the pipeline. The pipeline itself is in test-pipeline.R.
 
 cli_script <- system.file("scripts", "run_orfquant.R", package = "ORFquant")
