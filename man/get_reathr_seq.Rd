@@ -16,7 +16,9 @@ get_reathr_seq(tx_name, orf, sequence, genetic_code)
 \item{genetic_code}{GENETIC_CODE table to use}
 }
 \value{
-GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it
+GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it.
+Each range starts at a stop codon in the frame of \code{orf}, the first at the stop codon of \code{orf}, and ends one codon before
+the next stop codon, or at the end of the transcript. So the last codon before each stop codon is in no range.
 }
 \description{
 This function extracts readthrough regions for subsequent analysis
@@ -25,7 +27,7 @@ This function extracts readthrough regions for subsequent analysis
 The function looks for stop-stop pairs after the stop codon of the detected ORF
 }
 \seealso{
-\code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}
+\code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{detect_readthrough}}
 }
 \author{
 Lorenzo Calviello, \email{calviello.l.bio@gmail.com}

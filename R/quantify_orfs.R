@@ -303,8 +303,10 @@ select_txs<-function(region,annotation,P_sites,P_sites_uniq,junction_counts,uniq
 #' @param sequence DNAString object containing the sequence of the transcript
 #' @param orf transcript-level ORF coordinates 
 #' @param genetic_code GENETIC_CODE table to use
-#' @return GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it
-#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}
+#' @return GRanges object with the set of possible readthrough sequences, empty for an ORF without a stop codon after it.
+#' Each range starts at a stop codon in the frame of \code{orf}, the first at the stop codon of \code{orf}, and ends one codon before
+#' the next stop codon, or at the end of the transcript. So the last codon before each stop codon is in no range.
+#' @seealso \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}}, \code{\link{detect_readthrough}}
 #' @export
 
 get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
@@ -378,10 +380,22 @@ get_reathr_seq<-function(tx_name,orf,sequence,genetic_code){
 #'
 #' This function uses the multitaper method to look for readthrough translation
 #' @details The function looks for stop-stop pairs after the stop codon of the detected ORF.\cr
+#' Each region (see \code{\link{get_reathr_seq}}) starts at a stop codon, so \code{Protein} starts with \code{*} (the protein FASTA of
+#' \code{\link{run_ORFquant}} leaves it out). It ends one codon before the next stop codon in the frame, or at the end of the
+#' transcript. So the last codon before a stop codon is in no region: \code{Protein} lacks its amino acid, and its P-sites do not
+#' count in \code{P_sites_raw}, \code{pval} and \code{pct_fr}.\cr
+#' A test passes with a \code{pval} below 0.05 (\code{pval_uniq} with \code{uniq_signal = TRUE}) and a \code{pct_fr} of at least
+#' 0.5 (above 0.5 for a next region alone), also when \code{cutoff_fr_ave} is lower. The readthrough is found when the first region
+#' after the ORF passes. Then the function tests each next region alone, and extends the readthrough to the end of each region that
+#' passes, also over regions that fail. In each step it tests the readthrough as extended so far, and stops after the step when this
+#' test fails, but it can still add one region in that step. It does not test the readthrough after its last extension. So a
+#' readthrough over more than one stop codon (\code{n_stops_readth}) can have a \code{pval} above 0.05 or a \code{pct_fr} below 0.5:
+#' filter on these columns. ORFquant has always worked this way, and it still does.\cr
 #' The same readthrough can be found after the ORFs of several transcripts of the region. The function removes most of these
 #' duplicates: \code{compatible_id} has the \code{ORF_id_tr} of the other readthroughs of the region with the same \code{Protein},
 #' and \code{compatible_original_id} their \code{ORF_orig_tr} (the detected ORF before the readthrough), so these ids are usually
-#' not in the result.\cr
+#' not in the result. Then it also removes a readthrough when its \code{Protein} and its \code{P_sites_raw} each occur in an earlier
+#' readthrough of the region, also in two different ones.\cr
 #' Because of an indexing error, a readthrough found after a readthrough with another \code{Protein} in the same region has its own
 #' \code{ORF_id_tr} in \code{compatible_id} and its own \code{ORF_orig_tr} in \code{compatible_original_id}, and can lack the id of
 #' one other readthrough with the same \code{Protein}. ORFquant has always worked this way, and it still does. No other column or

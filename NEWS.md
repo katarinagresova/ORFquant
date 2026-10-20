@@ -939,6 +939,23 @@ deprecation warnings.
   2,470 readthroughs have their own id in `compatible_id`. A fix changes
   only these 66 values: 60 become empty, and 6 get the id of another
   readthrough.
+- `?detect_readthrough` and `?get_reathr_seq` now describe the regions and
+  the tests of `ORFs_readthroughs` (beta). A readthrough starts at the stop
+  codon of its ORF, so its `Protein` starts with `*`, and ends one codon
+  before the next stop codon: the amino acid of that codon is not in
+  `Protein`, and its P-sites do not count. After the first region,
+  `detect_readthrough()` extends a readthrough over each next region that
+  passes the test alone, also over regions that fail, and does not test the
+  readthrough after its last extension. So a readthrough over more than one
+  stop codon can have a `pval` above 0.05. The tests need a `pct_fr` of 0.5,
+  also when `stn.orf_find.cutoff_fr_ave` is lower. The last duplicate test
+  compares `Protein` and `P_sites_raw` each on its own, not as pairs.
+  ORFquant has always worked this way, and it still does. In 22 human samples
+  (GENCODE 47), all 2,415 readthroughs over one stop codon pass the test, and
+  16 of the 55 over more do not (one goes over 148 stop codons, with a `pval`
+  of 0.50). With this version, one of these samples (SRR15513199) has 11
+  readthroughs: 6 end one codon before a stop codon, and the other 5 at the
+  end of the transcript.
 - `?run_ORFquant` and `?get_orfs` now say what `canonical_start_only = FALSE`
   does. The alternative initiation codons of the genetic code (TTG and CTG in
   the standard code) are then start codons only at the first codon of a
