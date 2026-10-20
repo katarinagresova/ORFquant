@@ -13,7 +13,7 @@ plot_orfquant_locus(
 )
 }
 \arguments{
-\item{locus}{String; a gene name, must be present in names(orfquant_results$ORFs_gen)}
+\item{locus}{String; a gene_id, must be present in orfquant_results$ORFs_tx$gene_id}
 
 \item{orfquant_results}{A list containing processed output from ORFquant}
 
@@ -28,6 +28,8 @@ returns the value of plotfile if successfull.
 }
 \description{
 Create a plot of the ORFquant results at a locus. Uses the info form the orfquant results about where the psite data is located.
+The function takes the annotation from the global variable \code{GTF_annotation}: \code{run_ORFquant} leaves it there,
+and \code{load_annotation} called from the console puts it there.
 }
 \author{
 Dermot Harnett, \email{dermot.p.harnett@gmail.com}

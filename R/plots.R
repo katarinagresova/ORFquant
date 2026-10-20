@@ -1078,11 +1078,13 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 #' Create a plot of the ORFquant results at a locus
 #'
 #' Create a plot of the ORFquant results at a locus. Uses the info form the orfquant results about where the psite data is located.
+#' The function takes the annotation from the global variable \code{GTF_annotation}: \code{run_ORFquant} leaves it there,
+#' and \code{load_annotation} called from the console puts it there.
 #' 
 #' @keywords ORFquant
 #' @author Dermot Harnett, \email{dermot.p.harnett@@gmail.com}
 #' 
-#' @param locus String; a gene name, must be present in names(orfquant_results$ORFs_gen)
+#' @param locus String; a gene_id, must be present in orfquant_results$ORFs_tx$gene_id
 #' @param orfquant_results A list containing processed output from ORFquant
 #' @param bam_files Not used: the P-sites and junction reads come from the psite data file of orfquant_results. A value gives a warning.
 #' @param plotfile the file into which the plot will be saved as a pdf

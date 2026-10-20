@@ -733,6 +733,13 @@ deprecation warnings.
     described as that of `select_start()`.
   - `?get_orfs` said that the function loads the annotation. It finds the
     ORFs of a transcript sequence.
+  - `?plot_orfquant_locus` said that `locus` is a gene name, but it is a
+    `gene_id`. The page now also says that the function takes the annotation
+    from the global variable `GTF_annotation`.
+- The HTML report of `create_ORFquant_html_report()` said that the category
+  "other" holds the overlapping uORFs, but the plots have them in the
+  category "uORF". The report now says this, and names all categories in
+  "other".
 - `?select_start` and `?ORFquant_output` now describe the first filter of
   `select_start()`. Before it chooses the start codon of each stop codon, it
   removes the candidate ORFs below `cutoff_ave`
