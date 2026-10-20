@@ -172,6 +172,12 @@ test_that("plot_ORFquant_results() plots the splice sites of the example with co
   bins <- c("1-3", "4-6", "7-9", ">9")
   expect_identical(as.character(sel$qnt), bins[findInterval(sel$elementNROWS.ch_txs_sel., c(1, 4, 7, 10))])
   expect_identical(levels(plots$Sel_txs_genes$data$qnt), intersect(bins, as.character(sel$qnt)))
+  # Before, the file also held the annotation, the results and the P-sites, in the
+  # environment of the plots. The plots do not need them
+  expect_false(any(c("GTF_annotation", "ORFquant_results", "for_ORFquant") %in% ls(plots$ORFs_found$plot_env)))
+  for (n in setdiff(names(plots), "Meta_splicing_coverage")) {
+    expect_no_error(suppressWarnings(ggplot_build(plots[[n]])))
+  }
 })
 
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {

@@ -513,6 +513,13 @@ deprecation warnings.
   `10-49`). For example, when it was 4, the genes with 4 selected
   transcripts had the bin `3-4`, and when it was 10, the bin `9-10`. The bars
   were in the order of their numbers of genes.
+- The file `<prefix>_ORFquant_plots_RData` of `plot_ORFquant_results()` no
+  longer holds the annotation, the results and the P-sites. Before, they
+  were in the environment of each plot, which `save()` writes with it: in
+  the file of a human sample (SRR15513199, GENCODE 47), they were 180 of its
+  181 MB. `create_ORFquant_html_report()` loads one such file for each
+  sample. On the example data, the file is now 3.5 MB, not 6.6 MB. The plots
+  do not change.
 - `plot_orfquant_locus()`:
   - no longer fails for genes none of whose discarded transcripts is coding,
     or without junction reads;

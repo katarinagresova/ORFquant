@@ -382,7 +382,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   df<-data.frame(tpm=tpms[names(ch_txs_sel)],elementNROWS(ch_txs_sel))
   df$qnt<-qnt
   rownames(df)<-NULL
-  b<-ggplot(df,aes(x=qnt,y=tpms+1,fill="dark grey"))
+  b<-ggplot(df,aes(x=qnt,y=tpm+1,fill="dark grey"))
   b<-b + geom_violin(scale="width",draw_quantiles=.5,adjust = 1)
   b<-b + scale_y_log10(breaks=c(1,11,101,1001,10001),limits=c(1,max(df$tpm+1)*1.1),labels=c(0,10,100,1000,10000))
   #b<-b + geom_text(aes(x=cat_tx, y=value, hjust="top",label=value),colour="black",position = position_dodge(width = 1),size=5)
@@ -1061,6 +1061,9 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
     list_ORFquant_plots[["Meta_splicing_coverage"]][["pars"]]<-c(22,16)
   }
   
+  #each plot keeps the environment of this function, and save() writes it with the plots:
+  #remove the annotation, the results, the P-sites and the rest that the plots do not use
+  rm(list=setdiff(ls(),c("list_ORFquant_plots","output_plots_path","prefix","ORFquant_output_file")))
   save(list_ORFquant_plots,file = paste0(output_plots_path,"/",prefix,"_","ORFquant_plots_RData"))
   for(i in names(list_ORFquant_plots)){
     pdf(file = paste0(output_plots_path,"/",prefix,"_",i,".pdf"),width = list_ORFquant_plots[[i]][["pars"]][1] ,height = list_ORFquant_plots[[i]][["pars"]][2])
