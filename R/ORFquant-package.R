@@ -2,7 +2,6 @@
 #' @rawNamespace import(Biostrings, except = pattern)
 #' @import GenomicAlignments
 #' @import rtracklayer
-#' @import BSgenome
 #' @rawNamespace import(BiocGenerics, except = c(combine, Position))
 #' @import multitaper
 #' @import reshape2

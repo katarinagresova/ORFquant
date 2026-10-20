@@ -25,7 +25,6 @@ Depends:
 Imports:
     BiocGenerics,
     Biostrings,
-    BSgenome,
     cowplot,
     GenomicAlignments,
     GenomicFeatures,

@@ -60,6 +60,8 @@
   deprecated (ggplot2 3.4.0). Its violin plots use the arguments of ggplot2
   4.0.0 for the line at the median, not `draw_quantiles`, which is
   deprecated. With ggplot2 4.0.0 or later, the plots do not change.
+- ORFquant no longer imports BSgenome: it used none of its functions.
+  RiboseQC imports it, so it is still installed with ORFquant.
 
 None of these changes affect results. On our test data, all outputs are the
 same as before them (run with txdbmaker attached), apart from the two
