@@ -6,7 +6,7 @@
 #
 #   conda env create -f environment.yml
 #   conda activate orfquant
-#   Rscript -e 'remotes::install_github("katarinagresova/ORFquant@v1.3.0", upgrade = "never")'
+#   Rscript -e 'remotes::install_github("katarinagresova/ORFquant@v1.3.1", upgrade = "never")'
 name: orfquant
 channels:
   - conda-forge
