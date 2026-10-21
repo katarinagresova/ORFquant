@@ -37,6 +37,11 @@
 - `?plot_ORFquant_results` now tells that with few ORFs, for example the
   results of a few genes, some plots are empty, and ggplot2 warns about
   groups with too few data points.
+- `?select_quantify_ORFs` and `?run_ORFquant` now tell that
+  `cutoff_P_sites` and `cutoff_cums` filter the values of each round of the
+  selection, before the removed ORFs give their signal to the other ORFs. So
+  a cutoff can remove an ORF whose value in the results of a run without
+  this cutoff passes it.
 
 # ORFquant 1.03.0
 
