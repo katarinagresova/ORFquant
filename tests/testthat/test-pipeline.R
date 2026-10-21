@@ -261,6 +261,40 @@ test_that("plot_ORFquant_results() plots the splice sites with bedGraph coverage
   expect_true(file.exists(file.path(work, "plots_bedgraph", "example_Meta_splicing_coverage.pdf")))
 })
 
+test_that("plot_ORFquant_results() plots the splice sites of an ORF exon that spans an intron of the reference", {
+  skip_if(is.null(runs$one_core))
+  load(paste0(runs$one_core, "_final_ORFquant_results"))
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  # The example has no event CDS_spanning (an ORF exon over an intron of the CDS of
+  # its reference). Here an ORF gets one, from its second to its third exon
+  spl <- ORFquant_results$ORFs_spl_feat_maxORF
+  id <- "ENST00000402752.5_227_826"
+  x <- spl[names(spl) == id]
+  expect_length(x, 6)
+  span <- GRanges(seqnames(x)[2], IRanges(start(x[2]), end(x[3])), strand(x)[2], seqinfo = seqinfo(spl))
+  names(span) <- id
+  span$ref <- GRangesList(granges(x[2:3], use.mcols = FALSE))
+  span$spl_type <- "CDS_spanning"
+  ORFquant_results$ORFs_spl_feat_maxORF <- c(spl, span)
+  dir.create(file.path(work, "spanning"))
+  res_file <- file.path(work, "spanning", "example_final_ORFquant_results")
+  save(ORFquant_results, file = res_file)
+  cov <- file.path(work, "spanning", c("coverage_plus.bw", "coverage_minus.bw"))
+  rtracklayer::export(ps[strand(ps) == "+"], cov[1], format = "bigWig")
+  rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
+  # Before, the plot of these events gave facet_grid() the argument facets, which
+  # ggplot2 4.0 no longer accepts, and the function stopped before it wrote a plot
+  quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                              ORFquant_output_file = res_file,
+                              annotation_file = runs$annotation,
+                              coverage_file_plus = cov[1], coverage_file_minus = cov[2],
+                              output_plots_path = file.path(work, "spanning", "plots"), prefix = "example"),
+        expected = c("Groups with fewer than two datapoints have been dropped",
+                     "Computation failed in `stat_ydensity()`",
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
+  expect_true(file.exists(file.path(work, "spanning", "plots", "example_Meta_splicing_coverage.pdf")))
+})
+
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
   plots <- file.path(work, "plots", "example_ORFquant_plots_RData")
   skip_if_not(file.exists(plots))

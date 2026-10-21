@@ -1,5 +1,16 @@
 # ORFquant 1.3.1
 
+## Bug fixes
+
+- `plot_ORFquant_results()` with coverage files no longer stops with "The
+  `facets` argument of `facet_grid()` was deprecated in ggplot2 2.2.0 and
+  is now defunct" when the results have a `CDS_spanning` splice event (an
+  ORF exon over an intron of the CDS of its reference). ggplot2 4.0.0,
+  which ORFquant needs, no longer accepts this argument (ggplot2 3 gave a
+  warning), so the function stopped before it wrote any plot. The example
+  data have no such event, but a whole human sample (SRR15513199 with
+  GENCODE 47) has 15; it now gives all plots.
+
 # ORFquant 1.03.0
 
 ## Installation and dependencies

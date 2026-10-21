@@ -1007,8 +1007,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         scale_color_manual(values=cols,name="Avg.\ncontribution\nadditional ORF(s)") +
         ggtitle(paste("Event =",nm_titl,"\nn =",length(ok)))
       if(topl_ok[i]=="CDS_spanning"){
-        a<-a+facet_grid(facets = .~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nRibo-seq")
-        b<-b+facet_grid(facets = .~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nORFquant ORFs")
+        a<-a+facet_grid(.~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nRibo-seq")
+        b<-b+facet_grid(.~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nORFquant ORFs")
       }
       if(topl_ok[i]%in%c("up_5ss")){
         a<-a + xlab("Position from Splice Site") +  ylab("Normalized coverage\nRibo-seq")
