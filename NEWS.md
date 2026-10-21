@@ -1,5 +1,14 @@
 # ORFquant 1.3.2
 
+## Installation and dependencies
+
+- ORFquant no longer needs the method of `unlist()` for `GRanges` that
+  RiboseQC 1.4.0 and older have. This method changes `unlist()` in the whole
+  R session, and a later RiboseQC removes it. `run_ORFquant()` used it to
+  join the results of the regions, and `annotate_ORFs()` for an ORF in a
+  region with the CDS of two or more genes. ORFquant now runs with and
+  without it. The results do not change.
+
 # ORFquant 1.3.1
 
 ## Changes in results

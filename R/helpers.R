@@ -21,9 +21,6 @@
 
 # Helpers used by several steps: faster versions of Bioconductor functions and from_tx_togen().
 # The parallel helpers (mc_*) and the checks of the input are in RiboseQC (ORFquant-package.R).
-# unlist(x) gives x back when x is a GRanges. run_ORFquant() needs this when it joins the
-# results of the regions. The method is in RiboseQC, which ORFquant imports, so it is in
-# place whenever ORFquant runs.
 
 
 # translate(x, ..., if.fuzzy.codon = "solve"), faster. "solve" costs a fixed

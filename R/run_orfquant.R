@@ -358,7 +358,8 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   #at most 3 at a time. Each one can copy GBs of the memory of this process, and more don't make it
   #faster: ORFs_tx alone takes about as long as the other tables on 2 cores
   tables<-mc_lapply(list(ORFs_txs_feats=function(){
-  ORFs_txs_feats<-unlist(GRangesList_fast(lapply(ORFs_found_feats,function(x){unlist(x$genomic_features)})))
+  #genomic_features is a GRanges, or GRangesList() when the features of the region have fewer than 4 reads (select_txs())
+  ORFs_txs_feats<-unlist(GRangesList_fast(lapply(ORFs_found_feats,function(x){if(is(x$genomic_features,"GRangesList")){unlist(x$genomic_features)}else{x$genomic_features}})))
   ORFs_txs_feats<-ORFs_txs_feats[!duplicated(mcols(ORFs_txs_feats)) | !duplicated(ORFs_txs_feats)]
   },ORFs_tx=function(){
 
@@ -381,7 +382,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   ORFs_tx<-unlist(ORFs_tx)
   },ORFs_feat=function(){
 
-  ORFs_feat<-unlist(sapply(ORFs_found,function(x){unlist(x$selected_ORFs_features)}))
+  ORFs_feat<-unlist(sapply(ORFs_found,function(x){x$selected_ORFs_features}))
   ORFs_feat<-GRangesList_fast(sapply(ORFs_feat,function(x){
     #x$X$tx_name<-NULL, on the slots: the $<- calls check the objects, 12 ms per region
     x@elementMetadata@listData$X@elementMetadata@listData$tx_name<-NULL
@@ -394,7 +395,7 @@ run_ORFquant<-function(for_ORFquant_file,annotation_file,n_cores,prefix=for_ORFq
   },ORFs_spl_feat_maxORF=function(){
   ORFs_spl_feat_maxORF<-unlist(GRangesList_fast(sapply(ORFs_found,function(x){unlist(x$ORFs_splice_feats$annotation_wrt_maxORF)})))
   },ORFs_readthroughs=function(){
-  ORFs_readthroughs<-unlist(GRangesList_fast(unlist(sapply(ORFs_found,function(x){unlist(x$readthrough)}))))
+  ORFs_readthroughs<-unlist(GRangesList_fast(unlist(sapply(ORFs_found,function(x){x$readthrough}))))
   if(length(ORFs_readthroughs)>0){
     ORFs_readthroughs<-ORFs_readthroughs[order(ORFs_readthroughs$P_sites_raw,decreasing = T)]
   }
