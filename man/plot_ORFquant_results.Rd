@@ -50,6 +50,9 @@ The plots created are as follows:\cr\cr
 This function produces a series of plots and statistics about the set ORFs called by ORFquant compared to the annotation.
 IMPORTANT: Use only on transcriptome-wide ORFquant results. See \code{run_ORFquant}
 }
+\details{
+With few ORFs, for example the results of a few genes, some plots are empty, and ggplot2 warns about groups with too few data points.
+}
 \seealso{
 \code{\link{run_ORFquant}}
 }

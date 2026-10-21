@@ -25,6 +25,16 @@
   warning), so the function stopped before it wrote any plot. The example
   data have no such event, but a whole human sample (SRR15513199 with
   GENCODE 47) has 15; it now gives all plots.
+- `plot_ORFquant_results()` now stops at once with "The results in ... have
+  no ORFs, so there is nothing to plot" when the results file has no ORFs.
+  Before, it stopped later with `no rows to aggregate`. `run_ORFquant()`
+  writes no results without ORFs, but a filtered results file can have none.
+
+## Documentation
+
+- `?plot_ORFquant_results` now tells that with few ORFs, for example the
+  results of a few genes, some plots are empty, and ggplot2 warns about
+  groups with too few data points.
 
 # ORFquant 1.03.0
 

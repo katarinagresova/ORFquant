@@ -26,6 +26,8 @@
 #'
 #' This function produces a series of plots and statistics about the set ORFs called by ORFquant compared to the annotation.
 #' IMPORTANT: Use only on transcriptome-wide ORFquant results. See \code{run_ORFquant}
+#'
+#' With few ORFs, for example the results of a few genes, some plots are empty, and ggplot2 warns about groups with too few data points.
 #' @keywords ORFquant, Ribo-seQC
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param for_ORFquant_file path to the "for_ORFquant" file containing P_sites positions and junction reads
@@ -75,6 +77,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   load(annotation_file)
   load(ORFquant_output_file)
   ORFs_tx<-ORFquant_results$ORFs_tx
+  if(length(ORFs_tx)==0){stop("The results in ",ORFquant_output_file," have no ORFs, so there is nothing to plot.",call. = FALSE)}
   ORFs_gen<-ORFquant_results$ORFs_gen
   selected_txs<-ORFquant_results$selected_txs
   

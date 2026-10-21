@@ -20,3 +20,13 @@ test_that("plot_orfquant_locus() warns when bam_files or col is given, because t
   expect_equal(sub(":.*", "", warned), c("bam_files is not used", "col is not used"))
   expect_no_warning(expect_error(plot_orfquant_locus("TCN2", list()), "old version|Please install"))
 })
+
+test_that("plot_ORFquant_results() stops with a clear message on results without ORFs", {
+  f <- tempfile(fileext = "_final_ORFquant_results")
+  ORFquant_results <- list(ORFs_tx = GenomicRanges::GRanges())
+  save(ORFquant_results, file = f)
+  # Before, it stopped later with "no rows to aggregate"
+  expect_error(suppressMessages(plot_ORFquant_results(for_ORFquant_file = f, ORFquant_output_file = f,
+                                                      annotation_file = f, output_plots_path = tempfile())),
+               "have no ORFs, so there is nothing to plot")
+})
