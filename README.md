@@ -29,7 +29,7 @@ With *BiocManager*:
 
 ```r
 install.packages(c("BiocManager", "remotes"))
-BiocManager::install("katarinagresova/ORFquant", dependencies = TRUE)
+BiocManager::install("katarinagresova/ORFquant@v1.3.0", dependencies = TRUE)
 ```
 
 This also installs [RiboseQC](https://github.com/katarinagresova/RiboseQC) from GitHub (the `Remotes` field of `DESCRIPTION`), which *ORFquant* uses for the first two steps: `prepare_annotation_files()`, `load_annotation()`, `FaFile_Circ` and `prepare_for_ORFquant()` are from *RiboseQC*, and *ORFquant* exports them again. `dependencies = TRUE` also installs the packages that `plot_orfquant_locus()` and `create_ORFquant_html_report()` need (*Gviz*, *lemon*, *dplyr*, *GenomeInfoDb*, *knitr*, *rmarkdown*). The HTML report also needs [pandoc](https://pandoc.org). On Linux, the packages are usually built from source, which needs the development files of system libraries such as libcurl and libjpeg (`libcurl-devel` and `libjpeg-turbo-devel` on RHEL or Fedora, `libcurl4-openssl-dev` and `libjpeg-dev` on Debian or Ubuntu).
@@ -39,8 +39,10 @@ Or with conda, using [environment.yml](environment.yml) from this repository (R 
 ```bash
 conda env create -f environment.yml
 conda activate orfquant
-Rscript -e 'remotes::install_github("katarinagresova/ORFquant", upgrade = "never")'
+Rscript -e 'remotes::install_github("katarinagresova/ORFquant@v1.3.0", upgrade = "never")'
 ```
+
+`@v1.3.0` installs the release 1.3.0. Without it, both commands install the latest code of the `main` branch.
 
 To also install the vignette, add `build_vignettes = TRUE` to either install command (this needs pandoc), and read it with `vignette("ORFquant")`.
 
