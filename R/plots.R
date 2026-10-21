@@ -1104,8 +1104,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='locusplot.pdf', col=NULL ){
   if(!missing(bam_files)){warning("bam_files is not used: the P-sites and junction reads come from orfquant_results$psite_data_file. Please remove it from the call.",call. = FALSE)}
   if(!missing(col)){warning("col is not used: the P-site and junction tracks are drawn in forestgreen. Please remove it from the call.",call. = FALSE)}
-  if (!all(vapply(c("Gviz",'lemon','dplyr','GenomeInfoDb'), requireNamespace, logical(1), quietly = TRUE))) {
-    stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
+  missing_pkgs<-c("Gviz","lemon","dplyr","GenomeInfoDb")
+  missing_pkgs<-missing_pkgs[!vapply(missing_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_pkgs)>0) {
+    stop("Package(s) ",paste0("\"",missing_pkgs,"\"",collapse=",")," needed for this function to work. Please install them.",
          call. = FALSE)
   }
   old_options<-options(ucscChromosomeNames=FALSE)

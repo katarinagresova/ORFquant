@@ -29,6 +29,8 @@
   no ORFs, so there is nothing to plot" when the results file has no ORFs.
   Before, it stopped later with `no rows to aggregate`. `run_ORFquant()`
   writes no results without ORFs, but a filtered results file can have none.
+- `plot_orfquant_locus()` now names only the missing packages when it stops
+  because packages it suggests are not installed. Before, it named all four.
 
 ## Documentation
 
