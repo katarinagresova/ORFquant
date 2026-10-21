@@ -852,7 +852,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF)>0){
       
       ann_sta<-start(annotated_ORF)
-      ann_sto<-end(annotated_ORF)-stop_len
+      ann_sto<-end(annotated_ORF)-cds_stop_len(Annotation$cds_txs[[orf_tx$transcript_id]],stop_len,genome_sequence,genetic_code)
       sta<-start(orf_tx)
       sto<-end(orf_tx)
       cols$ORF_category_Tx<-tx_category(sta,sto,ann_sta,ann_sto)
@@ -862,7 +862,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF_compatible)>0){
       
       ann_sta<-start(annotated_ORF_compatible)
-      ann_sto<-end(annotated_ORF_compatible)-stop_len
+      ann_sto<-end(annotated_ORF_compatible)-cds_stop_len(Annotation$cds_txs[[orf_tx$compatible_tx]],stop_len,genome_sequence,genetic_code)
       #change
       sta<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)-1]}))
       sto<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)]}))
@@ -942,16 +942,18 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         max_cdsok<-annotated_cds_tx[[which.max(sum(width(annotated_cds_tx)))]]
       }
       cols$ref_id<-max_cds[cols$gene_id]
+      #the nt of the stop codon at the end of the CDS: none when it ends without one
+      ref_stop_len<-cds_stop_len(max_cdsok,stop_len,genome_sequence,genetic_code)
       max_cds_seq<-unlist(getSeq(x=genome_sequence,max_cdsok))
       segm<-10
       #the length of the CDS with its stop codon
-      if(length(max_cds_seq)+3-stop_len<33 | nchar(orf_tx$Protein)<10){
-        segm<-min(c(as.integer((length(max_cds_seq)+3-stop_len)/3)-1,nchar(orf_tx$Protein)))
+      if(length(max_cds_seq)+3-ref_stop_len<33 | nchar(orf_tx$Protein)<10){
+        segm<-min(c(as.integer((length(max_cds_seq)+3-ref_stop_len)/3)-1,nchar(orf_tx$Protein)))
       }
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
       N_ann<-translate_solve(max_cds_seq[1:(segm*3)],genetic.code = genetic_code)
-      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+stop_len)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
+      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+ref_stop_len)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       cols$NC_protein_isoform<-"N_C"
@@ -966,12 +968,12 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       
       #ann genomic
       #the stop is the last nucleotide before the stop codon, of the ORF and of the CDS (as for ORF_category_Tx). For the
-      #CDS it is found through its exons, as its stop codon (its last stop_len nt) can be split by an intron or be the
+      #CDS it is found through its exons, as its stop codon (its last ref_stop_len nt) can be split by an intron or be the
       #first codon of an exon: sto_ex is the exon of the CDS with this nucleotide, sto_in_ex the nt of the stop codon in it
       cds_ex<-sort(max_cdsok,decreasing=as.vector(strand(orf_gen[1]))=="-")
       nt_to_end<-rev(cumsum(rev(width(cds_ex))))
-      sto_ex<-max(which(nt_to_end>stop_len),1)
-      sto_in_ex<-stop_len-(nt_to_end[sto_ex]-width(cds_ex)[sto_ex])
+      sto_ex<-max(which(nt_to_end>ref_stop_len),1)
+      sto_in_ex<-ref_stop_len-(nt_to_end[sto_ex]-width(cds_ex)[sto_ex])
       
       if(as.vector(strand(orf_gen[1]))=="+"){
         

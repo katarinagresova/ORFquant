@@ -12,8 +12,19 @@
   a stop codon. They are the reference of 33 ORFs. In the rows of these
   ORFs, 58 `ref` and 6 `missing_CDS` ranges get their last codon back, and 2
   labels change: `down_lastCDS` back to `same_lastCDS` (ADAMTSL1) and
-  `down_3ss` back to `same_3ss`. The other outputs and the example data
-  don't change.
+  `down_3ss` back to `same_3ss`. The example data don't change.
+- `ORF_category_Tx`, `ORF_category_Tx_compatible`, `ORF_category_Gen` and
+  `NC_protein_isoform` now also keep the last codon of a CDS that ends
+  without a stop codon, as `ORFs_spl_feat_longest` does (see above). Before,
+  they compared the ORF with an end 3 nucleotides before the end of such a
+  CDS, so an ORF that ends there was, for example, `C_extension` and
+  `Alt3_stop`, not `ORF_annotated` and `exact_start_stop`. On the human
+  sample, this changes 1 ORF (ADAMTSL1, which ends at the end of the CDS of
+  its `ref_id`): its `ORF_category_Gen` changes from `Alt3_start_Alt3_stop`
+  to `Alt3_start`, and its `NC_protein_isoform` from `N_C` to `N`. 6 of the
+  8,830 CDS of the ORFs' transcripts and compatible transcripts end without
+  a stop codon; the transcript categories of their 6 ORFs don't change. The
+  example data don't change.
 
 ## Bug fixes
 

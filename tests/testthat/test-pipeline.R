@@ -514,7 +514,7 @@ test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without 
   }
 })
 
-test_that("ORFs_spl_feat_longest keeps the last codon of a CDS of ref_id that ends without a stop codon", {
+test_that("The ORF categories, NC_protein_isoform and ORFs_spl_feat_longest keep the last codon of a CDS that ends without a stop codon", {
   skip_if(is.null(runs$one_core))
   res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
   loaded <- NULL
@@ -522,13 +522,25 @@ test_that("ORFs_spl_feat_longest keeps the last codon of a CDS of ref_id that en
   for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
   genetic_code <- Biostrings::getGeneticCode("SGC0")
   attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
-  # The ORFs of the test above. Here the CDS of ref_id ends without its stop codon, as a CDS
-  # with the GENCODE tag cds_end_NF does, so the ORF ends at the end of the CDS
+  # The ORFs of the test above. Here the CDS of the gene that end at the stop codon of ref_id
+  # (also the ORF's transcript and its compatible_tx) end without it, as a CDS with the GENCODE
+  # tag cds_end_NF does, so the ORF ends at the end of the CDS. All of them: TOP3B has two
+  # transcripts with this CDS, and the other one would become ref_id
   orfs <- res$ORFs_tx[res$ORFs_tx$ORF_category_Gen == "exact_start_stop"]
   expect_length(orfs, 2)
+  expect_identical(orfs$compatible_tx, orfs$transcript_id)
+  cds_end <- function(cds) if (as.vector(strand(cds))[1] == "+") max(end(cds)) else min(start(cds))
   for (k in seq_along(orfs)) {
     annotation <- loaded$GTF_annotation
-    annotation$cds_txs[[orfs$ref_id[k]]] <- cds_without_stop(annotation$cds_txs[[orfs$ref_id[k]]], 3)
+    txs <- names(annotation$cds_txs)
+    txs <- txs[annotation$trann$gene_id[match(txs, annotation$trann$transcript_id)] %in% orfs$gene_id[k]]
+    txs <- txs[vapply(txs, function(t) cds_end(annotation$cds_txs[[t]]), numeric(1)) == cds_end(annotation$cds_txs[[orfs$ref_id[k]]])]
+    expect_true(orfs$transcript_id[k] %in% txs)
+    for (t in txs) {
+      annotation$cds_txs[[t]] <- cds_without_stop(annotation$cds_txs[[t]], 3)
+    }
+    on_tx <- as.character(seqnames(annotation$cds_txs_coords)) %in% txs
+    end(annotation$cds_txs_coords)[on_tx] <- end(annotation$cds_txs_coords)[on_tx] - 3
     region <- GenomicRanges::reduce(unlist(annotation$txs_gene[orfs$gene_id[k]]))
     out <- NULL
     quiet(out <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
@@ -537,6 +549,11 @@ test_that("ORFs_spl_feat_longest keeps the last codon of a CDS of ref_id that en
     # Before, the last codon of this CDS was removed too, and the last exon was down_lastCDS
     expect_true(any(grepl("same_lastCDS", types)), info = orfs$ORF_id_tr[k])
     expect_false(any(grepl("down_lastCDS|new_lastCDS_3prime", types)), info = orfs$ORF_id_tr[k])
+    # Before, C_extension, Alt3_stop and C
+    o <- out$ORFs_tx_position[[orfs$ORF_id_tr[k]]]
+    expect_identical(o$ref_id, orfs$ref_id[k])
+    expect_identical(c(o$ORF_category_Tx, o$ORF_category_Tx_compatible, o$ORF_category_Gen, o$NC_protein_isoform),
+                     c("ORF_annotated", "ORF_annotated", "exact_start_stop", "same"), info = orfs$ORF_id_tr[k])
   }
 })
 

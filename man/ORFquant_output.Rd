@@ -292,15 +292,16 @@ Both kinds of categories and \code{NC_protein_isoform} compare the ORF's
 stop codon with the annotated one. The annotated CDS includes its stop
 codon when the GTF has \code{stop_codon} lines (GENCODE, Ensembl and
 RefSeq GTFs do): \code{\link{prepare_annotation_files}} adds them to the
-CDS. When most CDS end before their stop codon (CDS lines made by factR, or
+CDS. A CDS whose last codon is not a stop codon (for example with the
+GENCODE tag \code{cds_end_NF}) keeps its last codon in these comparisons.
+When most CDS end before their stop codon (CDS lines made by factR, or
 a GTF without its \code{stop_codon} lines), the annotation's
 \code{stop_in_gtf} is \code{NA}, and the codon after each CDS is its stop
-codon (\code{run_ORFquant} says so in a message). One rule is used for the
-whole annotation: with a GTF that has both kinds of CDS, ORFs at the stop
-codons of the smaller part are compared with an annotated end 3
-nucleotides away. Such an annotated ORF itself becomes, for example,
-\code{C_extension} and \code{Alt3_stop}, not \code{ORF_annotated} and
-\code{exact_start_stop}.
+codon (\code{run_ORFquant} says so in a message). This rule is used for all
+CDS of such an annotation: an ORF at the stop codon of a CDS that includes
+it is compared with an annotated end 3 nucleotides away. Such an annotated
+ORF itself becomes, for example, \code{C_truncation} and \code{Alt5_stop},
+not \code{ORF_annotated} and \code{exact_start_stop}.
 }
 
 \section{P-site runs}{
