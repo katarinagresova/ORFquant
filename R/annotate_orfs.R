@@ -881,7 +881,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         orf_gen%over%x
       })
       if(length(orf_gen)==1){moreg<-t(data.frame(moreg,stringsAsFactors=F))}
-      annotated_cds2<-reduce(unlist(annotated_cds[[colnames(moreg)[which.max(colSums(moreg))]]]))
+      annotated_cds2<-reduce(annotated_cds[[colnames(moreg)[which.max(colSums(moreg))]]])
       
     }
     

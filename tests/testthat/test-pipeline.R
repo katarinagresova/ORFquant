@@ -239,7 +239,7 @@ test_that("plot_ORFquant_results() plots the splice sites with bedGraph coverage
   skip_if(is.null(runs$one_core))
   ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
   res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
-  spl <- unlist(res$ORFs_spl_feat_maxORF)
+  spl <- res$ORFs_spl_feat_maxORF
   cov <- file.path(work, c("coverage_plus.bedGraph", "coverage_minus.bedGraph"))
   # The P-sites before the middle of the splice features of each strand. Before, the
   # coverage of a bedGraph (it has no chromosome lengths) ended at its last P-site,
