@@ -42,6 +42,8 @@
   selection, before the removed ORFs give their signal to the other ORFs. So
   a cutoff can remove an ORF whose value in the results of a run without
   this cutoff passes it.
+- `?ORFquant_output` (section "P-site runs") now tells what a minimum of 5
+  P-sites, not 5 ranges, would change in a human sample.
 
 # ORFquant 1.03.0
 

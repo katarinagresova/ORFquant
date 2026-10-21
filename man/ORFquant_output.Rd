@@ -334,8 +334,10 @@ than with single positions, and 270 of its 939,002 exonic bins count more
 P-sites than are on them (0.038\% more P-sites in total). In 43 genes of
 this sample, single positions give one more ORF, of a third RPL19
 transcript, with an \code{ORF_pct_P_sites} of 2.04, just above
-\code{stn.orf_quant.cutoff_pct}. In the example data of the vignette,
-they change nothing.
+\code{stn.orf_quant.cutoff_pct}. A minimum of 5 P-sites, not 5 ranges,
+would add 511 regions with 3,745 P-sites (0.38\%) to the 10,546 regions of
+this sample, and 20 ORFs with 1.7 to 7 P-sites each. In the example data
+of the vignette, runs change nothing.
 }
 
 \seealso{
