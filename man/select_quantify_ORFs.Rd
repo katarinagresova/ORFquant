@@ -53,6 +53,7 @@ When no unique features are present on an ORF, an adjusted scaling value is calc
 When no unique features are present on any ORF, scaling values are calculated assuming uniform coverage on each ORF.\cr
 Scaling values are then further scaled to adjust for average coverage or for the total number of P_sites on the ORFs' exonic bins (recommended, the default).\cr
 ORFs are then further filtered to exclude lowly translated ORFs and quantification/selection is re-iterated until no ORF is further filtered out. 
+The cutoffs filter the values of each round, before the removed ORFs give their signal to the other ORFs. So a cutoff can remove an ORF whose value in the results of a run without this cutoff passes it.
 Percentage of total gene translation and length-adjusted quantification estimates are produced.
 More details about the quantificatin procedure can be found in the ORFquant manuscript.\cr\cr
 Additional columns are added to the ORFs_tx object:\cr

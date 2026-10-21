@@ -40,7 +40,7 @@ The column \code{ref} has the exons of the reference that each row is compared w
 ORF overlaps; for a \code{new} exon, the nearest exon of the reference (none when the reference has no exons); for a
 \code{missing_CDS} row, the exon of the reference itself.
 
-\code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon
+\code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon, when it ends with one
 (\code{ORFs_spl_feat_longest}) or the ORF of \code{ref_id_maxORF} (\code{ORFs_spl_feat_maxORF}), as an ORF ends before
 its stop codon. So an ORF that ends at the stop codon of the reference has \code{same_lastCDS}.
 }

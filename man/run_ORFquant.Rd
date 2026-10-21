@@ -63,11 +63,11 @@ run_ORFquant(
 
 \item{stn.orf_find.cutoff_fr_ave}{\code{orf_find.cutoff_fr_ave} parameter for the \code{ORFquant} function}
 
-\item{stn.orf_quant.cutoff_cums}{\code{orf_quant.cutoff_cums} parameter for the \code{ORFquant} function}
+\item{stn.orf_quant.cutoff_cums}{\code{orf_quant.cutoff_cums} parameter for the \code{ORFquant} function. It filters the values of each round of the selection (see \code{select_quantify_ORFs}).}
 
 \item{stn.orf_quant.cutoff_pct}{\code{orf_quant.cutoff_pct} parameter for the \code{ORFquant} function}
 
-\item{stn.orf_quant.cutoff_P_sites}{\code{orf_quant.cutoff_P_sites} parameter for the \code{ORFquant} function}
+\item{stn.orf_quant.cutoff_P_sites}{\code{orf_quant.cutoff_P_sites} parameter for the \code{ORFquant} function. It filters the values of each round of the selection (see \code{select_quantify_ORFs}).}
 
 \item{unique_reads_only}{Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.}
 

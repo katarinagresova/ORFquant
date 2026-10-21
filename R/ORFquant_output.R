@@ -271,23 +271,25 @@
 #' annotated CDS of the ORF's gene: all its exons are then rows with a
 #' \code{spl_type} that starts with \code{missing_CDS}. When the gene has no
 #' CDS, it uses none, and the rows are the ORF's exons only. The CDS is
-#' without its stop codon, as the ORF ends before its stop codon.
+#' without its stop codon, as the ORF ends before its stop codon. A CDS that
+#' ends without a stop codon (for example with the GENCODE tag
+#' \code{cds_end_NF}) keeps its last codon.
 #'
 #' @section Stop codons in the annotation:
-#' Both kinds of categories, \code{NC_protein_isoform} and
-#' \code{ORFs_spl_feat_longest} compare the ORF's stop codon with the
-#' annotated one. The annotated CDS includes its stop
+#' Both kinds of categories and \code{NC_protein_isoform} compare the ORF's
+#' stop codon with the annotated one. The annotated CDS includes its stop
 #' codon when the GTF has \code{stop_codon} lines (GENCODE, Ensembl and
 #' RefSeq GTFs do): \code{\link{prepare_annotation_files}} adds them to the
-#' CDS. When most CDS end before their stop codon (CDS lines made by factR, or
+#' CDS. A CDS whose last codon is not a stop codon (for example with the
+#' GENCODE tag \code{cds_end_NF}) keeps its last codon in these comparisons.
+#' When most CDS end before their stop codon (CDS lines made by factR, or
 #' a GTF without its \code{stop_codon} lines), the annotation's
 #' \code{stop_in_gtf} is \code{NA}, and the codon after each CDS is its stop
-#' codon (\code{run_ORFquant} says so in a message). One rule is used for the
-#' whole annotation: with a GTF that has both kinds of CDS, ORFs at the stop
-#' codons of the smaller part are compared with an annotated end 3
-#' nucleotides away. Such an annotated ORF itself becomes, for example,
-#' \code{C_extension} and \code{Alt3_stop}, not \code{ORF_annotated} and
-#' \code{exact_start_stop}.
+#' codon (\code{run_ORFquant} says so in a message). This rule is used for all
+#' CDS of such an annotation: an ORF at the stop codon of a CDS that includes
+#' it is compared with an annotated end 3 nucleotides away. Such an annotated
+#' ORF itself becomes, for example, \code{C_truncation} and \code{Alt5_stop},
+#' not \code{ORF_annotated} and \code{exact_start_stop}.
 #'
 #' @section P-site runs:
 #' The P-site tracks of \code{\link{prepare_for_ORFquant}}
@@ -319,8 +321,10 @@
 #' P-sites than are on them (0.038\% more P-sites in total). In 43 genes of
 #' this sample, single positions give one more ORF, of a third RPL19
 #' transcript, with an \code{ORF_pct_P_sites} of 2.04, just above
-#' \code{stn.orf_quant.cutoff_pct}. In the example data of the vignette,
-#' they change nothing.
+#' \code{stn.orf_quant.cutoff_pct}. A minimum of 5 P-sites, not 5 ranges,
+#' would add 511 regions with 3,745 P-sites (0.38\%) to the 10,546 regions of
+#' this sample, and 20 ORFs with 1.7 to 7 P-sites each. In the example data
+#' of the vignette, runs change nothing.
 #'
 #' @seealso \code{\link{run_ORFquant}}, \code{\link{ORFquant}},
 #' \code{\link{detect_translated_orfs}}, \code{\link{select_quantify_ORFs}},

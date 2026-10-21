@@ -26,6 +26,8 @@
 #'
 #' This function produces a series of plots and statistics about the set ORFs called by ORFquant compared to the annotation.
 #' IMPORTANT: Use only on transcriptome-wide ORFquant results. See \code{run_ORFquant}
+#'
+#' With few ORFs, for example the results of a few genes, some plots are empty, and ggplot2 warns about groups with too few data points.
 #' @keywords ORFquant, Ribo-seQC
 #' @author Lorenzo Calviello, \email{calviello.l.bio@@gmail.com}
 #' @param for_ORFquant_file path to the "for_ORFquant" file containing P_sites positions and junction reads
@@ -75,6 +77,7 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
   load(annotation_file)
   load(ORFquant_output_file)
   ORFs_tx<-ORFquant_results$ORFs_tx
+  if(length(ORFs_tx)==0){stop("The results in ",ORFquant_output_file," have no ORFs, so there is nothing to plot.",call. = FALSE)}
   ORFs_gen<-ORFquant_results$ORFs_gen
   selected_txs<-ORFquant_results$selected_txs
   
@@ -1007,8 +1010,8 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
         scale_color_manual(values=cols,name="Avg.\ncontribution\nadditional ORF(s)") +
         ggtitle(paste("Event =",nm_titl,"\nn =",length(ok)))
       if(topl_ok[i]=="CDS_spanning"){
-        a<-a+facet_grid(facets = .~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nRibo-seq")
-        b<-b+facet_grid(facets = .~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nORFquant ORFs")
+        a<-a+facet_grid(.~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nRibo-seq")
+        b<-b+facet_grid(.~spanning) + xlab("Position from Splice Sites") +  ylab("Normalized coverage\nORFquant ORFs")
       }
       if(topl_ok[i]%in%c("up_5ss")){
         a<-a + xlab("Position from Splice Site") +  ylab("Normalized coverage\nRibo-seq")
@@ -1101,8 +1104,10 @@ plot_ORFquant_results<-function(for_ORFquant_file,ORFquant_output_file,annotatio
 plot_orfquant_locus<-function(locus,orfquant_results,bam_files=NULL, plotfile='locusplot.pdf', col=NULL ){
   if(!missing(bam_files)){warning("bam_files is not used: the P-sites and junction reads come from orfquant_results$psite_data_file. Please remove it from the call.",call. = FALSE)}
   if(!missing(col)){warning("col is not used: the P-site and junction tracks are drawn in forestgreen. Please remove it from the call.",call. = FALSE)}
-  if (!all(vapply(c("Gviz",'lemon','dplyr','GenomeInfoDb'), requireNamespace, logical(1), quietly = TRUE))) {
-    stop("Packages \"Gviz\",\"dplyr\",\"lemon\",\"GenomeInfoDb\" needed for this function to work. Please install them.",
+  missing_pkgs<-c("Gviz","lemon","dplyr","GenomeInfoDb")
+  missing_pkgs<-missing_pkgs[!vapply(missing_pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing_pkgs)>0) {
+    stop("Package(s) ",paste0("\"",missing_pkgs,"\"",collapse=",")," needed for this function to work. Please install them.",
          call. = FALSE)
   }
   old_options<-options(ucscChromosomeNames=FALSE)

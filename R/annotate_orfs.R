@@ -46,7 +46,7 @@
 #' ORF overlaps; for a \code{new} exon, the nearest exon of the reference (none when the reference has no exons); for a
 #' \code{missing_CDS} row, the exon of the reference itself.
 #'
-#' \code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon
+#' \code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon, when it ends with one
 #' (\code{ORFs_spl_feat_longest}) or the ORF of \code{ref_id_maxORF} (\code{ORFs_spl_feat_maxORF}), as an ORF ends before
 #' its stop codon. So an ORF that ends at the stop codon of the reference has \code{same_lastCDS}.
 #' @keywords ORFquant
@@ -531,6 +531,15 @@ cds_without_stop<-function(cds,stop_len){
   cds[width(cds)>0]
 }
 
+# stop_len when the last stop_len nt of the CDS exons cds are a stop codon of genetic_code, else 0: a CDS can end
+# without its stop codon (e.g. the GENCODE tag cds_end_NF) also in a GTF whose other CDS include it
+cds_stop_len<-function(cds,stop_len,genome_sequence,genetic_code){
+  if(length(cds)==0 | stop_len==0){return(stop_len)}
+  last<-sort(setdiff(cds,cds_without_stop(cds,stop_len)),decreasing=as.vector(strand(cds[1]))=="-")
+  codon<-as.character(unlist(getSeq(x=genome_sequence,last)))
+  if(isTRUE(genetic_code[codon]=="*")){stop_len}else{0}
+}
+
 # NMD_candidate from Distance_to_lastExEx (the start of the last exon minus the ORF end, which excludes the stop codon):
 # TRUE when the last exon-exon junction is after the whole stop codon. 1 is a stop codon at the start of the last exon,
 # 2 and 3 a stop codon across the last junction. The distances of the compatible transcripts are a CharacterList, which
@@ -843,7 +852,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF)>0){
       
       ann_sta<-start(annotated_ORF)
-      ann_sto<-end(annotated_ORF)-stop_len
+      ann_sto<-end(annotated_ORF)-cds_stop_len(Annotation$cds_txs[[orf_tx$transcript_id]],stop_len,genome_sequence,genetic_code)
       sta<-start(orf_tx)
       sto<-end(orf_tx)
       cols$ORF_category_Tx<-tx_category(sta,sto,ann_sta,ann_sto)
@@ -853,7 +862,7 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
     if(length(annotated_ORF_compatible)>0){
       
       ann_sta<-start(annotated_ORF_compatible)
-      ann_sto<-end(annotated_ORF_compatible)-stop_len
+      ann_sto<-end(annotated_ORF_compatible)-cds_stop_len(Annotation$cds_txs[[orf_tx$compatible_tx]],stop_len,genome_sequence,genetic_code)
       #change
       sta<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)-1]}))
       sto<-as.numeric(sapply(strsplit(orf_tx$compatible_ORF_id_tr,"_"),function(x){x[length(x)]}))
@@ -933,16 +942,18 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
         max_cdsok<-annotated_cds_tx[[which.max(sum(width(annotated_cds_tx)))]]
       }
       cols$ref_id<-max_cds[cols$gene_id]
+      #the nt of the stop codon at the end of the CDS: none when it ends without one
+      ref_stop_len<-cds_stop_len(max_cdsok,stop_len,genome_sequence,genetic_code)
       max_cds_seq<-unlist(getSeq(x=genome_sequence,max_cdsok))
       segm<-10
       #the length of the CDS with its stop codon
-      if(length(max_cds_seq)+3-stop_len<33 | nchar(orf_tx$Protein)<10){
-        segm<-min(c(as.integer((length(max_cds_seq)+3-stop_len)/3)-1,nchar(orf_tx$Protein)))
+      if(length(max_cds_seq)+3-ref_stop_len<33 | nchar(orf_tx$Protein)<10){
+        segm<-min(c(as.integer((length(max_cds_seq)+3-ref_stop_len)/3)-1,nchar(orf_tx$Protein)))
       }
       N_pr<-AAString(unlist(orf_tx$Protein))[1:segm]
       C_pr<-AAString(unlist(orf_tx$Protein))[(nchar(unlist(orf_tx$Protein))-(segm-1)):nchar(unlist(orf_tx$Protein))]
       N_ann<-translate_solve(max_cds_seq[1:(segm*3)],genetic.code = genetic_code)
-      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+stop_len)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
+      C_ann<-translate_solve(head(tail(max_cds_seq,(segm*3+ref_stop_len)),(segm*3)),genetic.code = genetic_code,no.init.codon=segm<nchar(unlist(orf_tx$Protein)))
       
       
       cols$NC_protein_isoform<-"N_C"
@@ -957,12 +968,12 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       
       #ann genomic
       #the stop is the last nucleotide before the stop codon, of the ORF and of the CDS (as for ORF_category_Tx). For the
-      #CDS it is found through its exons, as its stop codon (its last stop_len nt) can be split by an intron or be the
+      #CDS it is found through its exons, as its stop codon (its last ref_stop_len nt) can be split by an intron or be the
       #first codon of an exon: sto_ex is the exon of the CDS with this nucleotide, sto_in_ex the nt of the stop codon in it
       cds_ex<-sort(max_cdsok,decreasing=as.vector(strand(orf_gen[1]))=="-")
       nt_to_end<-rev(cumsum(rev(width(cds_ex))))
-      sto_ex<-max(which(nt_to_end>stop_len),1)
-      sto_in_ex<-stop_len-(nt_to_end[sto_ex]-width(cds_ex)[sto_ex])
+      sto_ex<-max(which(nt_to_end>ref_stop_len),1)
+      sto_in_ex<-ref_stop_len-(nt_to_end[sto_ex]-width(cds_ex)[sto_ex])
       
       if(as.vector(strand(orf_gen[1]))=="+"){
         
@@ -1019,8 +1030,8 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
     }     
     
-    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS)
-    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,stop_len))
+    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS), when the CDS ends with one
+    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,cds_stop_len(max_cdsok,stop_len,genome_sequence,genetic_code)))
     #to maxORF
     max_pct<-ORFs_gen[[maxORF_orf[cols$gene_id]]]
     cols$ref_id_maxORF<-maxORF_orf[cols$gene_id]

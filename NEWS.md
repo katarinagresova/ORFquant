@@ -1,3 +1,61 @@
+# ORFquant 1.3.1
+
+## Changes in results
+
+- `ORFs_spl_feat_longest` now removes the last codon of the CDS of `ref_id`
+  only when it is a stop codon. A CDS can end without its stop codon (for
+  example with the GENCODE tag `cds_end_NF`) also in a GTF whose other CDS
+  include it. Since 1.03.0 (see "Changes in results" there), such a CDS lost
+  its last 3 coding nucleotides, so an ORF that ends at its end, or a splice
+  site in its last 3 nucleotides, got the wrong label. On a human sample
+  (SRR15513199 with GENCODE 47), 29 of the 6,673 CDS of `ref_id` end without
+  a stop codon. They are the reference of 33 ORFs. In the rows of these
+  ORFs, 58 `ref` and 6 `missing_CDS` ranges get their last codon back, and 2
+  labels change: `down_lastCDS` back to `same_lastCDS` (ADAMTSL1) and
+  `down_3ss` back to `same_3ss`. The example data don't change.
+- `ORF_category_Tx`, `ORF_category_Tx_compatible`, `ORF_category_Gen` and
+  `NC_protein_isoform` now also keep the last codon of a CDS that ends
+  without a stop codon, as `ORFs_spl_feat_longest` does (see above). Before,
+  they compared the ORF with an end 3 nucleotides before the end of such a
+  CDS, so an ORF that ends there was, for example, `C_extension` and
+  `Alt3_stop`, not `ORF_annotated` and `exact_start_stop`. On the human
+  sample, this changes 1 ORF (ADAMTSL1, which ends at the end of the CDS of
+  its `ref_id`): its `ORF_category_Gen` changes from `Alt3_start_Alt3_stop`
+  to `Alt3_start`, and its `NC_protein_isoform` from `N_C` to `N`. 6 of the
+  8,830 CDS of the ORFs' transcripts and compatible transcripts end without
+  a stop codon; the transcript categories of their 6 ORFs don't change. The
+  example data don't change.
+
+## Bug fixes
+
+- `plot_ORFquant_results()` with coverage files no longer stops with "The
+  `facets` argument of `facet_grid()` was deprecated in ggplot2 2.2.0 and
+  is now defunct" when the results have a `CDS_spanning` splice event (an
+  ORF exon over an intron of the CDS of its reference). ggplot2 4.0.0,
+  which ORFquant needs, no longer accepts this argument (ggplot2 3 gave a
+  warning), so the function stopped before it wrote any plot. The example
+  data have no such event, but a whole human sample (SRR15513199 with
+  GENCODE 47) has 15; it now gives all plots.
+- `plot_ORFquant_results()` now stops at once with "The results in ... have
+  no ORFs, so there is nothing to plot" when the results file has no ORFs.
+  Before, it stopped later with `no rows to aggregate`. `run_ORFquant()`
+  writes no results without ORFs, but a filtered results file can have none.
+- `plot_orfquant_locus()` now names only the missing packages when it stops
+  because packages it suggests are not installed. Before, it named all four.
+
+## Documentation
+
+- `?plot_ORFquant_results` now tells that with few ORFs, for example the
+  results of a few genes, some plots are empty, and ggplot2 warns about
+  groups with too few data points.
+- `?select_quantify_ORFs` and `?run_ORFquant` now tell that
+  `cutoff_P_sites` and `cutoff_cums` filter the values of each round of the
+  selection, before the removed ORFs give their signal to the other ORFs. So
+  a cutoff can remove an ORF whose value in the results of a run without
+  this cutoff passes it.
+- `?ORFquant_output` (section "P-site runs") now tells what a minimum of 5
+  P-sites, not 5 ranges, would change in a human sample.
+
 # ORFquant 1.03.0
 
 ## Installation and dependencies

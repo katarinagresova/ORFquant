@@ -145,9 +145,9 @@ ORFs_tx_as_table<-function(ORFs_tx){
 #' @param stn.orf_find.start_sel_cutoff \code{orf_find.start_sel_cutoff} parameter for the \code{ORFquant} function
 #' @param stn.orf_find.start_sel_cutoff_ave \code{orf_find.start_sel_cutoff_ave} parameter for the \code{ORFquant} functio
 #' @param stn.orf_find.cutoff_fr_ave \code{orf_find.cutoff_fr_ave} parameter for the \code{ORFquant} function
-#' @param stn.orf_quant.cutoff_cums \code{orf_quant.cutoff_cums} parameter for the \code{ORFquant} function
+#' @param stn.orf_quant.cutoff_cums \code{orf_quant.cutoff_cums} parameter for the \code{ORFquant} function. It filters the values of each round of the selection (see \code{select_quantify_ORFs}).
 #' @param stn.orf_quant.cutoff_pct \code{orf_quant.cutoff_pct} parameter for the \code{ORFquant} function
-#' @param stn.orf_quant.cutoff_P_sites \code{orf_quant.cutoff_P_sites} parameter for the \code{ORFquant} function
+#' @param stn.orf_quant.cutoff_P_sites \code{orf_quant.cutoff_P_sites} parameter for the \code{ORFquant} function. It filters the values of each round of the selection (see \code{select_quantify_ORFs}).
 #' @param unique_reads_only Use only signal from uniquely mapping reads? Defaults to \code{FALSE}.
 #' @param stn.orf_quant.scaling \code{orf_quant.scaling} parameter for the \code{ORFquant} function. Defaults to total_Psites
 #' @param canonical_start_only Use only the canonical start codon (no alternative initiation codons)? Defaults to \code{TRUE}. With \code{FALSE}, the alternative initiation codons of the genetic code (TTG and CTG in the standard code) are start codons only at the first codon of a frame, that is, at one of the first three bases of a transcript (see \code{\link{get_orfs}}). Inside a transcript, only the codons of M (ATG in the standard code) are start codons, so \code{FALSE} does not find ORFs with a near-cognate start codon, such as N-terminal extensions that start at a CTG.

@@ -261,6 +261,40 @@ test_that("plot_ORFquant_results() plots the splice sites with bedGraph coverage
   expect_true(file.exists(file.path(work, "plots_bedgraph", "example_Meta_splicing_coverage.pdf")))
 })
 
+test_that("plot_ORFquant_results() plots the splice sites of an ORF exon that spans an intron of the reference", {
+  skip_if(is.null(runs$one_core))
+  load(paste0(runs$one_core, "_final_ORFquant_results"))
+  ps <- get(load(paste0(runs$one_core, "_for_ORFquant")))$P_sites_all
+  # The example has no event CDS_spanning (an ORF exon over an intron of the CDS of
+  # its reference). Here an ORF gets one, from its second to its third exon
+  spl <- ORFquant_results$ORFs_spl_feat_maxORF
+  id <- "ENST00000402752.5_227_826"
+  x <- spl[names(spl) == id]
+  expect_length(x, 6)
+  span <- GRanges(seqnames(x)[2], IRanges(start(x[2]), end(x[3])), strand(x)[2], seqinfo = seqinfo(spl))
+  names(span) <- id
+  span$ref <- GRangesList(granges(x[2:3], use.mcols = FALSE))
+  span$spl_type <- "CDS_spanning"
+  ORFquant_results$ORFs_spl_feat_maxORF <- c(spl, span)
+  dir.create(file.path(work, "spanning"))
+  res_file <- file.path(work, "spanning", "example_final_ORFquant_results")
+  save(ORFquant_results, file = res_file)
+  cov <- file.path(work, "spanning", c("coverage_plus.bw", "coverage_minus.bw"))
+  rtracklayer::export(ps[strand(ps) == "+"], cov[1], format = "bigWig")
+  rtracklayer::export(ps[strand(ps) == "-"], cov[2], format = "bigWig")
+  # Before, the plot of these events gave facet_grid() the argument facets, which
+  # ggplot2 4.0 no longer accepts, and the function stopped before it wrote a plot
+  quiet(plot_ORFquant_results(for_ORFquant_file = paste0(runs$one_core, "_for_ORFquant"),
+                              ORFquant_output_file = res_file,
+                              annotation_file = runs$annotation,
+                              coverage_file_plus = cov[1], coverage_file_minus = cov[2],
+                              output_plots_path = file.path(work, "spanning", "plots"), prefix = "example"),
+        expected = c("Groups with fewer than two datapoints have been dropped",
+                     "Computation failed in `stat_ydensity()`",
+                     "no non-missing arguments to min", "no non-missing arguments to max"))
+  expect_true(file.exists(file.path(work, "spanning", "plots", "example_Meta_splicing_coverage.pdf")))
+})
+
 test_that("create_ORFquant_html_report() makes the HTML report of the plots of the example", {
   plots <- file.path(work, "plots", "example_ORFquant_plots_RData")
   skip_if_not(file.exists(plots))
@@ -477,6 +511,49 @@ test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without 
     # Before, the CDS had its stop codon, and the ORF not, so the last exon was up_lastCDS
     expect_true(any(grepl("same_lastCDS", types)), info = id)
     expect_false(any(grepl("up_lastCDS|missing_CDS_3prime", types)), info = id)
+  }
+})
+
+test_that("The ORF categories, NC_protein_isoform and ORFs_spl_feat_longest keep the last codon of a CDS that ends without a stop codon", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  loaded <- NULL
+  quiet(loaded <- load_annotation(runs$annotation, envir = new.env()))
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  # The ORFs of the test above. Here the CDS of the gene that end at the stop codon of ref_id
+  # (also the ORF's transcript and its compatible_tx) end without it, as a CDS with the GENCODE
+  # tag cds_end_NF does, so the ORF ends at the end of the CDS. All of them: TOP3B has two
+  # transcripts with this CDS, and the other one would become ref_id
+  orfs <- res$ORFs_tx[res$ORFs_tx$ORF_category_Gen == "exact_start_stop"]
+  expect_length(orfs, 2)
+  expect_identical(orfs$compatible_tx, orfs$transcript_id)
+  cds_end <- function(cds) if (as.vector(strand(cds))[1] == "+") max(end(cds)) else min(start(cds))
+  for (k in seq_along(orfs)) {
+    annotation <- loaded$GTF_annotation
+    txs <- names(annotation$cds_txs)
+    txs <- txs[annotation$trann$gene_id[match(txs, annotation$trann$transcript_id)] %in% orfs$gene_id[k]]
+    txs <- txs[vapply(txs, function(t) cds_end(annotation$cds_txs[[t]]), numeric(1)) == cds_end(annotation$cds_txs[[orfs$ref_id[k]]])]
+    expect_true(orfs$transcript_id[k] %in% txs)
+    for (t in txs) {
+      annotation$cds_txs[[t]] <- cds_without_stop(annotation$cds_txs[[t]], 3)
+    }
+    on_tx <- as.character(seqnames(annotation$cds_txs_coords)) %in% txs
+    end(annotation$cds_txs_coords)[on_tx] <- end(annotation$cds_txs_coords)[on_tx] - 3
+    region <- GenomicRanges::reduce(unlist(annotation$txs_gene[orfs$gene_id[k]]))
+    out <- NULL
+    quiet(out <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
+                          annotation = annotation, genome_sequence = loaded$genome_seq))
+    types <- out$ORFs_splice_feats$annotation_wrt_longest[[orfs$ORF_id_tr[k]]]$spl_type
+    # Before, the last codon of this CDS was removed too, and the last exon was down_lastCDS
+    expect_true(any(grepl("same_lastCDS", types)), info = orfs$ORF_id_tr[k])
+    expect_false(any(grepl("down_lastCDS|new_lastCDS_3prime", types)), info = orfs$ORF_id_tr[k])
+    # Before, C_extension, Alt3_stop and C
+    o <- out$ORFs_tx_position[[orfs$ORF_id_tr[k]]]
+    expect_identical(o$ref_id, orfs$ref_id[k])
+    expect_identical(c(o$ORF_category_Tx, o$ORF_category_Tx_compatible, o$ORF_category_Gen, o$NC_protein_isoform),
+                     c("ORF_annotated", "ORF_annotated", "exact_start_stop", "same"), info = orfs$ORF_id_tr[k])
   }
 })
 
