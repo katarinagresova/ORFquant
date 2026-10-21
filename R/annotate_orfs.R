@@ -46,7 +46,7 @@
 #' ORF overlaps; for a \code{new} exon, the nearest exon of the reference (none when the reference has no exons); for a
 #' \code{missing_CDS} row, the exon of the reference itself.
 #'
-#' \code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon
+#' \code{\link{annotate_ORFs}} gives as \code{ref_cds} the CDS of \code{ref_id} without its stop codon, when it ends with one
 #' (\code{ORFs_spl_feat_longest}) or the ORF of \code{ref_id_maxORF} (\code{ORFs_spl_feat_maxORF}), as an ORF ends before
 #' its stop codon. So an ORF that ends at the stop codon of the reference has \code{same_lastCDS}.
 #' @keywords ORFquant
@@ -529,6 +529,15 @@ cds_without_stop<-function(cds,stop_len){
   cut[o]<-pmin(width(cds)[o],pmax(stop_len-after,0))
   cds<-resize(cds,width(cds)-cut,fix="start")
   cds[width(cds)>0]
+}
+
+# stop_len when the last stop_len nt of the CDS exons cds are a stop codon of genetic_code, else 0: a CDS can end
+# without its stop codon (e.g. the GENCODE tag cds_end_NF) also in a GTF whose other CDS include it
+cds_stop_len<-function(cds,stop_len,genome_sequence,genetic_code){
+  if(length(cds)==0 | stop_len==0){return(stop_len)}
+  last<-sort(setdiff(cds,cds_without_stop(cds,stop_len)),decreasing=as.vector(strand(cds[1]))=="-")
+  codon<-as.character(unlist(getSeq(x=genome_sequence,last)))
+  if(isTRUE(genetic_code[codon]=="*")){stop_len}else{0}
 }
 
 # NMD_candidate from Distance_to_lastExEx (the start of the last exon minus the ORF end, which excludes the stop codon):
@@ -1019,8 +1028,8 @@ annotate_ORFs<-function(results_ORFs,Annotation,genome_sequence,region,genetic_c
       }
     }     
     
-    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS)
-    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,stop_len))
+    #without the stop codon, as the ORF (before, the last exon of an annotated ORF was up_lastCDS), when the CDS ends with one
+    ORFs_splice_feats[[orf_tx$ORF_id_tr]]<-annotate_splicing(orf_gen = orf_gen,ref_cds = cds_without_stop(max_cdsok,cds_stop_len(max_cdsok,stop_len,genome_sequence,genetic_code)))
     #to maxORF
     max_pct<-ORFs_gen[[maxORF_orf[cols$gene_id]]]
     cols$ref_id_maxORF<-maxORF_orf[cols$gene_id]

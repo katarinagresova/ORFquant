@@ -1,5 +1,20 @@
 # ORFquant 1.3.1
 
+## Changes in results
+
+- `ORFs_spl_feat_longest` now removes the last codon of the CDS of `ref_id`
+  only when it is a stop codon. A CDS can end without its stop codon (for
+  example with the GENCODE tag `cds_end_NF`) also in a GTF whose other CDS
+  include it. Since 1.03.0 (see "Changes in results" there), such a CDS lost
+  its last 3 coding nucleotides, so an ORF that ends at its end, or a splice
+  site in its last 3 nucleotides, got the wrong label. On a human sample
+  (SRR15513199 with GENCODE 47), 29 of the 6,673 CDS of `ref_id` end without
+  a stop codon. They are the reference of 33 ORFs. In the rows of these
+  ORFs, 58 `ref` and 6 `missing_CDS` ranges get their last codon back, and 2
+  labels change: `down_lastCDS` back to `same_lastCDS` (ADAMTSL1) and
+  `down_3ss` back to `same_3ss`. The other outputs and the example data
+  don't change.
+
 ## Bug fixes
 
 - `plot_ORFquant_results()` with coverage files no longer stops with "The

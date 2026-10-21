@@ -514,6 +514,32 @@ test_that("ORFs_spl_feat_longest compares an ORF with the CDS of ref_id without 
   }
 })
 
+test_that("ORFs_spl_feat_longest keeps the last codon of a CDS of ref_id that ends without a stop codon", {
+  skip_if(is.null(runs$one_core))
+  res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
+  loaded <- NULL
+  quiet(loaded <- load_annotation(runs$annotation, envir = new.env()))
+  for_ORFquant <- get(load(paste0(runs$one_core, "_for_ORFquant")))
+  genetic_code <- Biostrings::getGeneticCode("SGC0")
+  attributes(genetic_code)$alt_init_codons <- names(which(genetic_code == "M"))
+  # The ORFs of the test above. Here the CDS of ref_id ends without its stop codon, as a CDS
+  # with the GENCODE tag cds_end_NF does, so the ORF ends at the end of the CDS
+  orfs <- res$ORFs_tx[res$ORFs_tx$ORF_category_Gen == "exact_start_stop"]
+  expect_length(orfs, 2)
+  for (k in seq_along(orfs)) {
+    annotation <- loaded$GTF_annotation
+    annotation$cds_txs[[orfs$ref_id[k]]] <- cds_without_stop(annotation$cds_txs[[orfs$ref_id[k]]], 3)
+    region <- GenomicRanges::reduce(unlist(annotation$txs_gene[orfs$gene_id[k]]))
+    out <- NULL
+    quiet(out <- ORFquant(region = region, for_ORFquant = for_ORFquant, genetic_code_region = genetic_code,
+                          annotation = annotation, genome_sequence = loaded$genome_seq))
+    types <- out$ORFs_splice_feats$annotation_wrt_longest[[orfs$ORF_id_tr[k]]]$spl_type
+    # Before, the last codon of this CDS was removed too, and the last exon was down_lastCDS
+    expect_true(any(grepl("same_lastCDS", types)), info = orfs$ORF_id_tr[k])
+    expect_false(any(grepl("down_lastCDS|new_lastCDS_3prime", types)), info = orfs$ORF_id_tr[k])
+  }
+})
+
 test_that("NMD_candidate is TRUE when Distance_to_lastExEx is more than 3, also on the compatible transcripts", {
   skip_if(is.null(runs$one_core))
   res <- get(load(paste0(runs$one_core, "_final_ORFquant_results")))
