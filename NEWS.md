@@ -1,3 +1,107 @@
+# ORFquant 1.4.0
+
+ORFquant's own code does not change. The changes below come from RiboseQC
+1.5.0, whose functions ORFquant uses for the first two steps and exports
+again: `prepare_annotation_files()`, `load_annotation()`, `FaFile_Circ`,
+`prepare_for_ORFquant()`, `get_ps_fromspliceplus()` and
+`get_ps_fromsplicemin()`. The NEWS of RiboseQC 1.5.0 gives all its changes.
+
+## Installation and dependencies
+
+- ORFquant now needs RiboseQC 1.5.0 or later (`Remotes` installs the tag
+  `v1.5.0`). RiboseQC 1.5.0 no longer has the methods of `unlist()` for
+  `GRanges` and `GAlignments`, which changed `unlist()` in the whole R
+  session. ORFquant does not need them since 1.3.2. RiboseQC 1.5.0 needs
+  *ggplot2* 3.4.0 or newer.
+
+## New arguments
+
+- `prepare_for_ORFquant()` has the new argument `stranded`, with the values
+  of `RiboseQC_analysis()`: `TRUE` (the default), `FALSE` or `"inverse"`.
+  Use `"inverse"` for libraries with the reads on the strand opposite to the
+  RNA: the function then inverts the strand of each read before it
+  calculates the P-sites and the junction reads. Before, for these libraries
+  each P-site was on the other strand, and the reads on the junctions were
+  not counted. `TRUE` and `FALSE` give the same results as before.
+- `prepare_annotation_files()` has the new argument `genetic_codes`: the
+  genetic codes of some chromosomes, e.g. `genetic_codes = c(chrM = "3")`,
+  with the ids of `Biostrings::GENETIC_CODE_TABLE`. They replace the codes
+  that the chromosome names give. So the mitochondrion of a yeast or
+  Drosophila genome with UCSC names (`chrM`), which gets code 2 from its
+  name, can get its own code, and `run_ORFquant()` finds and translates its
+  ORFs with that code. The default, `NULL`, gives the same codes as before.
+
+## Input checks
+
+- `prepare_annotation_files()` warns when the lines of the GTF file do not
+  agree: when the lines of a transcript give different values of an
+  attribute (for example two biotypes), or the transcripts of a gene give
+  different gene names or biotypes. Then the order of the lines chooses the
+  value (lcalviell/ORFquant#10). The annotation does not change.
+- `prepare_annotation_files()` stops at once for a GTF file without CDS
+  lines also when the file has `start_codon` or `stop_codon` lines. Before,
+  it made the annotation, and `run_ORFquant()` stopped later with `subscript
+  contains out-of-bounds indices`.
+- `prepare_annotation_files()` stops with an error that names a transcript
+  when a CDS ends after the end of its chromosome (one that is not circular)
+  in the genome sequence, for example when the GTF file and the FASTA file
+  are of different genome assemblies.
+- `load_annotation()`, and so `prepare_for_ORFquant()` and `run_ORFquant()`,
+  stop with an error that says what is wrong when the annotation file is not
+  a file of `prepare_annotation_files()`, for example the GTF file. Before,
+  the error was `bad restore file magic number`.
+- `prepare_for_ORFquant()` stops at once when a compartment of the cutoff
+  file is a chromosome that is not circular, for example `chr22`. Before, a
+  read length of `nucl` and of that chromosome gave each read of the
+  chromosome two P-sites. A compartment is `nucl` (all chromosomes that are
+  not circular) or the name of a circular chromosome.
+- The error of `prepare_for_ORFquant()` for a BAM file without a chromosome
+  of the annotation now names the two files, and says that the reads must be
+  aligned to the genome.
+
+## Changes in results
+
+- `prepare_for_ORFquant()`: the P-sites of the uniquely mapping reads
+  (`P_sites_uniq`) and of the uniquely mapping reads with mismatches
+  (`P_sites_uniq_mm`) now come from the correct reads. Before, a read with 2
+  or more introns and its P-site in a middle block could get the mapping
+  quality and the MD tag of another such read. In ORFquant, these P-sites
+  give `P_sites_raw_uniq`, `P_sites_raw_uniq_mm` and `pval_uniq`, and with
+  `unique_reads_only = TRUE` also the ORFs. This is rare: in a human sample,
+  37 of 71.8 million P-sites of `P_sites_uniq` move. The P-sites of all reads
+  (`P_sites_all`) and the results of our test data do not change. For this
+  fix, `get_ps_fromspliceplus()` and `get_ps_fromsplicemin()` now give the
+  P-sites in the order of the reads, not sorted by position.
+
+## Bug fixes
+
+- `prepare_annotation_files()` no longer stops on a GTF file without
+  introns, for example a GTF file of chrM only, and `prepare_for_ORFquant()`
+  no longer stops on an annotation without splice junctions.
+- `prepare_annotation_files()` no longer stops when the chromosomes that are
+  not circular have no genetic code or more than one, for example a GTF file
+  of chrM only with chrM circular. The annotations that were made before do
+  not change.
+- `getSeq()` of a `FaFile_Circ` now reads a range that starts after the end
+  of a circular chromosome. Before, such a range was dropped, so the
+  sequences did not match the ranges, or R crashed.
+- The messages of `load_annotation()` now say where it puts
+  `GTF_annotation` and `genome_seq`: "the global workspace" or "the
+  environment envir".
+
+## Performance
+
+- `prepare_for_ORFquant()` finds the P-sites of each chunk of the BAM file
+  faster. The results don't change.
+
+## Documentation
+
+- The help of `prepare_annotation_files()` says that the order of the lines
+  in the GTF file does not change the results if the lines agree, as in
+  GENCODE and Ensembl files (lcalviell/ORFquant#10), and which annotations
+  give wrong ORF categories in ORFquant: since ORFquant 1.3.1, only an
+  annotation with `stop_in_gtf` `NA`.
+
 # ORFquant 1.3.2
 
 ## Installation and dependencies
