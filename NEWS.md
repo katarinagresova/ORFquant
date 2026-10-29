@@ -1,3 +1,5 @@
+# ORFquant 1.4.0
+
 # ORFquant 1.3.2
 
 ## Installation and dependencies
