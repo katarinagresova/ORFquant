@@ -44,7 +44,7 @@ Rscript -e 'remotes::install_github("katarinagresova/ORFquant@v1.3.2", upgrade =
 
 `@v1.3.2` installs the release 1.3.2. Without it, both commands install the latest code of the `main` branch.
 
-*ORFquant* needs *RiboseQC* 1.4.0 or later. With an older *RiboseQC* in the library, `upgrade = "never"` keeps it, and the install stops with `namespace 'RiboseQC' ... is being loaded, but >= 1.4.0 is required`. Then install *RiboseQC* first, with `remotes::install_github("katarinagresova/RiboseQC@v1.4.0")`, and *ORFquant* again.
+*ORFquant* needs *RiboseQC* 1.5.0 or later. With an older *RiboseQC* in the library, `upgrade = "never"` keeps it, and the install stops with `namespace 'RiboseQC' ... is being loaded, but >= 1.5.0 is required`. Then install *RiboseQC* first, with `remotes::install_github("katarinagresova/RiboseQC@v1.5.0")`, and *ORFquant* again.
 
 To also install the vignette, add `build_vignettes = TRUE` to either install command (this needs pandoc), and read it with `vignette("ORFquant")`.
 
